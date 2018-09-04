@@ -1,8 +1,8 @@
 # HealthCheckToolkit_Community
 This repository contains the scripts used to collect data from a SCCM environmnet as per the blog post from https://thedesktopteam.com/raphael/sccm-sccm-healthcheck/
 
-How to:
-1- Download all files and save to a location on the hard drive (You should have 5 files: CollectData.ps1, HealthCheckClasses.dll, Messages.xml, SCCMDefaultValues.xml and SCCMRulesOverride.xml)
+How to:<br>
+1- Download all files and save to a location on the hard drive (You should have 5 files: CollectData.ps1, HealthCheckClasses.dll, Messages.xml, SCCMDefaultValues.xml and SCCMRulesOverride.xml)<br>
 2- Open PowerShell as Administrator and If prompted by UAC, click Yes
 3- Navigate to the folder where you have extracted the files
 4- Type: .\CollectData.ps1 -AuthorizedSiteCodes '001' -MessageFilePath .\Messages.xml -RulesOverrideFilePath .\SCCMRulesOverride.xml -DefaultValuesOverrideFilePath .\SCCMDefaultValues.xml
