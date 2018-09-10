@@ -108,7 +108,7 @@
     <DefaultValue Name="MinAppStatisticsSummarization2" Type="int" value="720" />
     <DefaultValue Name="MaxAppStatisticsSummarization3" Type="int" value="20160" />
     <DefaultValue Name="MinAppStatisticsSummarization3" Type="int" value="5040" />
-    <DefaultValue Name="GroupsNotAllowed" Type="array" value="Access Control Assistance Operators,Account Operators,Administrators,Backup Operators,Certificate Service DCOM Access,Cryptographic Operators,Distributed COM Users,Event Log Readers,Guests,Hyper-V Administrators,IIS_IUSRS,Incoming Forest Trust Builders,Network Configuration Operators,Performance Log Users,Performance Monitor Users,Pre-Windows 2000 Compatible Access,Print Operators,RDS Endpoint Servers,RDS Management Servers,RDS Remote Access Servers,Remote Desktop Users,Remote Management Users,Replicator,Server Operators,Storage Replica Administrators,System Managed Accounts Group,Terminal Server License Servers,Windows Authorization Access Group,Users,Allowed RODC Password Replication Group,Cert Publishers,Cloneable Domain Controllers,DHCP Administrators,DHCP Users,DnsAdmins,DnsUpdateProxy,Domain Admins,Domain Computers,Domain Controllers,Domain Guests,Enterprise Admins,Enterprise Key Admins,Enterprise Read-only Domain Controllers,Group Policy Creator Owners,Key Admins,Protected Users,RAS and IAS Servers,Read-only Domain Controllers,Schema Admins" />
+    <DefaultValue Name="GroupsNotAllowed" Type="array" value="Access Control Assistance Operators,Account Operators,Administrators,Backup Operators,Certificate Service DCOM Access,Cryptographic Operators,Distributed COM Users,Event Log Readers,Guests,Hyper-V Administrators,IIS_IUSRS,Incoming Forest Trust Builders,Network Configuration Operators,Performance Log Users,Performance Monitor Users,Pre-Windows 2000 Compatible Access,Print Operators,RDS Endpoint Servers,RDS Management Servers,RDS Remote Access Servers,Remote Desktop Users,Remote Management Users,Replicator,Server Operators,Storage Replica Administrators,System Managed Accounts Group,Terminal Server License Servers,Windows Authorization Access Group,Allowed RODC Password Replication Group,Cert Publishers,Cloneable Domain Controllers,DHCP Administrators,DHCP Users,DnsAdmins,DnsUpdateProxy,Domain Admins,Domain Computers,Domain Controllers,Domain Guests,Enterprise Admins,Enterprise Key Admins,Enterprise Read-only Domain Controllers,Group Policy Creator Owners,Key Admins,Protected Users,RAS and IAS Servers,Read-only Domain Controllers,Schema Admins" />
     <DefaultValue Name="MaxFullAdminWarning" Type="int" value="5" />
     <DefaultValue Name="MaxFullAdminError" Type="int" value="3" />
     <DefaultValue Name="ProcessListSamplesMinutes" Type="int" value="1" />
@@ -128,4 +128,12 @@
     <DefaultValue Name="AddMultipleComponentStatusMessage" Type="bool" value="False" />
     <DefaultValue Name="MaxApprovalRequestDate" Type="int" value="7" />
     <DefaultValue Name="MinMDTVersion" Type="string" value="6.3.8450.1000" />
+    <DefaultValue Name="MaxDistributionInProgressWarning" Type="int" value="3" />
+    <DefaultValue Name="MaxDistributionInProgressError" Type="int" value="7" />
+    <DefaultValue Name="MaxPingResponseTimeWarning" Type="int" value="50" />
+    <DefaultValue Name="MaxPingResponseTimeError" Type="int" value="100" />
+    <DefaultValue Name="MaxPingDropPercentWarning" Type="int" value="5" />
+    <DefaultValue Name="MaxPingDropPercentError" Type="int" value="10" />
+    <DefaultValue Name="PingDelay" Type="int" value="2" />
+    <DefaultValue Name="MaxPingCount" Type="int" value="75" />
 </DefaultValues>

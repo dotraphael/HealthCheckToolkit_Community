@@ -185,7 +185,7 @@
     <Rule ID="183" Name="Software Metering - Auto Create Rules" Category="15" Classification="WARNING" Enabled="True" />
     <Rule ID="184" Name="Software Metering - Disabled Rules" Category="15" Classification="WARNING" Enabled="True" />
     <Rule ID="185" Name="Boot Images - F8" Category="16" Classification="WARNING" Enabled="True" />
-    <Rule ID="186" Name="Boot Images - Default Boot Image Usage" Category="15" Classification="WARNING" Enabled="True" />
+    <Rule ID="186" Name="Boot Images - Default Boot Image Usage" Category="16" Classification="WARNING" Enabled="True" />
     <Rule ID="187" Name="Boot Images - Boot Image Usage" Category="16" Classification="WARNING" Enabled="True" />
     <Rule ID="188" Name="Boot Images - PXE Architecture Count" Category="16" Classification="WARNING" Enabled="True" />
     <Rule ID="189" Name="Boot Images - Default Boot Image Binary Delta Replication" Category="16" Classification="WARNING" Enabled="True" />
@@ -282,8 +282,9 @@
     <Rule ID="280" Name="Application - Devices with Failure (Warning)" Category="22" Classification="WARNING" Enabled="True" />
     <Rule ID="281" Name="Application - Users with Failure (Error)" Category="22" Classification="ERROR" Enabled="True" />
     <Rule ID="282" Name="Application - Users with Failure (Warning)" Category="22" Classification="WARNING" Enabled="True" />
-    <Rule ID="283" Name="Application - Deployment Count not used by TS" Category="22" Classification="WARNING" Enabled="True" />
-    <Rule ID="284" Name="Application - Deployment Count used by TS" Category="22" Classification="ERROR" Enabled="True" />
+    <Rule ID="283" Name="Application - not used" Category="22" Classification="WARNING" Enabled="True" />
+    <Rule ID="284" Name="Application - used but not deployed" Category="22" Classification="ERROR" Enabled="True" />
+    <Rule ID="285" Name="NO_SMS_ON_DRIVE.SMS on SQL Drive" Category="2" Classification="ERROR" Enabled="True" />
     <Rule ID="286" Name="Application - DT Folder does not exist" Category="22" Classification="ERROR" Enabled="True" />
     <Rule ID="287" Name="Application - DT allow User Interaction" Category="22" Classification="WARNING" Enabled="True" />
     <Rule ID="288" Name="Distribution Point Content - Not on DP Group" Category="22" Classification="WARNING" Enabled="True" />
@@ -312,7 +313,6 @@
     <Rule ID="311" Name="SQL Server 2016 SP1" Category="3" Classification="WARNING" Enabled="True" />
     <Rule ID="312" Name="WSUS Windows Internal Database" Category="2" Classification="ERROR" Enabled="True" />
     <Rule ID="313" Name="NO_SMS_ON_DRIVE.SMS on SystemDrive" Category="2" Classification="ERROR" Enabled="True" />
-    <Rule ID="285" Name="NO_SMS_ON_DRIVE.SMS on SQL Drive" Category="2" Classification="ERROR" Enabled="True" />
     <Rule ID="314" Name="Multiple Software Update Point (WSUS) using same SQL Server" Category="2" Classification="WARNING" Enabled="True" />
     <Rule ID="315" Name="Pending Approval Request" Category="2" Classification="WARNING" Enabled="True" />
     <Rule ID="316" Name="Hierarchy Settings - Auto Upgrade Client Excluded specified clients from update" Category="2" Classification="WARNING" Enabled="True" />
@@ -329,4 +329,15 @@
     <Rule ID="327" Name="ADK Version" Category="2" Classification="WARNING" Enabled="True" />
     <Rule ID="328" Name="MDT Version" Category="2" Classification="WARNING" Enabled="True" />
     <Rule ID="329" Name="SCCM Services on Site Server" Category="2" Classification="ERROR" Enabled="True" />
+    <Rule ID="330" Name="Collection (Total) Incremental Warning" Category="11" Classification="WARNING" Enabled="True" />
+    <Rule ID="331" Name="Collection (Total) Incremental Error" Category="11" Classification="ERROR" Enabled="True" />
+    <Rule ID="332" Name="Distribution Status - InProgress Warning" Category="20" Classification="WARNING" Enabled="True" />
+    <Rule ID="333" Name="Distribution Status - InProgress Error" Category="20" Classification="ERROR" Enabled="True" />
+    <Rule ID="334" Name="Ping Response Time Warning" Category="1" Classification="WARNING" Enabled="True" />
+    <Rule ID="335" Name="Ping Response Time Error" Category="1" Classification="ERROR" Enabled="True" />
+    <Rule ID="336" Name="Ping Drop Percentace Warning" Category="1" Classification="WARNING" Enabled="True" />
+    <Rule ID="337" Name="Ping Drop Percentace Error" Category="1" Classification="ERROR" Enabled="True" />
+    <Rule ID="338" Name="Application - Number of DT" Category="22" Classification="ERROR" Enabled="True" />
+    <Rule ID="339" Name="Intune Subscription" Category="2" Classification="ERROR" Enabled="True" />
+    <Rule ID="340" Name="IP Subnet Boundary" Category="2" Classification="ERROR" Enabled="True" />
 </Rules>

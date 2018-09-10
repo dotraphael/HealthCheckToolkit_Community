@@ -19,6 +19,7 @@
 #
 # Updates:
 #        1.0 - Raphael Perez - 03/08/2018 - Initial Script
+#        1.2 - Raphael Perez - 10/09/2018 - Initial Script
 #
 # Usage:
 #		 Option 1: powershell.exe -ExecutionPolicy Bypass .\SCCM.ps1 [Parameters]
@@ -45,7 +46,7 @@ if ($Verbose) {
     $VerbosePreference = 2
     $WarningPreference = 2
 }
-
+$Error.Clear()
 $ErrorActionPreference = "Continue"
 #endregion
 
@@ -115,10 +116,10 @@ function Test-CEUrl {
             $WebRequest = Invoke-WebRequest -Uri $url -UseBasicParsing
         }
 
-        $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDError; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleIDInfo; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)" }
+        $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDError; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleIDInfo.ID; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url }
     } catch {
         Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-        $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDException; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleIDInfo; 'ServerName' = $ServerName; 'StatusCode' = 'Unable to connect' }
+        $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDException; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleIDInfo.ID; 'ServerName' = $ServerName; 'StatusCode' = 'Unable to connect'; 'URL' = $url }
     }
 }
 #endregion
@@ -493,7 +494,7 @@ try {
     Set-CEHealthCheckDefaultValue -ValueName 'MinAppStatisticsSummarization2' -ValueNonExist 720
     Set-CEHealthCheckDefaultValue -ValueName 'MaxAppStatisticsSummarization3' -ValueNonExist 20160
     Set-CEHealthCheckDefaultValue -ValueName 'MinAppStatisticsSummarization3' -ValueNonExist 5040
-    Set-CEHealthCheckDefaultValue -ValueName 'GroupsNotAllowed' -ValueNonExist @('Access Control Assistance Operators', 'Account Operators', 'Administrators', 'Backup Operators', 'Certificate Service DCOM Access', 'Cryptographic Operators', 'Distributed COM Users', 'Event Log Readers', 'Guests', 'Hyper-V Administrators', 'IIS_IUSRS', 'Incoming Forest Trust Builders', 'Network Configuration Operators', 'Performance Log Users', 'Performance Monitor Users', 'Pre-Windows 2000 Compatible Access', 'Print Operators', 'RDS Endpoint Servers', 'RDS Management Servers', 'RDS Remote Access Servers', 'Remote Desktop Users', 'Remote Management Users', 'Replicator', 'Server Operators', 'Storage Replica Administrators', 'System Managed Accounts Group', 'Terminal Server License Servers', 'Windows Authorization Access Group', 'Users', 'Allowed RODC Password Replication Group', 'Cert Publishers', 'Cloneable Domain Controllers', 'DHCP Administrators', 'DHCP Users', 'DnsAdmins', 'DnsUpdateProxy', 'Domain Admins', 'Domain Computers', 'Domain Controllers', 'Domain Guests', 'Enterprise Admins', 'Enterprise Key Admins', 'Enterprise Read-only Domain Controllers', 'Group Policy Creator Owners', 'Key Admins', 'Protected Users', 'RAS and IAS Servers', 'Read-only Domain Controllers', 'Schema Admins')
+    Set-CEHealthCheckDefaultValue -ValueName 'GroupsNotAllowed' -ValueNonExist @('Access Control Assistance Operators', 'Account Operators', 'Administrators', 'Backup Operators', 'Certificate Service DCOM Access', 'Cryptographic Operators', 'Distributed COM Users', 'Event Log Readers', 'Guests', 'Hyper-V Administrators', 'IIS_IUSRS', 'Incoming Forest Trust Builders', 'Network Configuration Operators', 'Performance Log Users', 'Performance Monitor Users', 'Pre-Windows 2000 Compatible Access', 'Print Operators', 'RDS Endpoint Servers', 'RDS Management Servers', 'RDS Remote Access Servers', 'Remote Desktop Users', 'Remote Management Users', 'Replicator', 'Server Operators', 'Storage Replica Administrators', 'System Managed Accounts Group', 'Terminal Server License Servers', 'Windows Authorization Access Group', 'Allowed RODC Password Replication Group', 'Cert Publishers', 'Cloneable Domain Controllers', 'DHCP Administrators', 'DHCP Users', 'DnsAdmins', 'DnsUpdateProxy', 'Domain Admins', 'Domain Computers', 'Domain Controllers', 'Domain Guests', 'Enterprise Admins', 'Enterprise Key Admins', 'Enterprise Read-only Domain Controllers', 'Group Policy Creator Owners', 'Key Admins', 'Protected Users', 'RAS and IAS Servers', 'Read-only Domain Controllers', 'Schema Admins')
     Set-CEHealthCheckDefaultValue -ValueName 'MaxFullAdminWarning' -ValueNonExist 3
     Set-CEHealthCheckDefaultValue -ValueName 'MaxFullAdminError' -ValueNonExist 5
     Set-CEHealthCheckDefaultValue -ValueName 'WarningCPUAverageUsage' -ValueNonExist 50
@@ -511,6 +512,14 @@ try {
     Set-CEHealthCheckDefaultValue -ValueName 'AddMultipleComponentStatusMessage' -ValueNonExist $false
     Set-CEHealthCheckDefaultValue -ValueName 'MaxApprovalRequestDate' -ValueNonExist 7
     Set-CEHealthCheckDefaultValue -ValueName 'MinMDTVersion' -ValueNonExist '6.3.8450.1000'
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxDistributionInProgressWarning' -ValueNonExist 3
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxDistributionInProgressError' -ValueNonExist 7
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingResponseTimeWarning' -ValueNonExist 50
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingResponseTimeError' -ValueNonExist 100
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingDropPercentWarning' -ValueNonExist 5
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingDropPercentError' -ValueNonExist 10
+    Set-CEHealthCheckDefaultValue -ValueName 'PingDelay' -ValueNonExist 2
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingCount' -ValueNonExist 10
     #endregion
 
     #region set Override Rules
@@ -700,9 +709,9 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 183 -RuleName 'Software Metering - Auto Create Rules' -DefaultCategory 15 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 184 -RuleName 'Software Metering - Disabled Rules' -DefaultCategory 15 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 185 -RuleName 'Boot Images - F8' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 186 -RuleName 'Boot Images - Default Boot Image Usage' -DefaultCategory 15 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 187 -RuleName 'Boot Images - Boot Image Usage' -DefaultCategory 15 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 188 -RuleName 'Boot Images - PXE Architecture Count' -DefaultCategory 15 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 186 -RuleName 'Boot Images - Default Boot Image Usage' -DefaultCategory 16 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 187 -RuleName 'Boot Images - Boot Image Usage' -DefaultCategory 16 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 188 -RuleName 'Boot Images - PXE Architecture Count' -DefaultCategory 16 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 189 -RuleName 'Boot Images - Default Boot Image Binary Delta Replication' -DefaultCategory 16 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 190 -RuleName 'Boot Images - Default Boot Image Drivers' -DefaultCategory 16 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 191 -RuleName 'Boot Images - Binary Delta Replication' -DefaultCategory 16 -DefaultClassification 'WARNING'
@@ -797,8 +806,9 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 280 -RuleName 'Application - Devices with Failure (Warning)' -DefaultCategory 22 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 281 -RuleName 'Application - Users with Failure (Error)' -DefaultCategory 22 -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 282 -RuleName 'Application - Users with Failure (Warning)' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 283 -RuleName 'Application - Deployment Count not used by TS' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 284 -RuleName 'Application - Deployment Count used by TS' -DefaultCategory 22 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 283 -RuleName 'Application - not used' -DefaultCategory 22 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 284 -RuleName 'Application - used but not deployed' -DefaultCategory 22 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 285 -RuleName 'NO_SMS_ON_DRIVE.SMS on SQL Drive' -DefaultCategory 2 -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 286 -RuleName 'Application - DT Folder does not exist' -DefaultCategory 22 -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 287 -RuleName 'Application - DT allow User Interaction' -DefaultCategory 22 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 288 -RuleName 'Distribution Point Content - Not on DP Group' -DefaultCategory 22 -DefaultClassification 'WARNING'
@@ -827,7 +837,6 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 311 -RuleName 'SQL Server 2016 SP1' -DefaultCategory 3 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 312 -RuleName 'WSUS Windows Internal Database' -DefaultCategory 2 -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 313 -RuleName 'NO_SMS_ON_DRIVE.SMS on SystemDrive' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 285 -RuleName 'NO_SMS_ON_DRIVE.SMS on SQL Drive' -DefaultCategory 2 -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 314 -RuleName 'Multiple Software Update Point (WSUS) using same SQL Server' -DefaultCategory 2 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 315 -RuleName 'Pending Approval Request' -DefaultCategory 22 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 316 -RuleName 'Hierarchy Settings - Auto Upgrade Client Excluded specified clients from update' -DefaultCategory 2 -DefaultClassification 'WARNING'
@@ -844,6 +853,17 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 327 -RuleName 'ADK Version' -DefaultCategory 2 -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 328 -RuleName 'MDT Version' -DefaultCategory 2 -DefaultClassification 'WARNING' 
     Set-CEHealthCheckRulesOverride -RuleID 329 -RuleName 'SCCM Services on Site Server' -DefaultCategory 2 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 330 -RuleName 'Collection (Total) Incremental Warning' -DefaultCategory 11 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 331 -RuleName 'Collection (Total) Incremental Error' -DefaultCategory 11 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 332 -RuleName 'Distribution Status - InProgress Warning' -DefaultCategory 20 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 333 -RuleName 'Distribution Status - InProgress Error' -DefaultCategory 20 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 334 -RuleName 'Ping Response Time Warning' -DefaultCategory 1 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 335 -RuleName 'Ping Response Time Error' -DefaultCategory 1 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 336 -RuleName 'Ping Drop Percentace Warning' -DefaultCategory 1 -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 337 -RuleName 'Ping Drop Percentace Error' -DefaultCategory 1 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 338 -RuleName 'Application - Number of DT' -DefaultCategory 22 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 339 -RuleName 'Intune Subscription' -DefaultCategory 2 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 340 -RuleName 'IP Subnet Boundary' -DefaultCategory 2 -DefaultClassification 'ERROR'
     #endregion
 
     #region Script default variables
@@ -1013,7 +1033,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
         #region Site Information
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site'))
-        $SiteList = Get-CMSite
+        $FileToImport = "$($SaveToFolder)\SiteList.xml"
+        if (Test-Path $FileToImport) {
+            Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+            New-Variable -Name "SiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+        } else {
+            $SiteList = Get-CMSite
+            Export-CEXMLFile -VariableName 'SiteList'
+        }        
 
         #getting the main SCCM Site (Primary Site) - There is no CAS here
         $MainSiteCode = ($SiteList | Where-Object {$_.Type -eq 2}).SiteCode
@@ -1028,89 +1055,118 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #region Site Role List
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Role'))
         $SiteRoleList = @()
-        $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Role List', $_.SiteCode))
-            Get-CMSiteRole -SiteCode $_.SiteCode | ForEach-Object {
-                $item = $_ 
-                $Servername = ($item.NetworkOSPath.Replace('\\',''))
-                if ($script:ExcludeServers -notcontains $Servername) {
-                    $SiteRoleList += $item
+        $FileToImport = "$($SaveToFolder)\SiteRoleList.xml"
+        if (Test-Path $FileToImport) {
+            Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+            New-Variable -Name "SiteRoleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+        } else {
+            $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Role List', $_.SiteCode))
+
+                Get-CMSiteRole -SiteCode $_.SiteCode | ForEach-Object {
+                    $item = $_ 
+                    $Servername = ($item.NetworkOSPath.Replace('\\',''))
+                    if ($script:ExcludeServers -notcontains $Servername) {
+                        $SiteRoleList += $item
+                    }
                 }
+                Export-CEXMLFile -VariableName 'SiteRoleList'
             }
         }
         #endregion
 
-        #region SQL Server Primary Site
+        #region SQL Server
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Primary Site SQL Server'))
         $arrRuleID = @(29, 30, 31 ,32, 33, 34, 285)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLServerPrimarySiteList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLServerPrimarySiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "SQLServerInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\SQLServerInformationList.xml") -Force -Option AllScope -Scope Script
+            } else {
 
-            $SQLServerPrimarySiteList = @()
-            $SiteList | Where-Object {$_.Type -eq 2} | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
-                $item = $_
-                $SQLServerPrimarySiteList += $SiteRoleList | Where-Object {($_.SiteCode -eq $item.SiteCode) -and ($_.RoleName -eq 'SMS SQL Server')}
-            }
-
-            $SQLServerInformationList = @()
-            $SQLServerPrimarySiteList | ForEach-Object {
-                $item = $_
-                $SQLServerName = $item.PropLists.values.Split(',')[1].Trim()
-
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $SQLServerName)
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
-                    $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
-
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server")
-                    $InstanceName = $RegKey.GetValue("InstalledInstances")
-
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
-                    $InstanceID = $RegKey.GetValue($InstanceName)
-
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\Setup")
-                    $SQLProgramDir = $RegKey.GetValue("SqlProgramDir")
-
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\MSSQLServer\Parameters")
-                    $Arguments = @()
-                    $RegKey.GetValueNames() | ForEach-Object  {
-                        $Arguments += $RegKey.GetValue($_)
-                    }
-
-                    $SQLData = ''
-                    $SQLLogs = ''
-
-                    $Arguments | ForEach-Object {
-                        $subItem = $_
-                        $paramID = $subItem.Substring(0, 2).Tolower()
-                        switch ($paramID) {
-                            '-d' { $SQLData = $subItem.Replace($paramID,'').Replace('\master.mdf','') }
-                            '-l' { $SQLLogs = $subItem.Replace($paramID,'').Replace('\mastlog.ldf','') }
-                        }
-                    }
-
-                    $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
-                    $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
-
-                    if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                        $bPathExistDataRoot = $true
-                    } else {
-                        $bPathExistDataRoot = $false
-                    }
-
-                    if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                        $bPathExistLogRoot = $true
-                    } else {
-                        $bPathExistLogRoot = $false
-                    }
-
-                    $SQLServerInformationList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = $ProgramFIles; 'InstallationFolder' = $SQLProgramDir; 'DataFolder' = $SQLData; 'LogFolder' = $SQLLogs; 'NOSMSONData' = $bPathExistDataRoot; 'NOSMSONLog' = $bPathExistLogRoot }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $SQLServerName; 'ConnectionType' = 'SQL Server Remote Registry (RRP/RPC)' }
+                $SQLServerPrimarySiteList = @()
+                $SiteList | Where-Object {$_.Type -eq 2} | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
+                    $item = $_
+                    $SQLServerPrimarySiteList += $SiteRoleList | Where-Object {($_.SiteCode -eq $item.SiteCode) -and ($_.RoleName -eq 'SMS SQL Server')}
                 }
+
+                $SQLServerInformationList = @()
+                $SQLServerPrimarySiteList | ForEach-Object {
+                    $item = $_
+                    $SQLServerName = $item.PropLists.values.Split(',')[1].Trim()
+
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $SQLServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
+                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
+
+                        #todo: manage multiple instances
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server")
+                        $InstanceName = $RegKey.GetValue("InstalledInstances")
+                        $InstanceData = @()
+                        
+                        if ($InstanceName -is [Array]) {
+                            $InstanceData = $InstanceName
+                        } else {
+                            $InstanceData += $InstanceName
+                        }
+
+                        $InstanceData | ForEach-Object {
+                            $InstanceItem = $_
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
+                            $InstanceID = $RegKey.GetValue($InstanceItem)
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\Setup")
+                            $SQLProgramDir = $RegKey.GetValue("SqlProgramDir")
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\MSSQLServer\Parameters")
+                            $Arguments = @()
+                            $RegKey.GetValueNames() | ForEach-Object  {
+                                $Arguments += $RegKey.GetValue($_)
+                            }
+
+                            $SQLData = ''
+                            $SQLLogs = ''
+
+                            $Arguments | ForEach-Object {
+                                $subItem = $_
+                                $paramID = $subItem.Substring(0, 2).Tolower()
+                                switch ($paramID) {
+                                    '-d' { $SQLData = $subItem.Replace($paramID,'').Replace('\master.mdf','') }
+                                    '-l' { $SQLLogs = $subItem.Replace($paramID,'').Replace('\mastlog.ldf','') }
+                                }
+                            }
+
+                            $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
+                            $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
+
+                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                $bPathExistDataRoot = $true
+                            } else {
+                                $bPathExistDataRoot = $false
+                            }
+
+                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                $bPathExistLogRoot = $true
+                            } else {
+                                $bPathExistLogRoot = $false
+                            }
+
+                            $SQLServerInformationList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = $ProgramFIles; 'InstallationFolder' = $SQLProgramDir; 'DataFolder' = $SQLData; 'LogFolder' = $SQLLogs; 'NOSMSONData' = $bPathExistDataRoot; 'NOSMSONLog' = $bPathExistLogRoot }
+                        }                        
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $SQLServerName; 'InstanceID' = $InstanceID; 'ConnectionType' = 'SQL Server Remote Registry (RRP/RPC)' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLServerPrimarySiteList'
+                Export-CEXMLFile -VariableName 'SQLServerInformationList'
             }
         }
         #endregion
@@ -1123,29 +1179,37 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $ServerNOSMSONDriveInformation = @()
-            $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                $item = $_
-                $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+            $FileToImport = "$($SaveToFolder)\ServerNOSMSONDriveInformation.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ServerNOSMSONDriveInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1047 @('NO_SMS_ON_DRIVE.SMS on SystemDrive', $RemoteComputer))
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+                $ServerNOSMSONDriveInformation = @()
+                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1047 @('NO_SMS_ON_DRIVE.SMS on SystemDrive', $RemoteComputer))
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
                     
-                    $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
-                    if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                        $bPathExist = $true
-                    } else {
-                        $bPathExist = $false
+                        $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
+                        if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                            $bPathExist = $true
+                        } else {
+                            $bPathExist = $false
+                        }
+
+                        $ServerNOSMSONDriveInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = 'C:\' }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'NO_SMS_ON_DRIVE.SMS' }
+
                     }
-
-                    $ServerNOSMSONDriveInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = 'C:\' }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'NO_SMS_ON_DRIVE.SMS' }
-
                 }
+                Export-CEXMLFile -VariableName 'ServerNOSMSONDriveInformation'
             }
         }
         #endregion
@@ -1159,30 +1223,38 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $ServerRegistryInformation = @()
-            $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                $item = $_
-                $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+            $FileToImport = "$($SaveToFolder)\ServerRegistryInformation.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ServerRegistryInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('Short file name creation', $RemoteComputer))
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
-                    $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
-                    if ($RegKey -eq $Null) {
-                        $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
+                $ServerRegistryInformation = @()
+                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('Short file name creation', $RemoteComputer))
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
+                        $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
+                        if ($RegKey -eq $Null) {
+                            $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
+                        }
+
+                        $ShortNameCreation = $RegKey.GetValue("NtfsDisable8dot3NameCreation")
+
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
+                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
+
+                        $ServerRegistryInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = $ShortNameCreation; 'ProgramFiles' = $ProgramFiles }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'Short file name creation Remote Registry (RRP/RPC)' }
+
                     }
-
-                    $ShortNameCreation = $RegKey.GetValue("NtfsDisable8dot3NameCreation")
-
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
-                    $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
-
-                    $ServerRegistryInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = $ShortNameCreation; 'ProgramFiles' = $ProgramFiles }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'Short file name creation Remote Registry (RRP/RPC)' }
-
                 }
+                Export-CEXMLFile -VariableName 'ServerRegistryInformation'
             }
         }
         #endregion
@@ -1195,47 +1267,64 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $NumberOfSamples = [math]::Round([int]$Script:ProcessListSamplesMinutes * 60 / [int]$Script:ProcessListSamplesWaitSeconds)
-            $ProcessInfoList = @()
-            $ProcessAverageTimeList = @()
-            $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                $item = $_
-                $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+            $FileToImport = "$($SaveToFolder)\ProcessAverageTimeList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-                For ($i=1; $i -le $NumberOfSamples; $i++) {
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1030 @($RemoteComputer, $i, $NumberOfSamples))
-                    try {
-                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
-                        if ($itemReturn -ne $null) {
-                            $ProcessInfoList += $itemReturn
-                        } else {
+                $NumberOfSamples = [math]::Round([int]$Script:ProcessListSamplesMinutes * 60 / [int]$Script:ProcessListSamplesWaitSeconds)
+                $ProcessInfoList = @()
+                $ProcessAverageTimeList = @()
+                $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    For ($i=1; $i -le $NumberOfSamples; $i++) {
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1030 @($RemoteComputer, $i, $NumberOfSamples))
+                        try {
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
+                            if ($itemReturn -ne $null) {
+                                $ProcessInfoList += $itemReturn
+                            } else {
+                                $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
+                                break
+                            }
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                             $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
                             break
                         }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
-                        break
+                        if ($i -lt $NumberOfSamples) { start-sleep $Script:ProcessListSamplesWaitSeconds }
                     }
-                    if ($i -lt $NumberOfSamples) { start-sleep $Script:ProcessListSamplesWaitSeconds }
-                }
 
-                $ProcessInfoList | Select-Object PSComputerName | Get-Unique -AsString | ForEach-Object {
-                    $Item = $_
-                    $ProcessAverageTimeList += $ProcessInfoList | Where-Object {$_.PSComputerName -eq $item.PSComputerName} | Group-Object Name | Select-Object -Property  @{ Name = 'ComputerName'; Expression = { $item.PSComputerName }}, Name, @{ Name = 'Average'; Expression = { ($_.Group | Measure-Object -Property PercentProcessorTime -Sum).Sum / $NumberOfSamples } }
+                    $ProcessInfoList | Select-Object PSComputerName | Get-Unique -AsString | ForEach-Object {
+                        $Item = $_
+                        $ProcessAverageTimeList += $ProcessInfoList | Where-Object {$_.PSComputerName -eq $item.PSComputerName} | Group-Object Name | Select-Object -Property  @{ Name = 'ComputerName'; Expression = { $item.PSComputerName }}, Name, @{ Name = 'Average'; Expression = { ($_.Group | Measure-Object -Property PercentProcessorTime -Sum).Sum / $NumberOfSamples } }
+                    }
                 }
+                Export-CEXMLFile -VariableName 'ProcessAverageTimeList'
             }
         }
         #endregion
 
         #region Site Component List
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Component'))
-        $SiteComponentList = @()
-        $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Component List', $_.SiteCode))
-            $SiteComponentList += Get-CMSiteComponent -SiteCode $_.SiteCode
-        }
 
+        $FileToImport = "$($SaveToFolder)\SiteComponentList.xml"
+        if (Test-Path $FileToImport) {
+            Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+            New-Variable -Name "SiteComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+        } else {
+
+            $SiteComponentList = @()
+            $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Component List', $_.SiteCode))
+                $SiteComponentList += Get-CMSiteComponent -SiteCode $_.SiteCode
+                Export-CEXMLFile -VariableName 'SiteComponentList'
+            }
+        }
+        
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Management Point'))
         $arrRuleID = @(14, 15, 16, 170, 171)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
@@ -1243,7 +1332,15 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $MPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Management Point'}
+            $FileToImport = "$($SaveToFolder)\MPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                $MPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Management Point'}
+                Export-CEXMLFile -VariableName 'MPList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('SQL Server'))
@@ -1253,70 +1350,77 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $SQLList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SQL Server'}
+            $FileToImport = "$($SaveToFolder)\SQLList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "SQLConfigurationList" -Value (Import-Clixml -Path "$($SaveToFolder)\SQLConfigurationList.xml") -Force -Option AllScope -Scope Script
+            } else {
 
-            $SQLConfigurationList = @()
-            $SQLList | Where-Object {$_.Type -eq 2} | ForEach-Object { #only looking for SQL Server on Primary Servers
-                $item = $_
-                $arrPropList = $item.PropLists[0].values.split(',').Trim()
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+                $SQLList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SQL Server'}
 
-                #connect to SQL
-                $SQLOpen = $false
-                $conn = New-Object System.Data.SqlClient.SqlConnection
-                try {
-                    $conn.ConnectionString = "Data Source=$($arrPropList[1]);Initial Catalog=$($arrPropList[2]);trusted_connection = true;"
-                    $conn.Open()
-                    $SQLOpen = $true
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SQL TCP)' }
-                }
+                $SQLConfigurationList = @()
+                $SQLList | Where-Object {$_.Type -eq 2} | ForEach-Object { #only looking for SQL Server on Primary Servers
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
 
-                if ($SQLOpen -eq $true) {
+                    #connect to SQL
+                    $SQLOpen = $false
+                    $conn = New-Object System.Data.SqlClient.SqlConnection
                     try {
-                        $SqlCommand = $Conn.CreateCommand()
-                        $SqlCommand.CommandTimeOut = 0
-                        $SqlCommand.CommandText = "SELECT SERVERPROPERTY ('productversion'),SERVERPROPERTY ('productlevel'), SERVERPROPERTY ('edition')"
-                        $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
-                        $dataset = new-object System.Data.Dataset
-                        $DataAdapter.Fill($dataset) | Out-Null
+                        $conn.ConnectionString = "Data Source=$($arrPropList[1]);Initial Catalog=$($arrPropList[2]);trusted_connection = true;"
+                        $conn.Open()
+                        $SQLOpen = $true
                     } catch {
                         Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SERVERPROPERTY) (SQL TCP)' }
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SQL TCP)' }
                     }
 
-                    try {
-                        $SqlCommand2 = $Conn.CreateCommand()
-                        $SqlCommand2.CommandTimeOut = 0
-                        if (([int]$dataset.Tables[0].Column1.Split('.')[0]) -le 10) { #2008 r2 or lower\
-                            $SqlCommand2.CommandText = "select (select value FROM sys.configurations WHERE name = 'max server memory (MB)') as committed_kb, (select value FROM sys.configurations WHERE name = 'min server memory (MB)') as committed_target_kb"
-                        } else { #2012+
-                            $SqlCommand2.CommandText = "select committed_kb, committed_target_kb from sys.dm_os_sys_info"
+                    if ($SQLOpen -eq $true) {
+                        try {
+                            $SqlCommand = $Conn.CreateCommand()
+                            $SqlCommand.CommandTimeOut = 0
+                            $SqlCommand.CommandText = "SELECT SERVERPROPERTY ('productversion'),SERVERPROPERTY ('productlevel'), SERVERPROPERTY ('edition')"
+                            $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                            $dataset = new-object System.Data.Dataset
+                            $DataAdapter.Fill($dataset) | Out-Null
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SERVERPROPERTY) (SQL TCP)' }
                         }
-                        $DataAdapter2 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand2
-                        $dataset2 = new-object System.Data.Dataset
-                        $DataAdapter2.Fill($dataset2) | Out-Null
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (DM_OS_SYS_INFO) (SQL TCP)' }
-                    }
 
-                    try {
-                        $SqlCommand3 = $Conn.CreateCommand()
-                        $SqlCommand3.CommandTimeOut = 0
-                        $SqlCommand3.CommandText = "SELECT compatibility_level FROM sys.databases WHERE name = '$($arrPropList[2])'"
-                        $DataAdapter3 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand3
-                        $dataset3 = new-object System.Data.Dataset
-                        $DataAdapter3.Fill($dataset3) | Out-Null
+                        try {
+                            $SqlCommand2 = $Conn.CreateCommand()
+                            $SqlCommand2.CommandTimeOut = 0
 
-                        $SQLConfigurationList += New-Object -TypeName PSObject -Property @{'ServerName' = $arrPropList[1]; 'Version' = $dataset.Tables[0].Column1; 'MinMemory' = $dataset2.Tables[0].committed_kb; 'MaxMemory' = $dataset2.Tables[0].committed_target_kb; 'CompLevel' = $dataset3.Tables[0].compatibility_level; 'Database' = $arrPropList[2] }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (COMPATIBILITY_LEVEL) (SQL TCP)' }
-                    } finally {
-                        $conn.Close()
+                            $SqlCommand2.CommandText = "select (select value FROM sys.configurations WHERE name = 'max server memory (MB)') as committed_kb, (select value FROM sys.configurations WHERE name = 'min server memory (MB)') as committed_target_kb"
+                            $DataAdapter2 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand2
+                            $dataset2 = new-object System.Data.Dataset
+                            $DataAdapter2.Fill($dataset2) | Out-Null
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (DM_OS_SYS_INFO) (SQL TCP)' }
+                        }
+
+                        try {
+                            $SqlCommand3 = $Conn.CreateCommand()
+                            $SqlCommand3.CommandTimeOut = 0
+                            $SqlCommand3.CommandText = "SELECT compatibility_level FROM sys.databases WHERE name = '$($arrPropList[2])'"
+                            $DataAdapter3 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand3
+                            $dataset3 = new-object System.Data.Dataset
+                            $DataAdapter3.Fill($dataset3) | Out-Null
+
+                            $SQLConfigurationList += New-Object -TypeName PSObject -Property @{'ServerName' = $arrPropList[1]; 'Version' = $dataset.Tables[0].Column1; 'MinMemory' = $dataset2.Tables[0].committed_kb; 'MaxMemory' = $dataset2.Tables[0].committed_target_kb; 'CompLevel' = $dataset3.Tables[0].compatibility_level; 'Database' = $arrPropList[2] }
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (COMPATIBILITY_LEVEL) (SQL TCP)' }
+                        } finally {
+                            $conn.Close()
+                        }
                     }
+                    Export-CEXMLFile -VariableName 'SQLList'
+                    Export-CEXMLFile -VariableName 'SQLConfigurationList'
                 }
             }
         }
@@ -1327,10 +1431,19 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
-                $DPList = $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point') -and ($_.NetworkOSPath -notlike '*manage.microsoft.com')}
+
+            $FileToImport = "$($SaveToFolder)\DPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $DPList = $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Distribution Point'}
+
+                if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
+                    $DPList = $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point') -and ($_.NetworkOSPath -notlike '*manage.microsoft.com')}
+                } else {
+                    $DPList = $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Distribution Point'}
+                }
+                Export-CEXMLFile -VariableName 'DPList'
             }
         }
 
@@ -1341,7 +1454,15 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $SMPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS State Migration Point'}
+            $FileToImport = "$($SaveToFolder)\SMPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SMPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                $SMPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS State Migration Point'}
+                Export-CEXMLFile -VariableName 'SMPList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('MP Control Manager'))
@@ -1351,7 +1472,15 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $MPComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_MP_CONTROL_MANAGER'}
+            $FileToImport = "$($SaveToFolder)\MPComponentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MPComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                $MPComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_MP_CONTROL_MANAGER'}
+                Export-CEXMLFile -VariableName 'MPComponentList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Component Manager'))
@@ -1361,7 +1490,15 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $SiteComponentManagerList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_SITE_COMPONENT_MANAGER'}
+            $FileToImport = "$($SaveToFolder)\SiteComponentManagerList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SiteComponentManagerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                $SiteComponentManagerList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_SITE_COMPONENT_MANAGER'}
+                Export-CEXMLFile -VariableName 'SiteComponentManagerList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('SMS Provider'))
@@ -1371,7 +1508,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $SMSPolProvComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_POLICY_PROVIDER'}
+            $FileToImport = "$($SaveToFolder)\SMSPolProvComponentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SMSPolProvComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SMSPolProvComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_POLICY_PROVIDER'}
+                Export-CEXMLFile -VariableName 'SMSPolProvComponentList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Application Catalog Web Service'))
@@ -1380,7 +1524,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AppCatalogWebServiceList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Application Web Service'}
+            $FileToImport = "$($SaveToFolder)\AppCatalogWebServiceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AppCatalogWebServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AppCatalogWebServiceList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Application Web Service'}
+                Export-CEXMLFile -VariableName 'AppCatalogWebServiceList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Application Catalog Web Site'))
@@ -1389,7 +1540,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AppCatalogWebSiteList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Portal Web Site'}
+            $FileToImport = "$($SaveToFolder)\AppCatalogWebSiteList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AppCatalogWebSiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AppCatalogWebSiteList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Portal Web Site'}
+                Export-CEXMLFile -VariableName 'AppCatalogWebSiteList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Endpoint Protection Point'))
@@ -1398,7 +1556,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $EndpointProtectionList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Endpoint Protection Point'}
+            $FileToImport = "$($SaveToFolder)\EndpointProtectionList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "EndpointProtectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $EndpointProtectionList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Endpoint Protection Point'}
+                Export-CEXMLFile -VariableName 'EndpointProtectionList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Point'))
@@ -1407,7 +1572,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SUPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Software Update Point'}
+            $FileToImport = "$($SaveToFolder)\SUPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SUPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Software Update Point'}
+                Export-CEXMLFile -VariableName 'SUPList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Point WID'))
@@ -1416,24 +1588,32 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SUPWIDList = @()
-            $SUPList | ForEach-Object {
-                $item = $_
-                $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
+            $FileToImport = "$($SaveToFolder)\SUPWIDList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPWIDList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services")
-                    $WIDExist = -not [String]::IsNullOrEmpty(($RegKey.GetValueNames() | Where-Object {$_ -eq 'UpdateServices-WidDatabase'}))
+                $SUPWIDList = @()
+                $SUPList | ForEach-Object {
+                    $item = $_
+                    $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
 
-                    if ($WIDExist) {
-                        $SUPWIDList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName;  }
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services")
+                        $WIDExist = -not [String]::IsNullOrEmpty(($RegKey.GetValueNames() | Where-Object {$_ -eq 'UpdateServices-WidDatabase'}))
+
+                        if ($WIDExist) {
+                            $SUPWIDList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName;  }
+                        }
+
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WID Remote Registry (RRP/RPC)' }
                     }
-
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WID Remote Registry (RRP/RPC)' }
                 }
+                Export-CEXMLFile -VariableName 'SUPWIDList'
             }
         }
 
@@ -1443,22 +1623,30 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SUPSQL = @()
-            $SUPList | ForEach-Object {
-                $item = $_
-                $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
+            $FileToImport = "$($SaveToFolder)\SUPSQL.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPSQL" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup")
-                    $WSUSSQL = $RegKey.GetValue('SqlServerName').ToString()
+                $SUPSQL = @()
+                $SUPList | ForEach-Object {
+                    $item = $_
+                    $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
 
-                    $SUPSQL += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL }
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup")
+                        $WSUSSQL = $RegKey.GetValue('SqlServerName').ToString()
 
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WSUS Remote Registry (RRP/RPC)' }
+                        $SUPSQL += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL }
+
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WSUS Remote Registry (RRP/RPC)' }
+                    }
                 }
+                Export-CEXMLFile -VariableName 'SUPSQL'
             }
         }
 
@@ -1468,7 +1656,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SRSList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SRS Reporting Point'}
+            $FileToImport = "$($SaveToFolder)\SRSList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SRSList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SRSList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SRS Reporting Point'}
+                Export-CEXMLFile -VariableName 'SRSList'
+            }
         }
         #endregion
 
@@ -1491,6 +1686,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
 
+                $RuleID = 14
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
+
                 $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mplist"
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
             }
@@ -1510,6 +1708,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $MPProtocol = 'HTTPS'
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
+
+                $RuleID = 15
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
 
                 $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mpcert"
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
@@ -1531,6 +1732,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
 
+                $RuleID = 16
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
+
                 $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?SITESIGNCERT"
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
             }
@@ -1551,6 +1755,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $HTTPProtocol = 'HTTPS'
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
+
+                $RuleID = 18
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
 
                 $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)/ApplicationOfferService.svc"
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
@@ -1578,6 +1785,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
 
+                $RuleID = 19
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
+
                 $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)"
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
             }
@@ -1599,6 +1809,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
 
+                $RuleID = 20
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
+
                 $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
             }
@@ -1611,24 +1824,21 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $SUPList | ForEach-Object {
+                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISPort' }).Value
+                $HTTPProtocol = 'HTTP'
+                if ($_.sslState -in (1,3)) {
+                    $HTTPProtocol = 'HTTPS'
+                    $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISSSLPort' }).Value
+                }
+                $servername = $_.NetworkOSPath -replace '\\', ''
+                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
                 try {
-                    $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISPort' }).Value
-                    $HTTPProtocol = 'HTTP'
-                    if ($_.sslState -in (1,3)) {
-                        $HTTPProtocol = 'HTTPS'
-                        $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISSSLPort' }).Value
-                    }
-                    $servername = $_.NetworkOSPath -replace '\\', ''
-                    $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
-
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1038 @($url, "GetAuthorizationCookie"))
                     $SUPProxy = New-WebServiceProxy -Uri $url -UseDefaultCredential
                     $SUPProxy.GetAuthorizationCookie('SCCMHealthCheckID', $null, 'CreatedBySCCMHealthCheck') | out-null
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1036)
                 } catch {
-                    $RuleID = 21
-                    $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-                    $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = 5004; 'MessageIDError' = 3128; 'RuleInfo' = $RuleIDInfo; 'ServerName' = $ServerName; 'StatusCode' = "$_" }
+                    $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = 5004; 'MessageIDError' = 3128; 'RuleInfo' = 21; 'ServerName' = $ServerName; 'StatusCode' = "$_"; 'URL' = $url }
                 }
             }
         }
@@ -1646,6 +1856,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
                 $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
 
+                $RuleID = 23
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
+
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url ("$($ReportsURI)/$($RootFolder)") -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
             }
         }
@@ -1661,6 +1874,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
                 $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
 
+                $RuleID = 24
+                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
+
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url ("$($ReportServerURI)/$($RootFolder)") -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
             }
         }
@@ -1673,7 +1889,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $ServiceAccountList = Get-CMAccount
+            $FileToImport = "$($SaveToFolder)\ServiceAccountList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ServiceAccountList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ServiceAccountList = Get-CMAccount
+                Export-CEXMLFile -VariableName 'ServiceAccountList'
+            }
         }
         #endregion
 
@@ -1684,7 +1907,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AdminAccountList = Get-CMAdministrativeUser
+            $FileToImport = "$($SaveToFolder)\AdminAccountList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AdminAccountList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AdminAccountList = Get-CMAdministrativeUser
+                Export-CEXMLFile -VariableName 'AdminAccountList'
+            }
         }
         #endregion
 
@@ -1695,62 +1925,69 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\GroupMembershipList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "GroupMembershipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-            $Root = [ADSI]"LDAP://RootDSE"
-            $oForestConfig = $Root.Get("configurationNamingContext")
-            $oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
-            $AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
-            $AdSearcher.SearchRoot = $oSearchRoot
-            $domains = $AdSearcher.FindAll()
+                $Root = [ADSI]"LDAP://RootDSE"
+                $oForestConfig = $Root.Get("configurationNamingContext")
+                $oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
+                $AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
+                $AdSearcher.SearchRoot = $oSearchRoot
+                $domains = $AdSearcher.FindAll()
 
-            $GroupMembershipList = @()
-            $ServiceAccountList | ForEach-Object {
-                $itemAccount = $_
-                #todo: need to get information about @ user, how the filter will be?
-                if ($itemAccount.UserName.Indexof('@') -lt 0) {
-                    Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.UserName)"
-                    $arrAccountInfo = $itemAccount.UserName.Split('\')
-                    $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
+                $GroupMembershipList = @()
+                $ServiceAccountList | ForEach-Object {
+                    $itemAccount = $_
+                    #todo: need to get information about @ user, how the filter will be?
+                    if ($itemAccount.UserName.Indexof('@') -lt 0) {
+                        Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.UserName)"
+                        $arrAccountInfo = $itemAccount.UserName.Split('\')
+                        $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
 
-                    $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
-                    $objSearcher.PageSize = 1000
-                    $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
-                    $objSearcher.SearchScope = "Subtree"
-                    $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
+                        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
+                        $objSearcher.PageSize = 1000
+                        $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
+                        $objSearcher.SearchScope = "Subtree"
+                        $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
 
-                    if ($objDN -eq $null) {
-                        $Script:ServiceAccountDoesNotExist += $itemAccount.UserName
-                    } else {
-                        $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
-                        ($objSearcher.FindAll()) | ForEach-Object {
-                            $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                        if ($objDN -eq $null) {
+                            $Script:ServiceAccountDoesNotExist += $itemAccount.UserName
+                        } else {
+                            $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
+                            ($objSearcher.FindAll()) | ForEach-Object {
+                                $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                            }
                         }
                     }
                 }
-            }
 
-            $AdminAccountList | ForEach-Object {
-                $itemAccount = $_
-                if ($itemAccount.LogonName.Indexof('@') -lt 0) {
-                    Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.LogonName)"
-                    $arrAccountInfo = $itemAccount.LogonName.Split('\')
-                    $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
+                $AdminAccountList | ForEach-Object {
+                    $itemAccount = $_
+                    if ($itemAccount.LogonName.Indexof('@') -lt 0) {
+                        Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.LogonName)"
+                        $arrAccountInfo = $itemAccount.LogonName.Split('\')
+                        $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
 
-                    $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
-                    $objSearcher.PageSize = 1000
-                    $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
-                    $objSearcher.SearchScope = "Subtree"
-                    $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
+                        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
+                        $objSearcher.PageSize = 1000
+                        $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
+                        $objSearcher.SearchScope = "Subtree"
+                        $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
 
-                    if ($objDN -eq $null) {
-                        $Script:AdminDoesNotExist = $itemAccount.LogonName
-                    } else {
-                        $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
-                        ($objSearcher.FindAll()) | ForEach-Object {
-                            $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                        if ($objDN -eq $null) {
+                            $Script:AdminDoesNotExist = $itemAccount.LogonName
+                        } else {
+                            $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
+                            ($objSearcher.FindAll()) | ForEach-Object {
+                                $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                            }
                         }
                     }
                 }
+                Export-CEXMLFile -VariableName 'GroupMembershipList'
             }
         }
         #endregion
@@ -1762,7 +1999,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $ClientStatusSettings = Get-CMClientStatusSetting
+            $FileToImport = "$($SaveToFolder)\ClientStatusSettings.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ClientStatusSettings" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ClientStatusSettings = Get-CMClientStatusSetting
+                Export-CEXMLFile -VariableName 'ClientStatusSettings'
+            }
         }
         #endregion
 
@@ -1773,7 +2017,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $DiscoveryMethodList = Get-CMDiscoveryMethod
+            $FileToImport = "$($SaveToFolder)\DiscoveryMethodList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DiscoveryMethodList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DiscoveryMethodList = Get-CMDiscoveryMethod
+                Export-CEXMLFile -VariableName 'DiscoveryMethodList'
+            }
         }
         #endregion
 
@@ -1784,7 +2035,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $DPGroupList = Get-CMDistributionPointGroup
+            $FileToImport = "$($SaveToFolder)\DPGroupList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DPGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DPGroupList = Get-CMDistributionPointGroup
+                Export-CEXMLFile -VariableName 'DPGroupList'
+            }
         }
         #endregion
 
@@ -1795,18 +2053,32 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $CollectionMembershipEvaluation = Get-CMCollectionMembershipEvaluationComponent
+            $FileToImport = "$($SaveToFolder)\CollectionMembershipEvaluation.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "CollectionMembershipEvaluation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $CollectionMembershipEvaluation = Get-CMCollectionMembershipEvaluationComponent
+                Export-CEXMLFile -VariableName 'CollectionMembershipEvaluation'
+            }
         }
         #endregion
 
         #region Device Collection List
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Device Collection'))
-        $arrRuleID = @(88,89,90,91,92,93)
+        $arrRuleID = @(88,89,90,91,92,93,330,331)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $DeviceCollectionList = Get-CMDeviceCollection
+            $FileToImport = "$($SaveToFolder)\DeviceCollectionList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DeviceCollectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DeviceCollectionList = Get-CMDeviceCollection
+                Export-CEXMLFile -VariableName 'DeviceCollectionList'
+            }
         }
 
         $arrRuleID = @(93) #using if for the sccm version because lower than 1702 does not have the cmdlet
@@ -1814,29 +2086,43 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {
-                    $item = $_
-                    #cade
-                    $MembershipRules = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'"
-                    $MembershipRules.Get()
-
-                    if (($MembershipRules.CollectionRules | Where-Object {$_.__CLASS -eq 'SMS_CollectionRuleDirect'} | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ }
-                } | Measure-Object).Count
+            $FileToImport = "$($SaveToFolder)\CollectionDeviceFilterCount.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "CollectionDeviceFilterCount" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {if ((Get-CMCollectionDirectMembershipRule -CollectionName $_.Name | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ } } | Measure-Object).Count
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {
+                        $item = $_
+                        #cade
+                        $MembershipRules = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'"
+                        $MembershipRules.Get()
+
+                        if (($MembershipRules.CollectionRules | Where-Object {$_.__CLASS -eq 'SMS_CollectionRuleDirect'} | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ }
+                    } | Measure-Object).Count
+                } else {
+                    $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {if ((Get-CMCollectionDirectMembershipRule -CollectionName $_.Name | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ } } | Measure-Object).Count
+                }
+                Export-CEXMLFile -VariableName 'CollectionDeviceFilterCount'
             }
         }
         #endregion
 
         #region User Collection List
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('User Collection'))
-        $arrRuleID = @(94,95,96,97,98,99,100)
+        $arrRuleID = @(94,95,96,97,98,99,100,330,331)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $UserCollectionList = Get-CMUserCollection
+            $FileToImport = "$($SaveToFolder)\UserCollectionList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "UserCollectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $UserCollectionList = Get-CMUserCollection
+                Export-CEXMLFile -VariableName 'UserCollectionList'
+            }
         }
 
         $arrRuleID = @(99) #using if for the sccm version because lower than 1702 does not have the cmdlet
@@ -1844,16 +2130,23 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $CollectionUserFilterCount = ($UserCollectionList | ForEach-Object {
-                    $item = $_
-                    $MembershipRules = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'"
-                    $MembershipRules.Get()
-
-                    if (($MembershipRules.CollectionRules | Where-Object {$_.__CLASS -eq 'SMS_CollectionRuleDirect'} | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ }
-                } | Measure-Object).Count
+            $FileToImport = "$($SaveToFolder)\CollectionUserFilterCount.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "CollectionUserFilterCount" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $CollectionUserFilterCount = ($UserCollectionList | ForEach-Object {if ((Get-CMCollectionDirectMembershipRule -CollectionName $_.Name | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ } } | Measure-Object).Count
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $CollectionUserFilterCount = ($UserCollectionList | ForEach-Object {
+                        $item = $_
+                        $MembershipRules = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'"
+                        $MembershipRules.Get()
+
+                        if (($MembershipRules.CollectionRules | Where-Object {$_.__CLASS -eq 'SMS_CollectionRuleDirect'} | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ }
+                    } | Measure-Object).Count
+                } else {
+                    $CollectionUserFilterCount = ($UserCollectionList | ForEach-Object {if ((Get-CMCollectionDirectMembershipRule -CollectionName $_.Name | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ } } | Measure-Object).Count
+                }
+                Export-CEXMLFile -VariableName 'CollectionUserFilterCount'
             }
         }
         #endregion
@@ -1865,7 +2158,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $DeploymentList = Get-CMDeployment
+            $FileToImport = "$($SaveToFolder)\DeploymentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DeploymentList = Get-CMDeployment
+                Export-CEXMLFile -VariableName 'DeploymentList'
+            }
         }
         #endregion
 
@@ -1876,7 +2176,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AlertList = Get-CMAlert
+            $FileToImport = "$($SaveToFolder)\AlertList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AlertList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AlertList = Get-CMAlert
+                Export-CEXMLFile -VariableName 'AlertList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Alert Subscription'))
@@ -1885,7 +2192,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AlertSubscriptionList = Get-CMAlertSubscription
+            $FileToImport = "$($SaveToFolder)\AlertSubscriptionList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AlertSubscriptionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AlertSubscriptionList = Get-CMAlertSubscription
+                Export-CEXMLFile -VariableName 'AlertSubscriptionList'
+            }
         }
         #endregion
 
@@ -1896,27 +2210,36 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $ADForestist = Get-CMActiveDirectoryForest
+            $FileToImport = "$($SaveToFolder)\ADForestist.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ADForestist" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "ADForestDiscoveryStatusList" -Value (Import-Clixml -Path "$($SaveToFolder)\ADForestDiscoveryStatusList.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $ADForestist = Get-CMActiveDirectoryForest
 
-            $ADForestDiscoveryStatusList = @()
-            $ADForestist | ForEach-Object {
-                $item = $_
+                $ADForestDiscoveryStatusList = @()
+                $ADForestist | ForEach-Object {
+                    $item = $_
 
-                #cade
-                $StatusList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ADForestDiscoveryStatus WHERE ForestID = $($item.ForestID)"
-                $StatusList | ForEach-Object {
-                    $dt1 = Get-Date -Date "01/01/1970"
-                    $dt2 = Get-Date -Date "01/01/1970"
-                    if (-not [string]::IsNullOrEmpty($_.LastDiscoveryTime)) {
-                        $dt1 = [datetime]::parseexact($_.LastDiscoveryTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
+                    #cade
+                    $StatusList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ADForestDiscoveryStatus WHERE ForestID = $($item.ForestID)"
+                    $StatusList | ForEach-Object {
+                        $dt1 = Get-Date -Date "01/01/1970"
+                        $dt2 = Get-Date -Date "01/01/1970"
+                        if (-not [string]::IsNullOrEmpty($_.LastDiscoveryTime)) {
+                            $dt1 = [datetime]::parseexact($_.LastDiscoveryTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
+                        }
+
+                        if (-not [string]::IsNullOrEmpty($_.LastPublishingTime)) {
+                            $dt2 = [datetime]::parseexact($_.LastPublishingTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
+                        }
+
+                        $ADForestDiscoveryStatusList += new-object HealthCheckClasses.SCCM.CEADForestDiscoveryStatus($_.DiscoveryEnabled, $_.DiscoveryStatus, $item.ForestFQDN, $dt1, $dt2, $_.PublishingEnabled, $_.PublishingStatus, $_.SiteCode)
                     }
-
-                    if (-not [string]::IsNullOrEmpty($_.LastPublishingTime)) {
-                        $dt2 = [datetime]::parseexact($_.LastPublishingTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
-                    }
-
-                    $ADForestDiscoveryStatusList += new-object HealthCheckClasses.SCCM.CEADForestDiscoveryStatus($_.DiscoveryEnabled, $_.DiscoveryStatus, $item.ForestFQDN, $dt1, $dt2, $_.PublishingEnabled, $_.PublishingStatus, $_.SiteCode)
                 }
+                Export-CEXMLFile -VariableName 'ADForestist'
+                Export-CEXMLFile -VariableName 'ADForestDiscoveryStatusList'
             }
         }
         #endregion
@@ -1929,8 +2252,15 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if (($SiteList | Measure-Object).Count -gt 1) {
-                $DatabaseReplicationStatusList = Get-CMDatabaseReplicationStatus
+            $FileToImport = "$($SaveToFolder)\DatabaseReplicationStatusList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DatabaseReplicationStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if (($SiteList | Measure-Object).Count -gt 1) {
+                    $DatabaseReplicationStatusList = Get-CMDatabaseReplicationStatus
+                    Export-CEXMLFile -VariableName 'DatabaseReplicationStatusList'
+                }
             }
         }
 
@@ -1940,10 +2270,16 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            if (($SiteList | Measure-Object).Count -gt 1) {
-                #cade
-                $DatabaseReplicationScheduleList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -class SMS_RcmSqlControl
+            $FileToImport = "$($SaveToFolder)\DatabaseReplicationScheduleList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DatabaseReplicationScheduleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if (($SiteList | Measure-Object).Count -gt 1) {
+                    #cade
+                    $DatabaseReplicationScheduleList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -class SMS_RcmSqlControl
+                    Export-CEXMLFile -VariableName 'DatabaseReplicationScheduleList'
+                }
             }
         }
         #endregion
@@ -1955,15 +2291,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\DeviceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DeviceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
 
-            #not using get-cmdevice anymore. on 1806 some properties have been removed and still on the wmi query
-            #if ($ModuleSCCMVersionBuild -lt 1702) {
-                $DeviceList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_CM_RES_COLL_SMS00001"
-            #} else {
-            #    $DeviceList = Get-CMDevice
-            #}
+                #not using get-cmdevice anymore. on 1806 some properties have been removed and still on the wmi query
+                #if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $DeviceList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_CM_RES_COLL_SMS00001"
+                #} else {
+                #    $DeviceList = Get-CMDevice
+                #}
 
-            $ManagedDeviceCount = ($DeviceList | Where-Object {$_.IsClient -eq $true}).Count
+                $ManagedDeviceCount = ($DeviceList | Where-Object {$_.IsClient -eq $true}).Count
+                Export-CEXMLFile -VariableName 'DeviceList'
+            }
         }
         #endregion
 
@@ -1975,22 +2318,32 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
-            $ClientSettingsList = Get-CMClientSetting
-            $ClientSettingsSettingsList = @()
-            $ClientSettingsList | ForEach-Object {
-                $item = $_
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Client Setting', $item.Name))
-                foreach ($itemName in $script:ClientSettingsListName) {
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1032 @('Getting', 'Client Setting', $itemName))
-                    try {
-                        Get-CMClientSetting -Name $item.Name -Setting $itemName | ForEach-Object {
-                            $_.GetEnumerator() | ForEach-Object { $ClientSettingsSettingsList += new-object HealthCheckClasses.SCCM.CEClassPolicySettings($item.Name, $itemName, $_.Key, $_.Value) }
+            $FileToImport = "$($SaveToFolder)\ClientSettingsList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ClientSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "ClientSettingsSettingsList" -Value (Import-Clixml -Path "$($SaveToFolder)\ClientSettingsSettingsList.xml") -Force -Option AllScope -Scope Script
+            } else {
+
+                $ClientSettingsList = Get-CMClientSetting
+                $ClientSettingsSettingsList = @()
+                $ClientSettingsList | ForEach-Object {
+                    $item = $_
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Client Setting', $item.Name))
+                    foreach ($itemName in $script:ClientSettingsListName) {
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1032 @('Getting', 'Client Setting', $itemName))
+                        try {
+                            Get-CMClientSetting -Name $item.Name -Setting $itemName | ForEach-Object {
+                                $_.GetEnumerator() | ForEach-Object { $ClientSettingsSettingsList += new-object HealthCheckClasses.SCCM.CEClassPolicySettings($item.Name, $itemName, $_.Key, $_.Value) }
+                            }
+                        } catch {
+                            #write error on log and continue. This is required if the $itemname does not exist (running it against an old site)
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                         }
-                    } catch {
-                        #write error on log and continue. This is required if the $itemname does not exist (running it against an old site)
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                     }
                 }
+                Export-CEXMLFile -VariableName 'ClientSettingsList'
+                Export-CEXMLFile -VariableName 'ClientSettingsSettingsList'
             }
         }
         #endregion
@@ -2002,15 +2355,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $MaintenanceTaskList = @()
-                $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Role List', $_.SiteCode))
-                    $MaintenanceTaskList += Get-CMSiteMaintenanceTask -SiteCode $_.SiteCode
-                }
+            $FileToImport = "$($SaveToFolder)\MaintenanceTaskList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MaintenanceTaskList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $MaintenanceTaskList = Get-CMSiteMaintenanceTask
+
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $MaintenanceTaskList = @()
+                    $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Role List', $_.SiteCode))
+                        $MaintenanceTaskList += Get-CMSiteMaintenanceTask -SiteCode $_.SiteCode
+                    }
+                } else {
+                    $MaintenanceTaskList = Get-CMSiteMaintenanceTask
+                }
+                Export-CEXMLFile -VariableName 'MaintenanceTaskList'
             }
         }
 
@@ -2023,13 +2383,30 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $BoundaryGroupList = Get-CMBoundaryGroup
 
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boundary Group Relationship'))
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $BoundaryGroupRelationshipList = @()
+            $FileToImport = "$($SaveToFolder)\BoundaryGroupList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "BoundaryGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $BoundaryGroupRelationshipList = Get-CMBoundaryGroupRelationship
+                $BoundaryGroupList = Get-CMBoundaryGroup
+                Export-CEXMLFile -VariableName 'BoundaryGroupList'
+            }
+
+            $FileToImport = "$($SaveToFolder)\BoundaryGroupRelationshipList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "BoundaryGroupRelationshipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boundary Group Relationship'))
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $BoundaryGroupRelationshipList = @()
+                } else {
+                    $BoundaryGroupRelationshipList = Get-CMBoundaryGroupRelationship
+                }
+            
+                Export-CEXMLFile -VariableName 'BoundaryGroupRelationshipList'
             }
         }
         #endregion
@@ -2041,9 +2418,15 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            if ($EndpointProtectionList -ne $null) {
-                $MalwareDetectedList = Get-CMDetectedMalware -CollectionId 'SMS00001'
+            $FileToImport = "$($SaveToFolder)\MalwareDetectedList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MalwareDetectedList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if ($EndpointProtectionList -ne $null) {
+                    $MalwareDetectedList = Get-CMDetectedMalware -CollectionId 'SMS00001'
+                    Export-CEXMLFile -VariableName 'MalwareDetectedList'
+                }
             }
         }
         #endregion
@@ -2055,31 +2438,45 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if ($EndpointProtectionList -ne $null) {
-                $MalwarePolicyList = Get-CMAntimalwarePolicy
+            $FileToImport = "$($SaveToFolder)\MalwarePolicyList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MalwarePolicyList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if ($EndpointProtectionList -ne $null) {
+                    $MalwarePolicyList = Get-CMAntimalwarePolicy
 
-                $MalwarePolicySettingsList = @()
-                $MalwarePolicyList | ForEach-Object {
-                    $item = $_
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Malware Policy', $item.Name))
+                    $MalwarePolicySettingsList = @()
+                    $MalwarePolicyList | ForEach-Object {
+                        $item = $_
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Malware Policy', $item.Name))
 
-                    foreach ($itemName in $script:AntiMalwarePolicySettingsListName) {
-                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1032 @('Getting', 'Anti-Malware Policy', $itemName))
-                        try {
-                            Get-CMAntimalwarePolicy -Name $item.Name -Policy $itemName | ForEach-Object {
-                                $_.GetEnumerator() | ForEach-Object { $MalwarePolicySettingsList += new-object HealthCheckClasses.SCCM.CEClassPolicySettings($item.Name, $itemName, $_.Key, $_.Value) }
+                        foreach ($itemName in $script:AntiMalwarePolicySettingsListName) {
+                            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1032 @('Getting', 'Anti-Malware Policy', $itemName))
+                            try {
+                                Get-CMAntimalwarePolicy -Name $item.Name -Policy $itemName | ForEach-Object {
+                                    $_.GetEnumerator() | ForEach-Object { $MalwarePolicySettingsList += new-object HealthCheckClasses.SCCM.CEClassPolicySettings($item.Name, $itemName, $_.Key, $_.Value) }
+                                }
+                            } catch {
+                                #write error on log and continue. This is required if the $itemname does not exist
+                                Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                             }
-                        } catch {
-                            #write error on log and continue. This is required if the $itemname does not exist
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                         }
                     }
+                    Export-CEXMLFile -VariableName 'MalwarePolicyList'
                 }
             }
 
             Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Firewall Policy'))
-            $CMPSSuppressFastNotUsedCheck = $true
-            $FirewallPolicyList = Get-CMWindowsFirewallPolicy
+            $FileToImport = "$($SaveToFolder)\FirewallPolicyList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MalwarePolicyList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $CMPSSuppressFastNotUsedCheck = $true
+                $FirewallPolicyList = Get-CMWindowsFirewallPolicy
+                Export-CEXMLFile -VariableName 'FirewallPolicyList'
+            }
         }
         #endregion
 
@@ -2090,8 +2487,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $SwMeteringSettingsList = Get-CMSoftwareMeteringSetting
+            $FileToImport = "$($SaveToFolder)\SwMeteringSettingsList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SwMeteringSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SwMeteringSettingsList = Get-CMSoftwareMeteringSetting
+                Export-CEXMLFile -VariableName 'SwMeteringSettingsList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Metering Rules'))
@@ -2100,7 +2503,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SwMeteringRuleList = Get-CMSoftwareMeteringRule
+            $FileToImport = "$($SaveToFolder)\SwMeteringRuleList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SwMeteringRuleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SwMeteringRuleList = Get-CMSoftwareMeteringRule
+                Export-CEXMLFile -VariableName 'SwMeteringRuleList'
+            }
         }
         #endregion
 
@@ -2111,7 +2521,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $BootList = Get-CMBootImage
+            $FileToImport = "$($SaveToFolder)\BootList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "BootList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $BootList = Get-CMBootImage
+                Export-CEXMLFile -VariableName 'BootList'
+            }
         }
         #endregion
 
@@ -2122,8 +2539,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $SoftwareUpdateGroupList = Get-CMSoftwareUpdateGroup
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateGroupList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SoftwareUpdateGroupList = Get-CMSoftwareUpdateGroup
+                Export-CEXMLFile -VariableName 'SoftwareUpdateGroupList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Group Deployment'))
@@ -2132,13 +2555,20 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $SoftwareUpdateGroupDeploymentList = @()
-                $SoftwareUpdateGroupList | ForEach-Object {
-                    $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment -UpdateGroup $_
-                }
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateGroupDeploymentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateGroupDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $SoftwareUpdateGroupDeploymentList = @()
+                    $SoftwareUpdateGroupList | ForEach-Object {
+                        $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment -UpdateGroup $_
+                    }
+                } else {
+                    $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment
+                }
+                Export-CEXMLFile -VariableName 'SoftwareUpdateGroupDeploymentList'
             }
         }
 
@@ -2148,12 +2578,18 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                #todo: test with gmi query: SELECT * FROM SMS_DeploymentSummary WHERE FeatureType = 5 and AssignmentType = 1
-                $SoftwareUpdateDeploymentList = @()
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateDeploymentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $SoftwareUpdateDeploymentList = Get-CMSoftwareUpdateDeployment | Where-Object {$_.AssignmentType -eq 1}
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    #todo: test with gmi query: SELECT * FROM SMS_DeploymentSummary WHERE FeatureType = 5 and AssignmentType = 1
+                    $SoftwareUpdateDeploymentList = @()
+                } else {
+                    $SoftwareUpdateDeploymentList = Get-CMSoftwareUpdateDeployment | Where-Object {$_.AssignmentType -eq 1}
+                }
+                Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentList'
             }
         }
 
@@ -2163,11 +2599,17 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $SoftwareUpdateList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ci.* FROM SMS_SoftwareUpdate ci WHERE ci.CI_ID NOT IN ( SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='UpdateClassification:3689bdc8-b205-4af4-8d4a-a63924c5e9d5') AND ci.CI_ID NOT IN (SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='Product:30eb551c-6288-4716-9a78-f300ec36d72b') ORDER BY DateRevised DESC"
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $SoftwareUpdateList = Get-CMSoftwareUpdate -Fast
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $SoftwareUpdateList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ci.* FROM SMS_SoftwareUpdate ci WHERE ci.CI_ID NOT IN ( SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='UpdateClassification:3689bdc8-b205-4af4-8d4a-a63924c5e9d5') AND ci.CI_ID NOT IN (SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='Product:30eb551c-6288-4716-9a78-f300ec36d72b') ORDER BY DateRevised DESC"
+                } else {
+                    $SoftwareUpdateList = Get-CMSoftwareUpdate -Fast
+                }
+                Export-CEXMLFile -VariableName 'SoftwareUpdateList'
             }
         }
 
@@ -2177,7 +2619,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SoftwareUpdateSummarizationList = Get-CMSoftwareUpdateSummarizationSchedule
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateSummarizationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SoftwareUpdateSummarizationList = Get-CMSoftwareUpdateSummarizationSchedule
+                Export-CEXMLFile -VariableName 'SoftwareUpdateSummarizationList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Automatic Deployment Rule'))
@@ -2186,7 +2635,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SoftwareUpdateADRList = Get-CMSoftwareUpdateAutoDeploymentRule
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateADRList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateADRList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SoftwareUpdateADRList = Get-CMSoftwareUpdateAutoDeploymentRule
+                Export-CEXMLFile -VariableName 'SoftwareUpdateADRList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Automatic Deployment Rule Deployment'))
@@ -2195,10 +2651,17 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $SoftwareUpdateADRDeploymetList = @() #cade Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_AutoDeployment"
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateADRDeploymetList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateADRDeploymetList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $SoftwareUpdateADRDeploymetList = Get-CMAutoDeploymentRuleDeployment
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $SoftwareUpdateADRDeploymetList = @() #cade Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_AutoDeployment"
+                } else {
+                    $SoftwareUpdateADRDeploymetList = Get-CMAutoDeploymentRuleDeployment
+                }
+                Export-CEXMLFile -VariableName 'SoftwareUpdateADRDeploymetList'
             }
         }
         #endregion
@@ -2209,19 +2672,28 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\AutoUpgradeConfigs.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AutoUpgradeConfigs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "AutoUpgradeConfigsError" -Value (Import-Clixml -Path "$($SaveToFolder)\AutoUpgradeConfigsError.xml") -Force -Option AllScope -Scope Script
+            } else {
 
-            $AutoUpgradeConfigs = @()
-            $AutoUpgradeConfigsError = @()
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Client Auto-Upgrade Configuration'))
-            ($SiteList | Where-Object {$_.Type -eq 2}) | ForEach-Object {
-                $Class = [wmiclass]""
-                $class.psbase.path = "\\$($SMSProviderServer)\root\sms\site_$($_.SiteCode):SMS_Site"
-                try {
-                    $AutoUpgradeConfigs += $Class.InvokeMethod("GetAutoUpgradeConfigs", $null, $null)
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $AutoUpgradeConfigsError += $SiteList
+                $AutoUpgradeConfigs = @()
+                $AutoUpgradeConfigsError = @()
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Client Auto-Upgrade Configuration'))
+                ($SiteList | Where-Object {$_.Type -eq 2}) | ForEach-Object {
+                    $Class = [wmiclass]""
+                    $class.psbase.path = "\\$($SMSProviderServer)\root\sms\site_$($_.SiteCode):SMS_Site"
+                    try {
+                        $AutoUpgradeConfigs += $Class.InvokeMethod("GetAutoUpgradeConfigs", $null, $null)
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $AutoUpgradeConfigsError += $SiteList
+                    }
                 }
+                Export-CEXMLFile -VariableName 'AutoUpgradeConfigs'
+                Export-CEXMLFile -VariableName 'AutoUpgradeConfigsError'
             }
         }
         #endregion
@@ -2233,7 +2705,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $EmailNotificationList = Get-CMEmailNotificationComponent
+            $FileToImport = "$($SaveToFolder)\EmailNotificationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "EmailNotificationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $EmailNotificationList = Get-CMEmailNotificationComponent
+                Export-CEXMLFile -VariableName 'EmailNotificationList'
+            }
         }
         #endregion
 
@@ -2243,25 +2722,31 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SiteSummarizationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SiteSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SiteSummarizationList = @()
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Status Summarization'))
+                ($SiteList | Where-Object {$_.Type -eq 2}) | ForEach-Object {
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Status Summarization List', $_.SiteCode))
+                    $Class = [wmiclass]""
+                    $class.psbase.path = "\\$($SMSProviderServer)\root\sms\site_$($MainSiteCode):sms_summarizationsettings"
+                    $method = "GetSummarizationSettings"
+                    $InParams = $class.GetMethodParameters($Method)
+                    $InParams.SiteCode = $_.SiteCode
+                    $InParams.SummarizationType = [uint32]2
 
-            $SiteSummarizationList = @()
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Status Summarization'))
-            ($SiteList | Where-Object {$_.Type -eq 2}) | ForEach-Object {
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Status Summarization List', $_.SiteCode))
-                $Class = [wmiclass]""
-                $class.psbase.path = "\\$($SMSProviderServer)\root\sms\site_$($MainSiteCode):sms_summarizationsettings"
-                $method = "GetSummarizationSettings"
-                $InParams = $class.GetMethodParameters($Method)
-                $InParams.SiteCode = $_.SiteCode
-                $InParams.SummarizationType = [uint32]2
+                    $returnSiteSummarization = $Class.InvokeMethod($method, $InParams, $null)
+                    $SiteSummarizationList += New-Object HealthCheckClasses.SCCM.CESummarizationInterval($_.SiteCode, "Application Deployment Summarizer", $returnSiteSummarization.FirstIntervalMins, $returnSiteSummarization.SecondIntervalMins, $returnSiteSummarization.ThirdIntervalMins)
 
-                $returnSiteSummarization = $Class.InvokeMethod($method, $InParams, $null)
-                $SiteSummarizationList += New-Object HealthCheckClasses.SCCM.CESummarizationInterval($_.SiteCode, "Application Deployment Summarizer", $returnSiteSummarization.FirstIntervalMins, $returnSiteSummarization.SecondIntervalMins, $returnSiteSummarization.ThirdIntervalMins)
+                    $InParams.SummarizationType = [uint32]3
+                    $returnSiteSummarization = $Class.InvokeMethod($method, $InParams, $null)
 
-                $InParams.SummarizationType = [uint32]3
-                $returnSiteSummarization = $Class.InvokeMethod($method, $InParams, $null)
-
-                $SiteSummarizationList += New-Object HealthCheckClasses.SCCM.CESummarizationInterval($_.SiteCode, "Application Statistics Summarizer", $returnSiteSummarization.FirstIntervalMins, $returnSiteSummarization.SecondIntervalMins, $returnSiteSummarization.ThirdIntervalMins)
+                    $SiteSummarizationList += New-Object HealthCheckClasses.SCCM.CESummarizationInterval($_.SiteCode, "Application Statistics Summarizer", $returnSiteSummarization.FirstIntervalMins, $returnSiteSummarization.SecondIntervalMins, $returnSiteSummarization.ThirdIntervalMins)
+                }
+                Export-CEXMLFile -VariableName 'SiteSummarizationList'
             }
         }
         #endregion
@@ -2273,50 +2758,75 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\DistributionPointList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DistributionPointList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "DistributionPointInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\DistributionPointInformationList.xml") -Force -Option AllScope -Scope Script
+                New-Variable -Name "BoundarySiteSystemsList" -Value (Import-Clixml -Path "$($SaveToFolder)\BoundarySiteSystemsList.xml") -Force -Option AllScope -Scope Script
+                New-Variable -Name "DistributionPointDriveInfo" -Value (Import-Clixml -Path "$($SaveToFolder)\DistributionPointDriveInfo.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $DistributionPointList = @()
+                $DistributionPointInformationList = @()
+                $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Distribution Point', $_.SiteCode))
+                    $DistributionPointList += Get-CMDistributionPoint -SiteCode $_.SiteCode
+                }
 
-            $DistributionPointList = @()
-            $DistributionPointInformationList = @()
-            $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Distribution Point', $_.SiteCode))
-                $DistributionPointList += Get-CMDistributionPoint -SiteCode $_.SiteCode
+                $DistributionPointList | ForEach-Object {
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'Distribution Point', ($_.NetworkOSPath -replace '\\', '')))
+                    $DistributionPointInformationList += Get-CMDistributionPointInfo -InputObject $_
+                }
+                #cade
+                $BoundarySiteSystemsList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_BoundaryGroupSiteSystems where Flags = 0"
+
+                #cade
+                $DistributionPointDriveInfo = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_DistributionPointDriveInfo"
+                Export-CEXMLFile -VariableName 'DistributionPointList'
+                Export-CEXMLFile -VariableName 'DistributionPointInformationList'
+                Export-CEXMLFile -VariableName 'BoundarySiteSystemsList'
+                Export-CEXMLFile -VariableName 'DistributionPointDriveInfo'
             }
-
-            $DistributionPointList | ForEach-Object {
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'Distribution Point', ($_.NetworkOSPath -replace '\\', '')))
-                $DistributionPointInformationList += Get-CMDistributionPointInfo -InputObject $_
-            }
-            #cade
-            $BoundarySiteSystemsList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_BoundaryGroupSiteSystems where Flags = 0"
-
-            #cade
-            $DistributionPointDriveInfo = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_DistributionPointDriveInfo"
         }
         #endregion
 
         #region Distribution Status
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Status'))
-        $arrRuleID = @(275,276,277)
+        $arrRuleID = @(275,276,277,332,333)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            if ($ModuleSCCMVersionBuild -lt 1702) {
-                $DistributionStatusList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ObjectContentExtraInfo"
+            $FileToImport = "$($SaveToFolder)\DistributionStatusList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DistributionStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $DistributionStatusList = Get-CMDistributionStatus
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $DistributionStatusList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ObjectContentExtraInfo"
+                } else {
+                    $DistributionStatusList = Get-CMDistributionStatus
+                }
+                Export-CEXMLFile -VariableName 'DistributionStatusList'
             }
         }
         #endregion
 
         #region Application List
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Application'))
-        $arrRuleID = @(278,279,280,281,282,283,284,285,286,287)
+        $arrRuleID = @(278,279,280,281,282,283,284,286,287,338)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $ApplicationList = Get-CMApplication
+            $FileToImport = "$($SaveToFolder)\ApplicationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ApplicationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ApplicationList = Get-CMApplication
+                Export-CEXMLFile -VariableName 'ApplicationList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Deployment Type'))
@@ -2325,44 +2835,54 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $DeploymentTypeList = @()
-            $ApplicationList | ForEach-Object {
-                $DeploymentTypeList += Get-CMDeploymentType -InputObject $_
-            }
+            $FileToImport = "$($SaveToFolder)\DeploymentTypeList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DeploymentTypeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "PathDTInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathDTInformationList.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $DeploymentTypeList = @()
+                $ApplicationList | ForEach-Object {
+                    $DeploymentTypeList += Get-CMDeploymentType -InputObject $_
+                }
 
-            $PathDTInformationList = @()
-            $ApplicationList | ForEach-Object {
-                $item = $_
+                $PathDTInformationList = @()
+                $ApplicationList | ForEach-Object {
+                    $item = $_
 
-                $DeploymentTypeList | Where-Object {$_.AppModelName -eq $item.ModelName} | ForEach-Object {
-                    $subItem = $_
-                    #todo: needneed to ignore more?
-                    #query for all technology
-                    #SELECT distinct SDMPackageDigest.value('declare namespace p1="http://schemas.microsoft.com/SystemCenterConfigurationManager/2009/AppMgmtDigest"; (p1:AppMgmtDigest/p1:DeploymentType/p1:Installer/@Technology)[1]','nvarchar(max)')AS DTTechnology FROM[v_ConfigurationItems] WHERE CIType_ID = 21 
-                    if (@('iOSDeepLink', 'WinPhone8Deeplink', 'Deeplink') -contains $subitem.Technology)  {
-                        #ignoring
-                    } else {
-                        if ([string]::IsNullOrEmpty($Item.SDMPackageXML) -eq $true) {
-                            $arrItem = $subitem.ModelName.Split('/')
-                            $itemxml = ([xml]$item.SDMPackageXML)
-                            $subitemxml = $itemxml.AppMgmtDigest.DeploymentType | where-object {($_.AuthoringScopeId -eq $arrItem[0]) -and ($_.LogicalName -eq $arrItem[1])}
-                            $folderName = $subitemxml.Installer.Contents.Content.Location
+                    $DeploymentTypeList | Where-Object {$_.AppModelName -eq $item.ModelName} | ForEach-Object {
+                        $subItem = $_
+                        #todo: needneed to ignore more?
+                        #query for all technology
+                        #SELECT distinct SDMPackageDigest.value('declare namespace p1="http://schemas.microsoft.com/SystemCenterConfigurationManager/2009/AppMgmtDigest"; (p1:AppMgmtDigest/p1:DeploymentType/p1:Installer/@Technology)[1]','nvarchar(max)')AS DTTechnology FROM[v_ConfigurationItems] WHERE CIType_ID = 21 
+                        if (@('AndroidDeepLink', 'iOSDeepLink', 'WinPhone8Deeplink', 'Deeplink', 'WebApp') -contains $subitem.Technology)  {
+                            #ignoring
                         } else {
-                            $subitemxml = [xml]$subItem.SDMPackageXML
-                            $folderName = $subitemxml.AppMgmtDigest.DeploymentType.Installer.Contents.Content.Location
-                        }
-                        if ([string]::IsNullOrEmpty($folderName) -eq $false) {
-                            if ($folderName -is [System.Array]) { $folderName = $FolderName[0] }
-                            if (Test-Path -Path "filesystem::$($folderName)" -ErrorAction SilentlyContinue) {
-                                $bPathExist = $true
+                            Write-CELog -logtype "INFO" -logmessage "Checking folder information for application '$($item.LocalizedDisplayName)' and DeploymentType $($subItem.LocalizedDisplayName)"
+                            if ([string]::IsNullOrEmpty($Item.SDMPackageXML) -eq $true) {
+                                $arrItem = $subitem.ModelName.Split('/')
+                                $itemxml = ([xml]$item.SDMPackageXML)
+                                $subitemxml = $itemxml.AppMgmtDigest.DeploymentType | where-object {($_.AuthoringScopeId -eq $arrItem[0]) -and ($_.LogicalName -eq $arrItem[1])}
+                                $folderName = $subitemxml.Installer.Contents.Content.Location
                             } else {
-                                $bPathExist = $false
+                                $subitemxml = [xml]$subItem.SDMPackageXML
+                                $folderName = $subitemxml.AppMgmtDigest.DeploymentType.Installer.Contents.Content.Location
                             }
+                            if ([string]::IsNullOrEmpty($folderName) -eq $false) {
+                                if ($folderName -is [System.Array]) { $folderName = $FolderName[0] }
+                                if (Test-Path -Path "filesystem::$($folderName)" -ErrorAction SilentlyContinue) {
+                                    $bPathExist = $true
+                                } else {
+                                    $bPathExist = $false
+                                }
 
-                            $PathDTInformationList += New-Object -TypeName PSObject -Property @{'Application' = $Item.LocalizedDisplayName; 'DTName' = $subItem.LocalizedDisplayName; 'Folder' = $folderName; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
+                                $PathDTInformationList += New-Object -TypeName PSObject -Property @{'Application' = $Item.LocalizedDisplayName; 'DTName' = $subItem.LocalizedDisplayName; 'Folder' = $folderName; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
+                            }
                         }
                     }
                 }
+                Export-CEXMLFile -VariableName 'DeploymentTypeList'
+                Export-CEXMLFile -VariableName 'PathDTInformationList'
             }
         }
         #endregion
@@ -2374,13 +2894,19 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $DPContentList = @()
-            $sqlQuery = 'select * from SMS_DPContentInfo'
-            if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
-                $sqlQuery += ' where NALPath not like "%manage.microsoft.com%"'
+            $FileToImport = "$($SaveToFolder)\DPContentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DPContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DPContentList = @()
+                $sqlQuery = 'select * from SMS_DPContentInfo'
+                if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
+                    $sqlQuery += ' where NALPath not like "%manage.microsoft.com%"'
+                }
+                $DPContentList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query $sqlQuery
+                Export-CEXMLFile -VariableName 'DPContentList'
             }
-            $DPContentList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query $sqlQuery
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Point Group Content List'))
@@ -2389,10 +2915,16 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $DPGroupContentList = @()
-            #cade
-            $DPGroupContentList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'select * from SMS_DPGroupContentInfo'
+            $FileToImport = "$($SaveToFolder)\DPGroupContentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DPGroupContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DPGroupContentList = @()
+                #cade
+                $DPGroupContentList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'select * from SMS_DPGroupContentInfo'
+                Export-CEXMLFile -VariableName 'DPGroupContentList'
+            }
         }
         #endregion
 
@@ -2403,21 +2935,29 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $PackageList = Get-CMPackage
-            $PathPkgInformationList = @()
-            $PackageList | ForEach-Object {
-                $Item = $_
-                if (($item.Name -notin $Script:HiddenPackages) -and ($item.DefaultImageFlags -ne 2)) { #2=USMT package
-                    if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
-                        if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
-                            $bPathExist = $true
-                        } else {
-                            $bPathExist = $false
+            $FileToImport = "$($SaveToFolder)\PackageList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "PackageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "PathPkgInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathPkgInformationList.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $PackageList = Get-CMPackage
+                $PathPkgInformationList = @()
+                $PackageList | ForEach-Object {
+                    $Item = $_
+                    if (($item.Name -notin $Script:HiddenPackages) -and ($item.DefaultImageFlags -ne 2)) { #2=USMT package
+                        if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
+                            if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                                $bPathExist = $true
+                            } else {
+                                $bPathExist = $false
+                            }
+                            $PathPkgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                         }
-                        $PathPkgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                     }
                 }
+                Export-CEXMLFile -VariableName 'PackageList'
+                Export-CEXMLFile -VariableName 'PathPkgInformationList'
             }
         }
         #endregion
@@ -2429,18 +2969,27 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $OperatingSystemImageList = Get-CMOperatingSystemImage
-            $PathOSImgInformationList  = @()
-            $OperatingSystemImageList | ForEach-Object {
-                $Item = $_
-                if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
-                    if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
-                        $bPathExist = $true
-                    } else {
-                        $bPathExist = $false
+            $FileToImport = "$($SaveToFolder)\OperatingSystemImageList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "OperatingSystemImageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "PathOSImgInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathOSImgInformationList.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $OperatingSystemImageList = Get-CMOperatingSystemImage
+                $PathOSImgInformationList  = @()
+                $OperatingSystemImageList | ForEach-Object {
+                    $Item = $_
+                    if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
+                        if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                            $bPathExist = $true
+                        } else {
+                            $bPathExist = $false
+                        }
+                        $PathOSImgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                     }
-                    $PathOSImgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                 }
+                Export-CEXMLFile -VariableName 'OperatingSystemImageList'
+                Export-CEXMLFile -VariableName 'PathOSImgInformationList'
             }
         }
 
@@ -2450,18 +2999,27 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $OperatingSystemInstallerList = Get-CMOperatingSystemInstaller
-            $PathOSInstallerInformationList = @()
-            $OperatingSystemInstallerList | ForEach-Object {
-                $Item = $_
-                if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
-                    if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
-                        $bPathExist = $true
-                    } else {
-                        $bPathExist = $false
+            $FileToImport = "$($SaveToFolder)\OperatingSystemInstallerList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "OperatingSystemInstallerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "PathOSInstallerInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathOSInstallerInformationList.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $OperatingSystemInstallerList = Get-CMOperatingSystemInstaller
+                $PathOSInstallerInformationList = @()
+                $OperatingSystemInstallerList | ForEach-Object {
+                    $Item = $_
+                    if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
+                        if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                            $bPathExist = $true
+                        } else {
+                            $bPathExist = $false
+                        }
+                        $PathOSInstallerInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                     }
-                    $PathOSInstallerInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                 }
+                Export-CEXMLFile -VariableName 'OperatingSystemInstallerList'
+                Export-CEXMLFile -VariableName 'PathOSInstallerInformationList'
             }
         }
 
@@ -2471,7 +3029,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $TaskSequenceList = Get-CMTaskSequence
+            $FileToImport = "$($SaveToFolder)\TaskSequenceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "TaskSequenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $TaskSequenceList = Get-CMTaskSequence
+                Export-CEXMLFile -VariableName 'TaskSequenceList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Task Sequence Reboot Step'))
@@ -2480,18 +3045,24 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $TaskSequenceRebootOptions = @()
-            if ($ModuleSCCMVersionBuild -lt 1702) {
+            $FileToImport = "$($SaveToFolder)\TaskSequenceRebootOptions.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "TaskSequenceRebootOptions" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $TaskSequenceList | ForEach-Object {
-                    $item = $_
+                $TaskSequenceRebootOptions = @()
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                } else {
+                    $TaskSequenceList | ForEach-Object {
+                        $item = $_
 
-                    Get-CMTaskSequenceStepReboot -TaskSequenceName $item.Name | Where-Object {($_.Enabled -eq $true) -and ($_.Target -eq 'WinPE')} | ForEach-Object {
-                        $subItem = $_
-                        $TaskSequenceRebootOptions += New-Object -TypeName PSObject -Property @{'Name' = $item.Name; 'StepName' = $subItem.Name}
+                        Get-CMTaskSequenceStepReboot -TaskSequenceID $item.PackageID | Where-Object {($_.Enabled -eq $true) -and ($_.Target -eq 'WinPE')} | ForEach-Object {
+                            $subItem = $_
+                            $TaskSequenceRebootOptions += New-Object -TypeName PSObject -Property @{'Name' = $item.Name; 'StepName' = $subItem.Name}
+                        }
                     }
                 }
+                Export-CEXMLFile -VariableName 'TaskSequenceRebootOptions'
             }
         }
 
@@ -2501,12 +3072,18 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            #cade
-            $TaskSequenceReferenceList = @()
-            $TaskSequenceList | ForEach-Object {
-                $item = $_
-                $TaskSequenceReferenceList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ts.*, content.* FROM SMS_ObjectContentExtraInfo content INNER JOIN SMS_TaskSequencePackageReference tspr ON tspr.RefPackageID = content.PackageID INNER JOIN SMS_TaskSequencePackage ts on ts.PackageID = tspr.PackageID where ts.PackageID = '$($item.PackageID)'"
+            $FileToImport = "$($SaveToFolder)\TaskSequenceReferenceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "TaskSequenceReferenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                #cade
+                $TaskSequenceReferenceList = @()
+                $TaskSequenceList | ForEach-Object {
+                    $item = $_
+                    $TaskSequenceReferenceList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ts.*, content.* FROM SMS_ObjectContentExtraInfo content INNER JOIN SMS_TaskSequencePackageReference tspr ON tspr.RefPackageID = content.PackageID INNER JOIN SMS_TaskSequencePackage ts on ts.PackageID = tspr.PackageID where ts.PackageID = '$($item.PackageID)'"
+                }
+                Export-CEXMLFile -VariableName 'TaskSequenceReferenceList'
             }
         }
         #endregion
@@ -2518,33 +3095,39 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\inboxList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "inboxList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $inboxList = @()
+                $SiteList | ForEach-Object {
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Inbox Files', $_.SiteCode))
+                    $item = $_
 
-            $inboxList = @()
-            $SiteList | ForEach-Object {
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Inbox Files', $_.SiteCode))
-                $item = $_
-
-                try {
-                    if (Test-Path -Path "filesystem::\\$($item.ServerName)\SMS_$($item.SiteCode)\inboxes") {
-                        $ChildFolders = Get-ChildItem "filesystem::\\$($item.ServerName)\SMS_$($item.SiteCode)\inboxes" -Recurse -ErrorAction Stop | Where-Object {$_.PSIsContainer}
-                        foreach($subitem in $ChildFolders) {
-                            if(Test-Path "filesystem::$($subitem.FullName)")
-                            {
-                                $fcount = (Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Count
-                                $fsize = "{0:N2}" -f ((Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Sum / 1MB)
-                                $inboxList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $item.ServerName; 'FolderName' = $subitem.Name; 'FolderPath' = $subitem.FullName; 'FolderCount' = $fCount; 'FolderSize' = $fsize}
-                            } else {
-                                Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @($subitem.FullName))
+                    try {
+                        if (Test-Path -Path "filesystem::\\$($item.ServerName)\SMS_$($item.SiteCode)\inboxes") {
+                            $ChildFolders = Get-ChildItem "filesystem::\\$($item.ServerName)\SMS_$($item.SiteCode)\inboxes" -Recurse -ErrorAction Stop | Where-Object {$_.PSIsContainer}
+                            foreach($subitem in $ChildFolders) {
+                                if(Test-Path "filesystem::$($subitem.FullName)")
+                                {
+                                    $fcount = (Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Count
+                                    $fsize = "{0:N2}" -f ((Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Sum / 1MB)
+                                    $inboxList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $item.ServerName; 'FolderName' = $subitem.Name; 'FolderPath' = $subitem.FullName; 'FolderCount' = $fCount; 'FolderSize' = $fsize}
+                                } else {
+                                    Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @($subitem.FullName))
+                                }
                             }
+                        } else {
+                            Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @("$($item.ServerName)\SMS_$($item.SiteCode)\inboxes"))
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.ServerName); 'ConnectionType' = 'Folder Access (inbox) (SMB)' }
                         }
-                    } else {
-                        Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @("$($item.ServerName)\SMS_$($item.SiteCode)\inboxes"))
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                         $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.ServerName); 'ConnectionType' = 'Folder Access (inbox) (SMB)' }
                     }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.ServerName); 'ConnectionType' = 'Folder Access (inbox) (SMB)' }
                 }
+                Export-CEXMLFile -VariableName 'inboxList'
             }
         }
         #endregion
@@ -2556,7 +3139,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $DriverPackageList = Get-CMDriverPackage
+            $FileToImport = "$($SaveToFolder)\DriverPackageList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DriverPackageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $DriverPackageList = Get-CMDriverPackage
+                Export-CEXMLFile -VariableName 'DriverPackageList'
+            }
         }
         #endregion
 
@@ -2567,11 +3157,17 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            #Tally Interval = https://msdn.microsoft.com/en-us/library/cc144112.aspx
-            #SMS_ComponentSummarizer = https://docs.microsoft.com/en-us/sccm/develop/reference/core/servers/manage/sms_componentsummarizer-server-wmi-class
-            #Status = 0=green, 1=warning, 2=red
-            $ComponentSummarizerList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ComponentSummarizer WHERE TallyInterval='0001128000100008'"
+            $FileToImport = "$($SaveToFolder)\ComponentSummarizerList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ComponentSummarizerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                #Tally Interval = https://msdn.microsoft.com/en-us/library/cc144112.aspx
+                #SMS_ComponentSummarizer = https://docs.microsoft.com/en-us/sccm/develop/reference/core/servers/manage/sms_componentsummarizer-server-wmi-class
+                #Status = 0=green, 1=warning, 2=red
+                $ComponentSummarizerList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ComponentSummarizer WHERE TallyInterval='0001128000100008'"
+                Export-CEXMLFile -VariableName 'ComponentSummarizerList'
+            }
         }
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Component Status Message'))
@@ -2580,69 +3176,83 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\ComponentStatusMessageList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ComponentStatusMessageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "ComponentStatusMessageCompletedList" -Value (Import-Clixml -Path "$($SaveToFolder)\ComponentStatusMessageCompletedList.xml") -Force -Option AllScope -Scope Script
+            } else {
+                $ComponentStatusMessageList = @()
+                $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays(([int]$script:ComponentStatusMessageDateOld)*-1) -Severity Warning
+                $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays([int]($script:ComponentStatusMessageDateOld)*-1) -Severity Error
 
-            $ComponentStatusMessageList = @()
-            $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays(([int]$script:ComponentStatusMessageDateOld)*-1) -Severity Warning
-            $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays([int]($script:ComponentStatusMessageDateOld)*-1) -Severity Error
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Component Status Message Details'))
+                $ComponentStatusMessageCompletedList = @()
+                $i=1
+                $j=1
+                $total = $ComponentStatusMessageList.Count
+                $ComponentStatusMessageList | ForEach-Object {
+                    if ($i -eq 500) {
+                        Write-CELog -logtype "Info" -logmessage "Analysing $([int]500*$j) out of $total"
+	                    $i=1
+                        $J++
+                    } else { $i++ }
 
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Component Status Message Details'))
-            $ComponentStatusMessageCompletedList = @()
-            $i=1
-            $j=1
-            $total = $ComponentStatusMessageList.Count
-            $ComponentStatusMessageList | ForEach-Object {
-                if ($i -eq 500) {
-                    Write-CELog -logtype "Info" -logmessage "Analysing $([int]500*$j) out of $total"
-	                $i=1
-                    $J++
-                } else { $i++ }
-
-                $item = $_
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @("Component Status Message Details ID $($item.RecordID)"))
-                try {
-                    $msgIDCount = ($ComponentStatusMessageCompletedList | Where-Object {$_.MessageID -eq $item.MessageID} | Measure-Object).Count
-                    if (($msgIDCount -eq 0) -or (($msgIDCount -gt 0) -and ($script:AddMultipleComponentStatusMessage -eq $true))) {
-                        if ($item.ModuleName -eq 'SMS Client') {
-                            $objMessageresult = $Win32FormatMessage::FormatMessage($flags, $ptrCliModule, $item.Severity -bor $item.MessageID, 0, $stringOutput, $sizeOfBuffer, $stringArrayInput)
-                        } else {
-                            $objMessageresult = $Win32FormatMessage::FormatMessage($flags, $ptrsrvModule, $item.Severity -bor $item.MessageID, 0, $stringOutput, $sizeOfBuffer, $stringArrayInput)
-                        }
-                        $objRecordID = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "Select * from SMS_StatMsgInsStrings where recordid = $($item.RecordID)"
-                        $objMessage = $stringOutput.toString().Replace("%11","").Replace("%12","").Replace("%3%4%5%6%7%8%9%10","")
-                        $objRecordID | ForEach-Object {
-                            $objMessage = $objMessage.Replace("%$($_.InsStrIndex+1)", $_.InsStrValue)
-                        }
-
-                        $Resolution = ""
-
-                        if ($objMessage.tolower().indexof('possible cause') -ge 0) {
-                            $arrMessage = $objMessage.Split([System.Environment]::NewLine)
-                            $Message = $arrMessage[0]
-                            for($i = 1; $i -lt $arrMessage.Count; $i++) {
-                                if ([string]::IsNullOrEmpty($arrMessage[$i])) {
-                                    continue
-                                }
-                                $intPossibleCause = $arrMessage[$i].tolower().indexof('possible cause:')
-                                $intSolution = $arrMessage[$i].tolower().indexof('solution:')
-                                if ($intPossibleCause -ge 0) {
-                                    if (-not [String]::IsNullOrEmpty($Resolution)) {
-                                        $Resolution += '[NL][NL]'
-                                    }
-                                    $Resolution += $arrMessage[$i].Substring($intPossibleCause).Trim().Replace('Possible cause: ','').trim()
-                                } elseif ($intSolution -ge 0) {
-                                    $Resolution += " $($arrMessage[$i].Substring($intSolution).Trim().Replace('Solution: ','').trim())"
-                                }
+                    $item = $_
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @("Component Status Message Details ID $($item.RecordID)"))
+                    try {
+                        $msgIDCount = ($ComponentStatusMessageCompletedList | Where-Object {$_.MessageID -eq $item.MessageID} | Measure-Object).Count
+                        if (($msgIDCount -eq 0) -or (($msgIDCount -gt 0) -and ($script:AddMultipleComponentStatusMessage -eq $true))) {
+                            if ($item.ModuleName -eq 'SMS Client') {
+                                $objMessageresult = $Win32FormatMessage::FormatMessage($flags, $ptrCliModule, $item.Severity -bor $item.MessageID, 0, $stringOutput, $sizeOfBuffer, $stringArrayInput)
+                            } else {
+                                $objMessageresult = $Win32FormatMessage::FormatMessage($flags, $ptrsrvModule, $item.Severity -bor $item.MessageID, 0, $stringOutput, $sizeOfBuffer, $stringArrayInput)
                             }
+                            $objRecordID = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "Select * from SMS_StatMsgInsStrings where recordid = $($item.RecordID)"
+                            $objMessage = $stringOutput.toString().Replace("%11","").Replace("%12","").Replace("%3%4%5%6%7%8%9%10","")
+                            $objRecordID | ForEach-Object {
+                                $objMessage = $objMessage.Replace("%$($_.InsStrIndex+1)", $_.InsStrValue)
+                            }
+
+                            $Resolution = ""
+
+                            if ($objMessage.tolower().indexof('possible cause') -ge 0) {
+                                $arrMessage = $objMessage.Split([System.Environment]::NewLine)
+                                $Message = $arrMessage[0]
+                                for($i = 1; $i -lt $arrMessage.Count; $i++) {
+                                    if ([string]::IsNullOrEmpty($arrMessage[$i])) {
+                                        continue
+                                    }
+                                    $intPossibleCause = $arrMessage[$i].tolower().indexof('possible cause:')
+                                    if ($intPossibleCouse -lt 0) {
+                                        $intPossibleCause = $arrMessage[$i].tolower().indexof('possible causes:')
+                                    }
+                                    $intSolution = $arrMessage[$i].tolower().indexof('solution:')
+                                    if ($intSolution -lt 0) {
+                                        $intSolution = $arrMessage[$i].tolower().indexof('solutions:')
+                                    }
+                                    if ($intPossibleCause -ge 0) {
+                                        if (-not [String]::IsNullOrEmpty($Resolution)) {
+                                            $Resolution += '[NL][NL]'
+                                        }
+                                        $Resolution += $arrMessage[$i].Substring($intPossibleCause).Replace('Possible cause: ','').Replace('Possible causes: ','').trim()
+                                    } elseif ($intSolution -ge 0) {
+                                        $Resolution += " $($arrMessage[$i].Substring($intSolution).Replace('Solution: ','').Replace('Solutions: ','').trim())"
+                                    }
+                                }
+                            } else {
+                                $Message = $objMessage.Trim().Replace([System.Environment]::NewLine, ' ')
+                            }
+                            $ComponentStatusMessageCompletedList += New-Object -TypeName PSObject -Property @{'Component' = $item.Component; 'MachineName' = $item.MachineName; 'MessageID' = $item.MessageID; 'RecordID' = $item.RecordID; 'Message' = $Message; 'Resolution' = $Resolution; 'Time' = $item.Time }
                         } else {
-                            $Message = $objMessage.Trim().Replace([System.Environment]::NewLine, ' ')
+                            Write-CELog -logtype "WARNING" -logmessage "Ignoring adding Message ID $($item.MessageID) to the report as it was already added"
                         }
-                        $ComponentStatusMessageCompletedList += New-Object -TypeName PSObject -Property @{'Component' = $item.Component; 'MachineName' = $item.MachineName; 'MessageID' = $item.MessageID; 'RecordID' = $item.RecordID; 'Message' = $Message; 'Resolution' = $Resolution; 'Time' = $item.Time }
-                    } else {
-                        Write-CELog -logtype "WARNING" -logmessage "Ignoring adding Message ID $($item.MessageID) to the report as it was already being added"
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                     }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                 }
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageList'
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageCompletedList'
             }
         }
         #endregion
@@ -2654,28 +3264,49 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $ApprovalRequestList = Get-CMApprovalRequest
+            $FileToImport = "$($SaveToFolder)\ApprovalRequestList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ApprovalRequestList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ApprovalRequestList = Get-CMApprovalRequest
+                Export-CEXMLFile -VariableName 'ApprovalRequestList'
+            }
         }
         #endregion
 
-                #region sup component information
+        #region sup component information
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Component - SyncManager'))
         $arrRuleID = @(319)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SUPComponentSyncManager = Get-CMSoftwareUpdatePointComponent -WsusSyncManager
+            $FileToImport = "$($SaveToFolder)\SUPComponentSyncManager.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPComponentSyncManager" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SUPComponentSyncManager = Get-CMSoftwareUpdatePointComponent -WsusSyncManager
+                Export-CEXMLFile -VariableName 'SUPComponentSyncManager'
+            }
         }
 
         #region sup component information
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Component'))
-        $arrRuleID = @(321)
+        $arrRuleID = @(320)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SUPComponent = Get-CMSoftwareUpdatePointComponent
+            $FileToImport = "$($SaveToFolder)\SUPComponent.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPComponent" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SUPComponent = Get-CMSoftwareUpdatePointComponent
+                Export-CEXMLFile -VariableName 'SUPComponent'
+            }
         }
         #endregion
 
@@ -2686,8 +3317,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $SiteDefinition =  Get-CMSiteDefinition
+            $FileToImport = "$($SaveToFolder)\SiteDefinition.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SiteDefinition" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SiteDefinition =  Get-CMSiteDefinition
+                Export-CEXMLFile -VariableName 'SiteDefinition'
+            }
         }
         #endregion
 
@@ -2699,36 +3336,42 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SoftwareVersionList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareVersionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SiteList | ForEach-Object {
+                    $item = $_
+                    $ServerName = $item.ServerName
 
-            $SiteList | ForEach-Object {
-                $item = $_
-                $ServerName = $item.ServerName
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $ServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
+                        $RegKey.GetSubKeyNames() | ForEach-Object {
+                            $RegSubKey= $RegKey.OpenSubKey($_)
+                            $SoftwareVersionList += New-Object -TypeName PSObject -Property @{'Key' = $_; 'Name' = $RegSubKey.GetValue("DisplayName"); 'Version' = $RegSubKey.GetValue("DisplayVersion"); 'Publisher' = $RegSubKey.GetValue("Publisher"); 'Architecture' = '64bit' }
+                        }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $ServerName; 'ConnectionType' = 'Add/Remove Programs Remote Registry (64bit)' }
 
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $ServerName)
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
-                    $RegKey.GetSubKeyNames() | ForEach-Object {
-                        $RegSubKey= $RegKey.OpenSubKey($_)
-                        $SoftwareVersionList += New-Object -TypeName PSObject -Property @{'Key' = $_; 'Name' = $RegSubKey.GetValue("DisplayName"); 'Version' = $RegSubKey.GetValue("DisplayVersion"); 'Publisher' = $RegSubKey.GetValue("Publisher"); 'Architecture' = '64bit' }
                     }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $ServerName; 'ConnectionType' = 'Add/Remove Programs Remote Registry (64bit)' }
 
-                }
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $ServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall")
+                        $RegKey.GetSubKeyNames() | ForEach-Object {
+                            $RegSubKey= $RegKey.OpenSubKey($_)
+                            $SoftwareVersionList += New-Object -TypeName PSObject -Property @{'Key' = $_; 'Name' = $RegSubKey.GetValue("DisplayName"); 'Version' = $RegSubKey.GetValue("DisplayVersion"); 'Publisher' = $RegSubKey.GetValue("Publisher"); 'Architecture' = '32bit' }
+                        }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $ServerName; 'ConnectionType' = 'Add/Remove Programs Remote Registry (32bit)' }
 
-                try {
-                    $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $ServerName)
-                    $RegKey= $Reg.OpenSubKey("SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall")
-                    $RegKey.GetSubKeyNames() | ForEach-Object {
-                        $RegSubKey= $RegKey.OpenSubKey($_)
-                        $SoftwareVersionList += New-Object -TypeName PSObject -Property @{'Key' = $_; 'Name' = $RegSubKey.GetValue("DisplayName"); 'Version' = $RegSubKey.GetValue("DisplayVersion"); 'Publisher' = $RegSubKey.GetValue("Publisher"); 'Architecture' = '32bit' }
                     }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $ServerName; 'ConnectionType' = 'Add/Remove Programs Remote Registry (32bit)' }
-
                 }
+                Export-CEXMLFile -VariableName 'SoftwareVersionList'
             }
         }
         #endregion
@@ -2741,53 +3384,132 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\ServiceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SiteList | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = $item.ServerName
 
-            $SiteList | ForEach-Object {
-                $item = $_
-                $RemoteComputer = $item.ServerName
-
-                try {
-                    $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "win32_Service" -ErrorAction SilentlyContinue) 
+                    try {
+                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "win32_Service" -ErrorAction SilentlyContinue) 
                     
-                    if ($itemReturn -ne $null) {
-                        $itemReturn | ForEach-Object {
-                            $ServiceList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'Name' = $_.Name; 'Caption' = $_.Caption; 'Started' = $_.Started; 'StartMode' = $_.StartMode; 'State' = $_.State; 'Status' = $_.Status }
+                        if ($itemReturn -ne $null) {
+                            $itemReturn | ForEach-Object {
+                                $ServiceList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'Name' = $_.Name; 'Caption' = $_.Caption; 'Started' = $_.Started; 'StartMode' = $_.StartMode; 'State' = $_.State; 'Status' = $_.Status }
+                            }
+                        } else {
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
+                            break
                         }
-                    } else {
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                         $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
                         break
                     }
-                } catch {
-                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
-                    break
                 }
+                Export-CEXMLFile -VariableName 'ServiceList'
             }
         }
         #endregion
 
+        #region ping
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Ping Status'))
+        $ServiceList = @()
+        $arrRuleID = @(334,335,336,337)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\PingList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "PingList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $PingList = @()
+                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    for($i=1; $i -le [int]$Script:MaxPingCount; $i++) {    
+                        $pingreturn = Test-Connection -ComputerName $RemoteComputer -Count 1 -ErrorAction SilentlyContinue
+                        if ($pingreturn -eq $null) {
+                            $PingList += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.Source; 'Destination' = $Destination; 'IPV4' = ''; 'ResponseTime' = 4000; 'Success' = $false  }
+                        } else {
+                            $PingList += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.Source; 'Destination' = $RemoteComputer; 'IPV4' = $pingreturn.IPV4Address.IPAddressToString; 'ResponseTime' = $pingreturn.ResponseTime; 'Success' = $true  }
+                        }
+                        Start-Sleep $Script:PingDelay
+                    }
+                }
+                Export-CEXMLFile -VariableName 'PingList'
+            }
+        }
+        #endregion
+
+        #region intune
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Intune Subscription'))
+        $ServiceList = @()
+        $arrRuleID = @(339)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IntuneSubscription.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IntuneSubscription" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $IntuneSubscription = Get-CMIntuneSubscription
+                Export-CEXMLFile -VariableName 'IntuneSubscription'
+            }
+        }
+        #endregion
+
+        #region intune
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boundary'))
+        $ServiceList = @()
+        $arrRuleID = @(340)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\Boundary.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "Boundary" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $Boundary = Get-CMIntuneSubscription
+                Export-CEXMLFile -VariableName 'Boundary'
+            }
+        }
+        #endregion
+        Export-CEXMLFile -VariableName 'ServerDown'
+        Export-CEXMLFile -VariableName 'ServerHTTPAccessInformation'
+
         #endregion
 
         #region Saving XML Files
-        Write-CELog -logtype "INFO" -logmessage "Saving Information to Disk"
-        $xmlList = @('SiteList', 'SiteRoleList', 'SQLServerPrimarySiteList', 'SQLServerInformationList', 'ServerRegistryInformation', 'ProcessAverageTimeList', 'SiteComponentList',
-            'MPList', 'SQLList', 'SQLConfigurationList', 'ServerDown', 'DPList', 'SMPList', 'MPComponentList', 'SiteComponentManagerList', 'SMSPolProvComponentList', 'AppCatalogWebServiceList',
-            'AppCatalogWebSiteList', 'EndpointProtectionList', 'SUPList', 'SRSList', 'ServiceAccountList', 'AdminAccountList', 'GroupMembershipList', 'ClientStatusSettings',
-            'DiscoveryMethodList', 'DPGroupList', 'CollectionMembershipEvaluation', 'DeviceCollectionList', 'UserCollectionList', 'DeploymentList', 'AlertList', 'AlertSubscriptionList',
-            'ADForestist', 'ADForestDiscoveryStatusList', 'DatabaseReplicationStatusList', 'DatabaseReplicationScheduleList', 'DeviceList', 'ClientSettingsList', 'ClientSettingsSettingsList',
-            'MaintenanceTaskList', 'BoundaryGroupList', 'BoundaryGroupRelationshipList', 'MalwareDetectedList', 'MalwarePolicyList', 'MalwarePolicySettingsList', 'FirewallPolicyList',
-            'SwMeteringSettingsList', 'SwMeteringRuleList', 'BootList', 'SoftwareUpdateGroupList', 'SoftwareUpdateGroupDeploymentList', 'SoftwareUpdateDeploymentList',
-            'SoftwareUpdateList', 'SoftwareUpdateSummarizationList', 'SoftwareUpdateADRList', 'SoftwareUpdateADRDeploymetList', 'AutoUpgradeConfigs', 'AutoUpgradeConfigsError',
-            'EmailNotificationList', 'SiteSummarizationList', 'DistributionPointList', 'DistributionPointInformationList', 'BoundarySiteSystemsList', 'DistributionPointDriveInfo',
-            'DistributionStatusList', 'ApplicationList', 'DeploymentTypeList', 'DPContentList', 'DPGroupContentList', 'PackageList', 'OperatingSystemImageList', 'OperatingSystemInstallerList',
-            'TaskSequenceList', 'TaskSequenceRebootOptions', 'TaskSequenceReferenceList', 'inboxList', 'DriverPackageList', 'ComponentSummarizerList', 'ComponentStatusMessageList',
-            'ComponentStatusMessageCompletedList', 'ServerHTTPAccessInformation', 'PathDTInformationList', 'PathPkgInformationList', 'PathOSImgInformationList',
-            'CollectionDeviceFilterCount', 'CollectionUserFilterCount', 'SUPWIDList', 'ServerNOSMSONDriveInformation', 'SUPSQL', 'ApprovalRequestList',
-            'SUPComponent', 'SUPComponentSyncManager', 'SiteDefinition', 'SoftwareVersionList', 'ServiceList'
-        )
-        $xmlList | ForEach-Object {
-            Export-CEXMLFile -VariableName $_
-        }
+        #Write-CELog -logtype "INFO" -logmessage "Saving Information to Disk"
+        #$xmlList = @('SiteList', 'SiteRoleList', 'SQLServerPrimarySiteList', 'SQLServerInformationList', 'ServerRegistryInformation', 'ProcessAverageTimeList', 'SiteComponentList',
+        #    'MPList', 'SQLList', 'SQLConfigurationList', 'ServerDown', 'DPList', 'SMPList', 'MPComponentList', 'SiteComponentManagerList', 'SMSPolProvComponentList', 'AppCatalogWebServiceList',
+        #    'AppCatalogWebSiteList', 'EndpointProtectionList', 'SUPList', 'SRSList', 'ServiceAccountList', 'AdminAccountList', 'GroupMembershipList', 'ClientStatusSettings',
+        #    'DiscoveryMethodList', 'DPGroupList', 'CollectionMembershipEvaluation', 'DeviceCollectionList', 'UserCollectionList', 'DeploymentList', 'AlertList', 'AlertSubscriptionList',
+        #    'ADForestist', 'ADForestDiscoveryStatusList', 'DatabaseReplicationStatusList', 'DatabaseReplicationScheduleList', 'DeviceList', 'ClientSettingsList', 'ClientSettingsSettingsList',
+        #    'MaintenanceTaskList', 'BoundaryGroupList', 'BoundaryGroupRelationshipList', 'MalwareDetectedList', 'MalwarePolicyList', 'MalwarePolicySettingsList', 'FirewallPolicyList',
+        #    'SwMeteringSettingsList', 'SwMeteringRuleList', 'BootList', 'SoftwareUpdateGroupList', 'SoftwareUpdateGroupDeploymentList', 'SoftwareUpdateDeploymentList',
+        #    'SoftwareUpdateList', 'SoftwareUpdateSummarizationList', 'SoftwareUpdateADRList', 'SoftwareUpdateADRDeploymetList', 'AutoUpgradeConfigs', 'AutoUpgradeConfigsError',
+        #    'EmailNotificationList', 'SiteSummarizationList', 'DistributionPointList', 'DistributionPointInformationList', 'BoundarySiteSystemsList', 'DistributionPointDriveInfo',
+        #    'DistributionStatusList', 'ApplicationList', 'DeploymentTypeList', 'DPContentList', 'DPGroupContentList', 'PackageList', 'OperatingSystemImageList', 'OperatingSystemInstallerList',
+        #    'TaskSequenceList', 'TaskSequenceRebootOptions', 'TaskSequenceReferenceList', 'inboxList', 'DriverPackageList', 'ComponentSummarizerList', 'ComponentStatusMessageList',
+        #    'ComponentStatusMessageCompletedList', 'ServerHTTPAccessInformation', 'PathDTInformationList', 'PathPkgInformationList', 'PathOSImgInformationList',
+        #    'CollectionDeviceFilterCount', 'CollectionUserFilterCount', 'SUPWIDList', 'ServerNOSMSONDriveInformation', 'SUPSQL', 'ApprovalRequestList',
+        #    'SUPComponentSyncManager', 'SUPComponent', 'SiteDefinition', 'SoftwareVersionList', 'ServiceList', 'IntuneSubscription'
+        #)
+        #$xmlList | ForEach-Object {
+        #    Export-CEXMLFile -VariableName $_
+        #}
         #endregion
 
         #region Create Zip File on Desktop
