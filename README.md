@@ -16,4 +16,6 @@ Notes:<br>
 3- I'll run it against our SCCM HealthCheck Reporting Tool and will generate a report in word format and will reply it to your e-mail. There will be no manual intervention, so the what the solution find i'll send to you<br>
 3.1- As it is a free service, don't expect a reply "ASAP style". I'll do my best to reply to you within couple of working days, but depending on my work schedule, it may take more time. Expect at least one week for reply. If not, send me an e-mail again.<br>
 4- Once i reply to your e-mail with the report, all data will be erased. i'll not keep any of the data you've send to me.<br>
-5- This is "as is" service at the moment, If something does not work, let me know and i'll try to fix, but don't expect a "premier" support. If you want a "premier" support and a only "on-prem" execution, you can use our paid services, available at https://www.rflsystems.co.uk/software/healthcheck-toolkit/<br>
+5- This is "as is" service, If something does not work, let me know and i'll try to fix, but don't expect a "premier" support. If you want a "premier" support and a only "on-prem" execution, you can use our paid services, available at https://www.rflsystems.co.uk/software/healthcheck-toolkit/<br>
+6- This service is limited to 1 per month. If you want to run as many times as you'd like per month, you can use our paid services, available at https://www.rflsystems.co.uk/software/healthcheck-toolkit/<br>
+
