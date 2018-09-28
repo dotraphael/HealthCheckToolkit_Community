@@ -1,8 +1,8 @@
 ﻿########################################################################################
 # Name: CollectData.ps1
-# Version: 1.2
+# Version: 1.3
 # Author: Raphael Perez - raphael@perez.net.br
-# Date: 01/05/2018
+# Date: 28/09/2018
 # Comment: This script will check the health of a System Center Configuration Manager
 #          Infrastructure based on user's rights.
 #
@@ -19,7 +19,9 @@
 #
 # Updates:
 #        1.0 - Raphael Perez - 03/08/2018 - Initial Script
-#        1.2 - Raphael Perez - 10/09/2018 - Initial Script
+#        1.1 - Raphael Perez - 28/08/2018
+#        1.2 - Raphael Perez - 10/09/2018
+#        1.3 - Raphael Perez - 28/09/2018
 #
 # Usage:
 #		 Option 1: powershell.exe -ExecutionPolicy Bypass .\SCCM.ps1 [Parameters]
@@ -257,11 +259,12 @@ function Set-CEHealthCheckRulesOverride {
         [Parameter(Position=1, Mandatory=$true)][int]$RuleID,
         [Parameter(Position=2, Mandatory=$true)][string]$RuleName,
         [Parameter(Position=3, Mandatory=$true)][int]$DefaultCategory,
-        [Parameter(Position=4, Mandatory=$true)][string]$DefaultClassification
+        [Parameter(Position=4, Mandatory=$true)][string]$Criticality,
+        [Parameter(Position=5, Mandatory=$true)][string]$DefaultClassification
     )
     $ValueDetails = $Script:HealthCheckRulesOverrideData.Rules.Rule | Where-Object {$_.ID -eq $RuleID}
     $VariableName = "RuleID$($RuleID)"
-    $objRule = new-object HealthCheckClasses.HealthCheck.CEClassRules($RuleID, $RuleName, $DefaultCategory, $DefaultClassification, $true)
+    $objRule = new-object HealthCheckClasses.HealthCheck.CEClassRules($RuleID, $RuleName, $DefaultCategory, $DefaultClassification, $Criticality, $true)
     $ShowMsg = $false
 
     if ($ValueDetails -ne $null) {
@@ -270,6 +273,7 @@ function Set-CEHealthCheckRulesOverride {
         }
         $objRule.Category = $ValueDetails.Category
         $objRule.Classification = $ValueDetails.Classification
+        $objRule.Criticality = $ValueDetails.Criticality
         $objRule.Enabled = [Convert]::ToBoolean($ValueDetails.Enabled)
         $ShowMsg = $true
     }
@@ -293,6 +297,7 @@ function Write-CEHealthCheckData {
     $newRow.Description = "$($Description)"
     $newRow.Comment = " $($Comment) "
     $newRow.RuleID = $RuleIDInfo.ID
+    $newRow.Criticality = $RuleIDInfo.Criticality
     $Script:HealthCheckData.Rows.Add($newRow)
     Write-CELog -logtype "$($newRow.Classification)" -logmessage "$($newRow.Category) - $Description"
 }
@@ -379,6 +384,7 @@ try {
 
     #region Set Default Variables
     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1001)
+    Set-CEHealthCheckDefaultValue -ValueName 'ADPageSize' -ValueNonExist 2000
     Set-CEHealthCheckDefaultValue -ValueName 'ExcludeServers' -ValueNonExist @()
     Set-CEHealthCheckDefaultValue -ValueName 'ProcessListSamplesMinutes' -ValueNonExist 1
     Set-CEHealthCheckDefaultValue -ValueName 'ProcessListSamplesWaitSeconds' -ValueNonExist 10
@@ -519,358 +525,437 @@ try {
     Set-CEHealthCheckDefaultValue -ValueName 'MaxPingDropPercentWarning' -ValueNonExist 5
     Set-CEHealthCheckDefaultValue -ValueName 'MaxPingDropPercentError' -ValueNonExist 10
     Set-CEHealthCheckDefaultValue -ValueName 'PingDelay' -ValueNonExist 2
-    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingCount' -ValueNonExist 10
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxPingCount' -ValueNonExist 30
+    Set-CEHealthCheckDefaultValue -ValueName 'MinScheduleInMinutes' -ValueNonExist 240
+    Set-CEHealthCheckDefaultValue -ValueName 'FreeDiskSpacePercentageWarning' -ValueNonExist 20
+    Set-CEHealthCheckDefaultValue -ValueName 'FreeDiskSpacePercentageError' -ValueNonExist 10
+    Set-CEHealthCheckDefaultValue -ValueName 'MinimumSiteServerRAMGB' -ValueNonExist 16
+    Set-CEHealthCheckDefaultValue -ValueName 'MinimumSiteServerCPUCore' -ValueNonExist 8
+    Set-CEHealthCheckDefaultValue -ValueName 'MinimumRemoteServerRAMGB' -ValueNonExist 8
+    Set-CEHealthCheckDefaultValue -ValueName 'MinimumRemoteServerCPUCore' -ValueNonExist 4
+    Set-CEHealthCheckDefaultValue -ValueName 'DeploymentErrorsWarning' -ValueNonExist 5
+    Set-CEHealthCheckDefaultValue -ValueName 'DeploymentErrorsError' -ValueNonExist 10
     #endregion
 
     #region set Override Rules
-    Set-CEHealthCheckRulesOverride -RuleID 9999 -RuleName 'Unknown' -DefaultCategory 0 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 1 -RuleName 'Server Down' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 2 -RuleName 'Minimum SCCM Build Version' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 3 -RuleName 'Latest SCCM Build Version' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 4 -RuleName 'Enforce Enhanced Hash Algorithm' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 5 -RuleName 'Enforce Message Signing' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 6 -RuleName 'Use Encryption' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 7 -RuleName 'Site Alert' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 8 -RuleName 'Database Free Space Warning (Higher)' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 9 -RuleName 'Database Free Space Warning (Lower)' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 10 -RuleName 'Database Free Space Error (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 11 -RuleName 'Database Free Space Error (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 12 -RuleName 'List Roles Installed' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 13 -RuleName 'List Roles Not Installed' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 14 -RuleName 'Test MP (MPList) URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 15 -RuleName 'Test MP (MPCert) URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 16 -RuleName 'Test MP (SiteSign Cert) URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 17 -RuleName 'MP Count' -DefaultCategory 6 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 18 -RuleName 'Application Catalog Web Service URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 19 -RuleName 'Application Catalog Web Site URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 20 -RuleName 'SUP (SimpleAuth) URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 21 -RuleName 'SUP (Registration) URL' -DefaultCategory 6 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 22 -RuleName 'Application Catalog Integration' -DefaultCategory 7 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 23 -RuleName 'SQL Server Reporting Services (Reports) URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 24 -RuleName 'SQL Server Reporting Services (ReportServer) URL' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 25 -RuleName 'Minimum SQL Server' -DefaultCategory 3 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 26 -RuleName 'Minimum SQL Memory' -DefaultCategory 3 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 27 -RuleName 'Maximum SQL Memory' -DefaultCategory 3 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 28 -RuleName 'SQL Compatibility Level' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 29 -RuleName 'SQL Server Installation Folder' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 30 -RuleName 'SQL Server Data Folder' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 31 -RuleName 'SQL Server Log Folder' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 32 -RuleName 'SQL Server Data Folder (Install)' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 33 -RuleName 'SQL Server Log Folder (Install)' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 34 -RuleName 'SQL Server Data Folder (Log)' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 35 -RuleName 'Account Usage' -DefaultCategory 8 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 36 -RuleName 'Account Usage (Software Distribution)' -DefaultCategory 8 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 37 -RuleName 'Account Usage (Admin)' -DefaultCategory 8 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 38 -RuleName 'Client Status (Clean Up) (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 39 -RuleName 'Client Status (Clean Up) (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 40 -RuleName 'Client Status (Heartbeat) (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 41 -RuleName 'Client Status (Heartbeat) (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 42 -RuleName 'Client Status (Hardware) (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 43 -RuleName 'Client Status (Hardware) (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 44 -RuleName 'Client Status (Client Policy) (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 45 -RuleName 'Client Status (Client Policy) (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 46 -RuleName 'Client Status (Status Message) (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 47 -RuleName 'Client Status (Status Message) (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 48 -RuleName 'Client Status (Software) (Higher)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 49 -RuleName 'Client Status (Software) (Lower)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 50 -RuleName 'Enabled Heartbeat Discovery' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 51 -RuleName 'Heartbeat Discovery Schedule (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 52 -RuleName 'Forest Discovery' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 53 -RuleName 'Forest Discovery Schedule (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 54 -RuleName 'Forest Discovery AD Boundary' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 55 -RuleName 'Forest Discovery Subnet Boundary' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 56 -RuleName 'Network Discovery' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 57 -RuleName 'Security Group Discovery' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 58 -RuleName 'Security Group Discovery Schedule (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 59 -RuleName 'Security Group Discovery Schedule (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 60 -RuleName 'Security Group Discovery Expired Logon' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 61 -RuleName 'Security Group Discovery Expired Logon Days (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 62 -RuleName 'Security Group Discovery Expired Logon Days (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 63 -RuleName 'Security Group Discovery Expired Password' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 64 -RuleName 'Security Group Discovery Expired Password Days (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 65 -RuleName 'Security Group Discovery Expired Password Days (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 66 -RuleName 'Security Group Discovery LDAP Count' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 67 -RuleName 'Security Group Discovery LDAP Root' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 68 -RuleName 'System Discovery' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 69 -RuleName 'System Discovery Schedule (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 70 -RuleName 'System Discovery Schedule (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 71 -RuleName 'System Discovery Expired Logon' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 72 -RuleName 'System Discovery Expired Logon Days (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 73 -RuleName 'System Discovery Expired Logon Days (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 74 -RuleName 'System Discovery Expired Password' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 75 -RuleName 'System Discovery Expired Password Days (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 76 -RuleName 'System Discovery Expired Password Days (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 77 -RuleName 'System Discovery LDAP Count' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 78 -RuleName 'System Discovery LDAP Root' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 79 -RuleName 'User Discovery' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 80 -RuleName 'User Discovery Schedule (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 81 -RuleName 'User Discovery Schedule (Lower)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 82 -RuleName 'User Discovery LDAP Count' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 83 -RuleName 'User Discovery LDAP Root' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 84 -RuleName 'DP Group Has Members' -DefaultCategory 12 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 85 -RuleName 'DP Group Content In Sync' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 86 -RuleName 'Collection Membership Evaluation Schedule (Higher)' -DefaultCategory 11 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 87 -RuleName 'Collection Membership Evaluation Schedule (Lower)' -DefaultCategory 11 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 88 -RuleName 'Device Collection Membership Rules Count' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 89 -RuleName 'Device Collection Membership Count' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 90 -RuleName 'Device Collection Limited by' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 91 -RuleName 'Device Collection Incremental Warning' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 92 -RuleName 'Device Collection Incremental Error' -DefaultCategory 11 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 93 -RuleName 'Device Collection Direct Membership Rule Count' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 94 -RuleName 'User Collection Membership Rules Count' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 95 -RuleName 'User Collection Membership Count' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 96 -RuleName 'User Collection Limited By' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 97 -RuleName 'User Collection Incremental Warning' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 98 -RuleName 'User Collection Incremental Error' -DefaultCategory 11 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 99 -RuleName 'User Collection Direct Membership Rule Count' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 100 -RuleName 'Deployment Empty Collection' -DefaultCategory 21 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 101 -RuleName 'Deployment to Root Collection' -DefaultCategory 21 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 102 -RuleName 'Active Alerts' -DefaultCategory 18 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 103 -RuleName 'Alert Subscription Count' -DefaultCategory 18 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 104 -RuleName 'Alert Subscription' -DefaultCategory 18 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 105 -RuleName 'Device List - Non Client' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 106 -RuleName 'Device List - Active Status' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 107 -RuleName 'Device List - Blocked' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 108 -RuleName 'Device List - Approved' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 109 -RuleName 'Device List - Obsolete' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 110 -RuleName 'Device List - Windows XP' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 111 -RuleName 'Device List - WIndows XP x64' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 112 -RuleName 'Device List - WIndows Vista' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 113 -RuleName 'Device List - Windows 7' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 114 -RuleName 'Device List - Windows 2003' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 115 -RuleName 'Device List - Windows 2008' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 116 -RuleName 'Device List - Windows 2008 R2' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 117 -RuleName 'Device List - Windows Server 2012' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 118 -RuleName 'Client Version Lower Site Server' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 119 -RuleName 'Endpoint Protection - Unmanaged' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 120 -RuleName 'Endpoint Protection - To Be Installed' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 121 -RuleName 'Endpoint Protection - Install with Error' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 122 -RuleName 'Endpoint Protection - Pending Reboot' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 123 -RuleName 'Endpoint Protection - Infection Status Error' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 124 -RuleName 'Endpoint Protection - Infection Status Pending' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 125 -RuleName 'Endpoint Protection - Infection Status Unknown' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 126 -RuleName 'Endpoint Protection - Policy Status Error' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 127 -RuleName 'Endpoint Protection - Product Status Service Not Started' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 128 -RuleName 'Endpoint Protection - Product Status Pending Full Scan' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 129 -RuleName 'Endpoint Protection - Product Status Pending reboot' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 130 -RuleName 'Endpoint Protection - Product Status Pending manual steps' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 131 -RuleName 'Endpoint Protection - Product Status AV Signature Out to Date' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 132 -RuleName 'Endpoint Protection - Product Status AS Signature Out to Date' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 133 -RuleName 'Endpoint Protection - Product Status Missing quick scan' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 134 -RuleName 'Endpoint Protection - Product Status Missing full scan' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 135 -RuleName 'Endpoint Protection - Product Status Cleaning in progress' -DefaultCategory 24 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 136 -RuleName 'Endpoint Protection - Product Status non-genuine windows' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 137 -RuleName 'Endpoint Protection - Product Status expired' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 138 -RuleName 'Endpoint Protection - Product Status offline scan required' -DefaultCategory 24 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 139 -RuleName 'Client Settings - Deployments' -DefaultCategory 9 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 140 -RuleName 'Client Settings - Use New Software Center' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 141 -RuleName 'Client Settings - Client Cache Size' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 142 -RuleName 'Client Settings - Policy Request Schedule (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 143 -RuleName 'Client Settings - Policy Request Schedule (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 144 -RuleName 'Client Settings - User Policy' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 145 -RuleName 'Client Settings - Reboot Logoff Notification Countdown Duration (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 146 -RuleName 'Client Settings - Reboot Logoff Notification Countdown Duration (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 147 -RuleName 'Client Settings - Reboot Logoff Notification Final Countdown (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 148 -RuleName 'Client Settings - Reboot Logoff Notification Final Countdown (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 149 -RuleName 'Client Settings - Hardware Inventory' -DefaultCategory 9 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 150 -RuleName 'Client Settings - Hardware Inventory Schedule (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 151 -RuleName 'Client Settings - Hardware Inventory Schedule (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 152 -RuleName 'Client Settings - Software Inventory' -DefaultCategory 9 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 153 -RuleName 'Client Settings - Software Inventory Schedule (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 154 -RuleName 'Client Settings - Software Inventory Schedule (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 155 -RuleName 'Client Settings - Software Reevaluation (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 156 -RuleName 'Client Settings - Software Reevaluation (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 157 -RuleName 'Client Settings - Software Updates' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 158 -RuleName 'Client Settings - Software Update Scan Schedule (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 159 -RuleName 'Client Settings - Software Update Scan Schedule (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 160 -RuleName 'Client Settings - Software Update Reevaluation Schedule (Higher)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 161 -RuleName 'Client Settings - Software Update Reevaluation Schedule (Lower)' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 162 -RuleName 'Client Settings - Software Update Reevaluation and Scan Schedule' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 163 -RuleName 'Client Settings - Endpoint Protection' -DefaultCategory 9 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 164 -RuleName 'Maintenance Task - Backup SMS Site Server' -DefaultCategory 4 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 165 -RuleName 'Maintenance Task - Rebuild Indexes' -DefaultCategory 4 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 166 -RuleName 'Boundary Group - Site System Count' -DefaultCategory 13 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 167 -RuleName 'Boundary Group - Boundary Count' -DefaultCategory 13 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 168 -RuleName 'Boundary Group - Fallback DP Relationship (Higher)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 169 -RuleName 'Boundary Group - Fallback DP Relationship (Lower)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 170 -RuleName 'Boundary Group - Fallback MP Relationship (Higher)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 171 -RuleName 'Boundary Group - Fallback MP Relationship (Lower)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 172 -RuleName 'Boundary Group - Fallback SMP Relationship (Higher)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 173 -RuleName 'Boundary Group - Fallback SMP Relationship (Lower)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 174 -RuleName 'Boundary Group - Fallback SUP Relationship (Higher)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 175 -RuleName 'Boundary Group - Fallback SUP Relationship (Lower)' -DefaultCategory 13 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 176 -RuleName 'Endpoint Protection - Malware Detected' -DefaultCategory 14 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 177 -RuleName 'Endpoint Protection - Antimalware Policy Deployment Count' -DefaultCategory 14 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 178 -RuleName 'Endpoint Protection - Antimalware Policy Limit CPU' -DefaultCategory 14 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 179 -RuleName 'Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Higher)' -DefaultCategory 14 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 180 -RuleName 'Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Lower)' -DefaultCategory 14 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 181 -RuleName 'Endpoint Protection - Firewall Policy Deployment Count' -DefaultCategory 14 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 182 -RuleName 'Endpoint Protection - Firewall Policy Settings' -DefaultCategory 14 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 183 -RuleName 'Software Metering - Auto Create Rules' -DefaultCategory 15 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 184 -RuleName 'Software Metering - Disabled Rules' -DefaultCategory 15 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 185 -RuleName 'Boot Images - F8' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 186 -RuleName 'Boot Images - Default Boot Image Usage' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 187 -RuleName 'Boot Images - Boot Image Usage' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 188 -RuleName 'Boot Images - PXE Architecture Count' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 189 -RuleName 'Boot Images - Default Boot Image Binary Delta Replication' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 190 -RuleName 'Boot Images - Default Boot Image Drivers' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 191 -RuleName 'Boot Images - Binary Delta Replication' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 192 -RuleName 'Boot Images - ADK Version' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 193 -RuleName 'Software Update - Summarization (Higher)' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 194 -RuleName 'Software Update - Summarization (Lower)' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 195 -RuleName 'Software Update - Superseded' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 196 -RuleName 'Software Update - Expired' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 197 -RuleName 'Software Update - Missing Content' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 198 -RuleName 'Software Update - Content not Deployed' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 199 -RuleName 'Software Update Group - Deployments' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 200 -RuleName 'Software Update Group - Warning COunt' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 201 -RuleName 'Software Update Group - Error Count' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 202 -RuleName 'Software Update Group - Member Count' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 203 -RuleName 'Software Update Group - Expired Updates' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 204 -RuleName 'Software Update Group - Superseded Updates' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 205 -RuleName 'Software Update Group - Missing Content' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 206 -RuleName 'Software Update Group - Content not Deployed' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 207 -RuleName 'Software Update Deployment' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 208 -RuleName 'Software Update Deployment - Root Collection' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 209 -RuleName 'Software Update Deployment - State Message' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 210 -RuleName 'Software Update - ADR Deployment' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 211 -RuleName 'Software Update - ADR Last Run Error' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 212 -RuleName 'Software Update - ADR Last Run Date and Time' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 213 -RuleName 'Software Update - ADR Deployment Count' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 214 -RuleName 'Software Update - ADR Root Collection' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 215 -RuleName 'Software Update - ADR Schedule (Higher)' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 216 -RuleName 'Software Update - ADR Schedule (Lower)' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 217 -RuleName 'Software Update - ADR No Schedule' -DefaultCategory 17 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 218 -RuleName 'Software Update - ADR State Message' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 219 -RuleName 'Software Update - ADR Alert' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 220 -RuleName 'Software Update - ADR Alert Schedule (Higher)' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 221 -RuleName 'Software Update - ADR Alert Schedule (Lower)' -DefaultCategory 17 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 222 -RuleName 'Hierarchy Settings - Auto Upgrade Client' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 223 -RuleName 'Hierarchy Settings - Auto Upgrade Client Schedule (Higher)' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 224 -RuleName 'Hierarchy Settings - Auto Upgrade Client Schedule (Lower)' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 225 -RuleName 'Hierarchy Settings - Email Notification' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 226 -RuleName 'Hierarchy Settings - Email Notification Account' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 227 -RuleName 'Hierarchy Settings - Email Notification Security' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 228 -RuleName 'Active Directory Forests - Publishing Enabled' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 229 -RuleName 'Active Directory Forests - Last Discovery Error (Discovery - Access Denied)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 230 -RuleName 'Active Directory Forests - Last Discovery Error (Discovery - Failed)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 231 -RuleName 'Active Directory Forests - Last Discovery Error (Publishing - Failed)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 232 -RuleName 'Active Directory Forests - Last Discovery Error (Publishing - Unknown)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 233 -RuleName 'Active Directory Forests - Last Discovery Schedule' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 234 -RuleName 'Database Replication Status (Failed)' -DefaultCategory 19 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 235 -RuleName 'Database Replication Status (Degraded)' -DefaultCategory 19 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 236 -RuleName 'Database Replication Status (Unknown)' -DefaultCategory 19 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 237 -RuleName 'Database Replication Status - Site1 To Site2 Global Sync' -DefaultCategory 19 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 238 -RuleName 'Database Replication Status - Site2 To Site1 Global Sync' -DefaultCategory 19 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 239 -RuleName 'Database Replication Status - Enforce Enhanced Hash Algorithm' -DefaultCategory 19 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 240 -RuleName 'Database Replication Status - Link Schedule (Higher)' -DefaultCategory 19 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 241 -RuleName 'Database Replication Status - Link Schedule (Lower)' -DefaultCategory 19 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 242 -RuleName 'Status Summarization - Application Deployment 1st Interval (Higher)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 243 -RuleName 'Status Summarization - Application Deployment 1st Interval (Lower)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 244 -RuleName 'Status Summarization - Application Deployment 2nd Interval (Higher)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 245 -RuleName 'Status Summarization - Application Deployment 2nd Interval (Lower)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 246 -RuleName 'Status Summarization - Application Deployment 3rd Interval (Higher)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 247 -RuleName 'Status Summarization - Application Deployment 3rd Interval (Lower)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 248 -RuleName 'Status Summarization - Application Statistics 1st Interval (Higher)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 249 -RuleName 'Status Summarization - Application Statistics 1st Interval (Lower)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 250 -RuleName 'Status Summarization - Application Statistics 2nd Interval (Higher)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 251 -RuleName 'Status Summarization - Application Statistics 2nd Interval (Lower)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 252 -RuleName 'Status Summarization - Application Statistics 3rd Interval (Higher)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 253 -RuleName 'Status Summarization - Application Statistics 3rd Interval (Lower)' -DefaultCategory 5 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 254 -RuleName 'Account - Admin (RBAC)' -DefaultCategory 8 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 255 -RuleName 'Account  - Service Account' -DefaultCategory 8 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 256 -RuleName 'Account - Full Admin Warning' -DefaultCategory 8 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 257 -RuleName 'Account - Full Admin Error' -DefaultCategory 8 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 258 -RuleName 'Account - Group Membership' -DefaultCategory 8 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 259 -RuleName 'CPU Usage - Error' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 260 -RuleName 'CPU Usage - Warning' -DefaultCategory 1 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 261 -RuleName 'Short file name creation' -DefaultCategory 1 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 262 -RuleName 'SCCM Installation on Root Drive' -DefaultCategory 1 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 263 -RuleName 'Distribution Point - Drive Free Space Error' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 264 -RuleName 'Distribution Point - Drive Free Space Warning' -DefaultCategory 12 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 265 -RuleName 'Distribution Point - Group Membership Count' -DefaultCategory 12 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 266 -RuleName 'Distribution Point - Boundary Group Count' -DefaultCategory 12 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 267 -RuleName 'Distribution Point - Multicast' -DefaultCategory 12 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 268 -RuleName 'Distribution Point - PXE Password' -DefaultCategory 12 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 269 -RuleName 'Distribution Point - Responding to PXE' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 270 -RuleName 'Distribution Point - PXE Unknown Machines' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 271 -RuleName 'Distribution Point - Content Evaluation' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 272 -RuleName 'Distribution Point - Content Evaluation Schedule (Higher)' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 273 -RuleName 'Distribution Point - Content Evaluation Schedule (Lower)' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 274 -RuleName 'Distribution Point - Content Evaluation Priority' -DefaultCategory 12 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 275 -RuleName 'Distribution Status - Default Boot Image' -DefaultCategory 20 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 276 -RuleName 'Distribution Status - Targeted Count' -DefaultCategory 20 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 277 -RuleName 'Distribution Status - Errors' -DefaultCategory 20 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 278 -RuleName 'Application - Hidden' -DefaultCategory 22 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 279 -RuleName 'Application - Devices with Failure (Error)' -DefaultCategory 22 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 280 -RuleName 'Application - Devices with Failure (Warning)' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 281 -RuleName 'Application - Users with Failure (Error)' -DefaultCategory 22 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 282 -RuleName 'Application - Users with Failure (Warning)' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 283 -RuleName 'Application - not used' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 284 -RuleName 'Application - used but not deployed' -DefaultCategory 22 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 285 -RuleName 'NO_SMS_ON_DRIVE.SMS on SQL Drive' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 286 -RuleName 'Application - DT Folder does not exist' -DefaultCategory 22 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 287 -RuleName 'Application - DT allow User Interaction' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 288 -RuleName 'Distribution Point Content - Not on DP Group' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 289 -RuleName 'Distribution Point Content - Not on All DPs' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 290 -RuleName 'Packages - Source Path does not exist' -DefaultCategory 23 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 291 -RuleName 'Packages - Source Path Local' -DefaultCategory 23 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 292 -RuleName 'Packages - Deployment Count not used by TS' -DefaultCategory 23 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 293 -RuleName 'Packages - Deployment Count used by TS' -DefaultCategory 23 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 294 -RuleName 'Operating System - Source File Exist' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 295 -RuleName 'Operating System - Used by TS' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 296 -RuleName 'Operating System Installer - Source Exist' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 297 -RuleName 'Operating System Installer - Used by TS' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 298 -RuleName 'Task Sequence - Enabled' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 299 -RuleName 'Task Sequence - Deployment Count' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 300 -RuleName 'Task Sequence - Reboot to WinPE' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 301 -RuleName 'Task Sequence - Boot Image' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 302 -RuleName 'Task Sequence - Content Distributed' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 303 -RuleName 'Task Sequence - Content Distributed with Error' -DefaultCategory 16 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 304 -RuleName 'Inbox - Count (Error)' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 305 -RuleName 'Inbox- Count (Warning)' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 306 -RuleName 'Driver Package' -DefaultCategory 16 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 307 -RuleName 'Component Status - Summarization' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 308 -RuleName 'Component Message' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 309 -RuleName 'Heartbeat Discovery Schedule (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 310 -RuleName 'Forest Discovery Schedule (Higher)' -DefaultCategory 10 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 311 -RuleName 'SQL Server 2016 SP1' -DefaultCategory 3 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 312 -RuleName 'WSUS Windows Internal Database' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 313 -RuleName 'NO_SMS_ON_DRIVE.SMS on SystemDrive' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 314 -RuleName 'Multiple Software Update Point (WSUS) using same SQL Server' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 315 -RuleName 'Pending Approval Request' -DefaultCategory 22 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 316 -RuleName 'Hierarchy Settings - Auto Upgrade Client Excluded specified clients from update' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 317 -RuleName 'Hierarchy Settings - Auto Upgrade Client Exclude Servers' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 318 -RuleName 'Hierarchy Settings - Auto Upgrade Client Automatically distribute client installation package' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 319 -RuleName 'Software Update - Windows 10 Express Update' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 320 -RuleName 'Software Update - WSUS Cleanup' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 321 -RuleName 'Software Update - Synchronisation Alert' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 322 -RuleName 'Site Hierarchy - Conflicting Client Record' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 323 -RuleName 'Site Hierarchy - Client Approval Method - Manual' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 324 -RuleName 'Site Hierarchy - Client Approval Method - Automatically all' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 325 -RuleName 'Site Hierarchy - Script authors require approver' -DefaultCategory 2 -DefaultClassification 'WARNING'    
-    Set-CEHealthCheckRulesOverride -RuleID 326 -RuleName 'Site Hierarchy - Clients prefer to use management point specified in boundary group' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 327 -RuleName 'ADK Version' -DefaultCategory 2 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 328 -RuleName 'MDT Version' -DefaultCategory 2 -DefaultClassification 'WARNING' 
-    Set-CEHealthCheckRulesOverride -RuleID 329 -RuleName 'SCCM Services on Site Server' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 330 -RuleName 'Collection (Total) Incremental Warning' -DefaultCategory 11 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 331 -RuleName 'Collection (Total) Incremental Error' -DefaultCategory 11 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 332 -RuleName 'Distribution Status - InProgress Warning' -DefaultCategory 20 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 333 -RuleName 'Distribution Status - InProgress Error' -DefaultCategory 20 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 334 -RuleName 'Ping Response Time Warning' -DefaultCategory 1 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 335 -RuleName 'Ping Response Time Error' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 336 -RuleName 'Ping Drop Percentace Warning' -DefaultCategory 1 -DefaultClassification 'WARNING'
-    Set-CEHealthCheckRulesOverride -RuleID 337 -RuleName 'Ping Drop Percentace Error' -DefaultCategory 1 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 338 -RuleName 'Application - Number of DT' -DefaultCategory 22 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 339 -RuleName 'Intune Subscription' -DefaultCategory 2 -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 340 -RuleName 'IP Subnet Boundary' -DefaultCategory 2 -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 1 -RuleName 'Server Down' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 2 -RuleName 'Minimum SCCM Build Version' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 3 -RuleName 'Latest SCCM Build Version' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 4 -RuleName 'Enforce Enhanced Hash Algorithm' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 5 -RuleName 'Enforce Message Signing' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 6 -RuleName 'Use Encryption' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 7 -RuleName 'Site Alert' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 8 -RuleName 'Database Free Space Warning (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 9 -RuleName 'Database Free Space Warning (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 10 -RuleName 'Database Free Space Error (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 11 -RuleName 'Database Free Space Error (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 12 -RuleName 'List Roles Installed' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 13 -RuleName 'List Roles Not Installed' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 14 -RuleName 'Test MP (MPList) URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 15 -RuleName 'Test MP (MPCert) URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 16 -RuleName 'Test MP (SiteSign Cert) URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 17 -RuleName 'MP Count' -DefaultCategory 6 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 18 -RuleName 'Application Catalog Web Service URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 19 -RuleName 'Application Catalog Web Site URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 20 -RuleName 'SUP (SimpleAuth) URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 21 -RuleName 'SUP (Registration) URL' -DefaultCategory 6 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 22 -RuleName 'Application Catalog Integration' -DefaultCategory 7 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 23 -RuleName 'SQL Server Reporting Services (Reports) URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 24 -RuleName 'SQL Server Reporting Services (ReportServer) URL' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 25 -RuleName 'Minimum SQL Server' -DefaultCategory 3 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 26 -RuleName 'Minimum SQL Memory' -DefaultCategory 3 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 27 -RuleName 'Maximum SQL Memory' -DefaultCategory 3 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 28 -RuleName 'SQL Compatibility Level' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 29 -RuleName 'SQL Server Installation Folder' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 30 -RuleName 'SQL Server Data Folder' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 31 -RuleName 'SQL Server Log Folder' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 32 -RuleName 'SQL Server Data Folder (Install)' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 33 -RuleName 'SQL Server Log Folder (Install)' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 34 -RuleName 'SQL Server Data Folder (Log)' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 35 -RuleName 'Account Usage' -DefaultCategory 8 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 36 -RuleName 'Account Usage (Software Distribution)' -DefaultCategory 8 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 37 -RuleName 'Account Usage (Admin)' -DefaultCategory 8 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 38 -RuleName 'Client Status (Clean Up) (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 39 -RuleName 'Client Status (Clean Up) (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 40 -RuleName 'Client Status (Heartbeat) (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 41 -RuleName 'Client Status (Heartbeat) (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 42 -RuleName 'Client Status (Hardware) (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 43 -RuleName 'Client Status (Hardware) (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 44 -RuleName 'Client Status (Client Policy) (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 45 -RuleName 'Client Status (Client Policy) (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 46 -RuleName 'Client Status (Status Message) (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 47 -RuleName 'Client Status (Status Message) (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 48 -RuleName 'Client Status (Software) (Higher)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 49 -RuleName 'Client Status (Software) (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 50 -RuleName 'Enabled Heartbeat Discovery' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 51 -RuleName 'Heartbeat Discovery Schedule (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 52 -RuleName 'Forest Discovery' -DefaultCategory 10 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 53 -RuleName 'Forest Discovery Schedule (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 54 -RuleName 'Forest Discovery AD Boundary' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 55 -RuleName 'Forest Discovery Subnet Boundary' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 56 -RuleName 'Network Discovery' -DefaultCategory 10 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 57 -RuleName 'Security Group Discovery' -DefaultCategory 10 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 58 -RuleName 'Security Group Discovery Schedule (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 59 -RuleName 'Security Group Discovery Schedule (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 60 -RuleName 'Security Group Discovery Expired Logon' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 61 -RuleName 'Security Group Discovery Expired Logon Days (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 62 -RuleName 'Security Group Discovery Expired Logon Days (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 63 -RuleName 'Security Group Discovery Expired Password' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 64 -RuleName 'Security Group Discovery Expired Password Days (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 65 -RuleName 'Security Group Discovery Expired Password Days (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 66 -RuleName 'Security Group Discovery LDAP Count' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 67 -RuleName 'Security Group Discovery LDAP Root' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 68 -RuleName 'System Discovery' -DefaultCategory 10 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 69 -RuleName 'System Discovery Schedule (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 70 -RuleName 'System Discovery Schedule (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 71 -RuleName 'System Discovery Expired Logon' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 72 -RuleName 'System Discovery Expired Logon Days (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 73 -RuleName 'System Discovery Expired Logon Days (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 74 -RuleName 'System Discovery Expired Password' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 75 -RuleName 'System Discovery Expired Password Days (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 76 -RuleName 'System Discovery Expired Password Days (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 77 -RuleName 'System Discovery LDAP Count' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 78 -RuleName 'System Discovery LDAP Root' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 79 -RuleName 'User Discovery' -DefaultCategory 10 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 80 -RuleName 'User Discovery Schedule (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 81 -RuleName 'User Discovery Schedule (Lower)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 82 -RuleName 'User Discovery LDAP Count' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 83 -RuleName 'User Discovery LDAP Root' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 84 -RuleName 'DP Group Has Members' -DefaultCategory 12 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 85 -RuleName 'DP Group Content In Sync' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 86 -RuleName 'Collection Membership Evaluation Schedule (Higher)' -DefaultCategory 11 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 87 -RuleName 'Collection Membership Evaluation Schedule (Lower)' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 88 -RuleName 'Device Collection Membership Rules Count' -DefaultCategory 11 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 89 -RuleName 'Device Collection Membership Count' -DefaultCategory 11 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 90 -RuleName 'Device Collection Limited by' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 91 -RuleName 'Device Collection Incremental Warning' -DefaultCategory 11 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 92 -RuleName 'Device Collection Incremental Error' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 93 -RuleName 'Device Collection Direct Membership Rule Count' -DefaultCategory 11 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 94 -RuleName 'User Collection Membership Rules Count' -DefaultCategory 11 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 95 -RuleName 'User Collection Membership Count' -DefaultCategory 11 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 96 -RuleName 'User Collection Limited By' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 97 -RuleName 'User Collection Incremental Warning' -DefaultCategory 11 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 98 -RuleName 'User Collection Incremental Error' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 99 -RuleName 'User Collection Direct Membership Rule Count' -DefaultCategory 11 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 100 -RuleName 'Deployment Empty Collection' -DefaultCategory 21 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 101 -RuleName 'Deployment to Root Collection' -DefaultCategory 21 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 102 -RuleName 'Active Alerts' -DefaultCategory 18 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 103 -RuleName 'Alert Subscription Count' -DefaultCategory 18 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 104 -RuleName 'Alert Subscription' -DefaultCategory 18 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 105 -RuleName 'Device List - Non Client' -DefaultCategory 24 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 106 -RuleName 'Device List - Active Status' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 107 -RuleName 'Device List - Blocked' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 108 -RuleName 'Device List - Approved' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 109 -RuleName 'Device List - Obsolete' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 110 -RuleName 'Device List - Windows XP' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 111 -RuleName 'Device List - WIndows XP x64' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 112 -RuleName 'Device List - WIndows Vista' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 113 -RuleName 'Device List - Windows 7' -DefaultCategory 24 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 114 -RuleName 'Device List - Windows 2003' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 115 -RuleName 'Device List - Windows 2008' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 116 -RuleName 'Device List - Windows 2008 R2' -DefaultCategory 24 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 117 -RuleName 'Device List - Windows Server 2012' -DefaultCategory 24 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 118 -RuleName 'Client Version Lower Site Server' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 119 -RuleName 'Endpoint Protection - Unmanaged' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 120 -RuleName 'Endpoint Protection - To Be Installed' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 121 -RuleName 'Endpoint Protection - Install with Error' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 122 -RuleName 'Endpoint Protection - Pending Reboot' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 123 -RuleName 'Endpoint Protection - Infection Status Error' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 124 -RuleName 'Endpoint Protection - Infection Status Pending' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 125 -RuleName 'Endpoint Protection - Infection Status Unknown' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 126 -RuleName 'Endpoint Protection - Policy Status Error' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 127 -RuleName 'Endpoint Protection - Product Status Service Not Started' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 128 -RuleName 'Endpoint Protection - Product Status Pending Full Scan' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 129 -RuleName 'Endpoint Protection - Product Status Pending reboot' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 130 -RuleName 'Endpoint Protection - Product Status Pending manual steps' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 131 -RuleName 'Endpoint Protection - Product Status AV Signature Out to Date' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 132 -RuleName 'Endpoint Protection - Product Status AS Signature Out to Date' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 133 -RuleName 'Endpoint Protection - Product Status Missing quick scan' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 134 -RuleName 'Endpoint Protection - Product Status Missing full scan' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 135 -RuleName 'Endpoint Protection - Product Status Cleaning in progress' -DefaultCategory 24 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 136 -RuleName 'Endpoint Protection - Product Status non-genuine windows' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 137 -RuleName 'Endpoint Protection - Product Status expired' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 138 -RuleName 'Endpoint Protection - Product Status offline scan required' -DefaultCategory 24 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 139 -RuleName 'Client Settings - Deployments' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 140 -RuleName 'Client Settings - Use New Software Center' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 141 -RuleName 'Client Settings - Client Cache Size' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 142 -RuleName 'Client Settings - Policy Request Schedule (Higher)' -DefaultCategory 9 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 143 -RuleName 'Client Settings - Policy Request Schedule (Lower)' -DefaultCategory 9 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 144 -RuleName 'Client Settings - User Policy' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 145 -RuleName 'Client Settings - Reboot Logoff Notification Countdown Duration (Higher)' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 146 -RuleName 'Client Settings - Reboot Logoff Notification Countdown Duration (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 147 -RuleName 'Client Settings - Reboot Logoff Notification Final Countdown (Higher)' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 148 -RuleName 'Client Settings - Reboot Logoff Notification Final Countdown (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 149 -RuleName 'Client Settings - Hardware Inventory' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 150 -RuleName 'Client Settings - Hardware Inventory Schedule (Higher)' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 151 -RuleName 'Client Settings - Hardware Inventory Schedule (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 152 -RuleName 'Client Settings - Software Inventory' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 153 -RuleName 'Client Settings - Software Inventory Schedule (Higher)' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 154 -RuleName 'Client Settings - Software Inventory Schedule (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 155 -RuleName 'Client Settings - Software Reevaluation (Higher)' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 156 -RuleName 'Client Settings - Software Reevaluation (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 157 -RuleName 'Client Settings - Software Updates' -DefaultCategory 9 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 158 -RuleName 'Client Settings - Software Update Scan Schedule (Higher)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 159 -RuleName 'Client Settings - Software Update Scan Schedule (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 160 -RuleName 'Client Settings - Software Update Reevaluation Schedule (Higher)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 161 -RuleName 'Client Settings - Software Update Reevaluation Schedule (Lower)' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 162 -RuleName 'Client Settings - Software Update Reevaluation and Scan Schedule' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 163 -RuleName 'Client Settings - Endpoint Protection' -DefaultCategory 9 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 164 -RuleName 'Maintenance Task - Backup SMS Site Server' -DefaultCategory 4 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 165 -RuleName 'Maintenance Task - Rebuild Indexes' -DefaultCategory 4 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 166 -RuleName 'Boundary Group - Site System Count' -DefaultCategory 13 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 167 -RuleName 'Boundary Group - Boundary Count' -DefaultCategory 13 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 168 -RuleName 'Boundary Group - Fallback DP Relationship (Higher)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 169 -RuleName 'Boundary Group - Fallback DP Relationship (Lower)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 170 -RuleName 'Boundary Group - Fallback MP Relationship (Higher)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 171 -RuleName 'Boundary Group - Fallback MP Relationship (Lower)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 172 -RuleName 'Boundary Group - Fallback SMP Relationship (Higher)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 173 -RuleName 'Boundary Group - Fallback SMP Relationship (Lower)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 174 -RuleName 'Boundary Group - Fallback SUP Relationship (Higher)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 175 -RuleName 'Boundary Group - Fallback SUP Relationship (Lower)' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 176 -RuleName 'Endpoint Protection - Malware Detected' -DefaultCategory 14 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 177 -RuleName 'Endpoint Protection - Antimalware Policy Deployment Count' -DefaultCategory 14 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 178 -RuleName 'Endpoint Protection - Antimalware Policy Limit CPU' -DefaultCategory 14 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 179 -RuleName 'Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Higher)' -DefaultCategory 14 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 180 -RuleName 'Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Lower)' -DefaultCategory 14 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 181 -RuleName 'Endpoint Protection - Firewall Policy Deployment Count' -DefaultCategory 14 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 182 -RuleName 'Endpoint Protection - Firewall Policy Settings' -DefaultCategory 14 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 183 -RuleName 'Software Metering - Auto Create Rules' -DefaultCategory 15 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 184 -RuleName 'Software Metering - Disabled Rules' -DefaultCategory 15 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 185 -RuleName 'Boot Images - F8' -DefaultCategory 16 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 186 -RuleName 'Boot Images - Default Boot Image Usage' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 187 -RuleName 'Boot Images - Boot Image Usage' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 188 -RuleName 'Boot Images - PXE Architecture Count' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 189 -RuleName 'Boot Images - Default Boot Image Binary Delta Replication' -DefaultCategory 16 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 190 -RuleName 'Boot Images - Default Boot Image Drivers' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 191 -RuleName 'Boot Images - Binary Delta Replication' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 192 -RuleName 'Boot Images - ADK Version' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 193 -RuleName 'Software Update - Summarization (Higher)' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 194 -RuleName 'Software Update - Summarization (Lower)' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 195 -RuleName 'Software Update - Superseded' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 196 -RuleName 'Software Update - Expired' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 197 -RuleName 'Software Update - Missing Content' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 198 -RuleName 'Software Update - Content not Deployed' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 199 -RuleName 'Software Update Group - Deployments' -DefaultCategory 17 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 200 -RuleName 'Software Update Group - Warning Count' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 201 -RuleName 'Software Update Group - Error Count' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 202 -RuleName 'Software Update Group - Member Count' -DefaultCategory 17 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 203 -RuleName 'Software Update Group - Expired Updates' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 204 -RuleName 'Software Update Group - Superseded Updates' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 205 -RuleName 'Software Update Group - Missing Content' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 206 -RuleName 'Software Update Group - Content not Deployed' -DefaultCategory 17 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 207 -RuleName 'Software Update Deployment' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 208 -RuleName 'Software Update Deployment - Root Collection' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 209 -RuleName 'Software Update Deployment - State Message' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 210 -RuleName 'Software Update - ADR Deployment' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 211 -RuleName 'Software Update - ADR Last Run Error' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 212 -RuleName 'Software Update - ADR Last Run Date and Time' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 213 -RuleName 'Software Update - ADR Deployment Count' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 214 -RuleName 'Software Update - ADR Root Collection' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 215 -RuleName 'Software Update - ADR Schedule (Higher)' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 216 -RuleName 'Software Update - ADR Schedule (Lower)' -DefaultCategory 17 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 217 -RuleName 'Software Update - ADR No Schedule' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 218 -RuleName 'Software Update - ADR State Message' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 219 -RuleName 'Software Update - ADR Alert' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 220 -RuleName 'Software Update - ADR Alert Schedule (Higher)' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 221 -RuleName 'Software Update - ADR Alert Schedule (Lower)' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 222 -RuleName 'Hierarchy Settings - Auto Upgrade Client' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 223 -RuleName 'Hierarchy Settings - Auto Upgrade Client Schedule (Higher)' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 224 -RuleName 'Hierarchy Settings - Auto Upgrade Client Schedule (Lower)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 225 -RuleName 'Hierarchy Settings - Email Notification' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 226 -RuleName 'Hierarchy Settings - Email Notification Account' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 227 -RuleName 'Hierarchy Settings - Email Notification Security' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 228 -RuleName 'Active Directory Forests - Publishing Enabled' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 229 -RuleName 'Active Directory Forests - Last Discovery Error (Discovery - Access Denied)' -DefaultCategory 10 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 230 -RuleName 'Active Directory Forests - Last Discovery Error (Discovery - Failed)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 231 -RuleName 'Active Directory Forests - Last Discovery Error (Publishing - Failed)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 232 -RuleName 'Active Directory Forests - Last Discovery Error (Publishing - Unknown)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 233 -RuleName 'Active Directory Forests - Last Discovery Schedule' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 234 -RuleName 'Database Replication Status (Failed)' -DefaultCategory 19 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 235 -RuleName 'Database Replication Status (Degraded)' -DefaultCategory 19 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 236 -RuleName 'Database Replication Status (Unknown)' -DefaultCategory 19 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 237 -RuleName 'Database Replication Status - Site1 To Site2 Global Sync' -DefaultCategory 19 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 238 -RuleName 'Database Replication Status - Site2 To Site1 Global Sync' -DefaultCategory 19 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 239 -RuleName 'Database Replication Status - Enforce Enhanced Hash Algorithm' -DefaultCategory 19 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 240 -RuleName 'Database Replication Status - Link Schedule (Higher)' -DefaultCategory 19 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 241 -RuleName 'Database Replication Status - Link Schedule (Lower)' -DefaultCategory 19 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 242 -RuleName 'Status Summarization - Application Deployment 1st Interval (Higher)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 243 -RuleName 'Status Summarization - Application Deployment 1st Interval (Lower)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 244 -RuleName 'Status Summarization - Application Deployment 2nd Interval (Higher)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 245 -RuleName 'Status Summarization - Application Deployment 2nd Interval (Lower)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 246 -RuleName 'Status Summarization - Application Deployment 3rd Interval (Higher)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 247 -RuleName 'Status Summarization - Application Deployment 3rd Interval (Lower)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 248 -RuleName 'Status Summarization - Application Statistics 1st Interval (Higher)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 249 -RuleName 'Status Summarization - Application Statistics 1st Interval (Lower)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 250 -RuleName 'Status Summarization - Application Statistics 2nd Interval (Higher)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 251 -RuleName 'Status Summarization - Application Statistics 2nd Interval (Lower)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 252 -RuleName 'Status Summarization - Application Statistics 3rd Interval (Higher)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 253 -RuleName 'Status Summarization - Application Statistics 3rd Interval (Lower)' -DefaultCategory 5 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 254 -RuleName 'Account - Admin (RBAC)' -DefaultCategory 8 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 255 -RuleName 'Account - Service Account' -DefaultCategory 8 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 256 -RuleName 'Account - Full Admin Warning' -DefaultCategory 8 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 257 -RuleName 'Account - Full Admin Error' -DefaultCategory 8 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 258 -RuleName 'Account - Group Membership' -DefaultCategory 8 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 259 -RuleName 'CPU Usage - Error' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 260 -RuleName 'CPU Usage - Warning' -DefaultCategory 1 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 261 -RuleName 'Short file name creation' -DefaultCategory 1 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 262 -RuleName 'SCCM Installation on Root Drive' -DefaultCategory 1 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 263 -RuleName 'Distribution Point - Drive Free Space Error' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 264 -RuleName 'Distribution Point - Drive Free Space Warning' -DefaultCategory 12 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 265 -RuleName 'Distribution Point - Group Membership Count' -DefaultCategory 12 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 266 -RuleName 'Distribution Point - Boundary Group Count' -DefaultCategory 12 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 267 -RuleName 'Distribution Point - Multicast' -DefaultCategory 12 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 268 -RuleName 'Distribution Point - PXE Password' -DefaultCategory 12 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 269 -RuleName 'Distribution Point - Responding to PXE' -DefaultCategory 12 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 270 -RuleName 'Distribution Point - PXE Unknown Machines' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 271 -RuleName 'Distribution Point - Content Evaluation' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 272 -RuleName 'Distribution Point - Content Evaluation Schedule (Higher)' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 273 -RuleName 'Distribution Point - Content Evaluation Schedule (Lower)' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 274 -RuleName 'Distribution Point - Content Evaluation Priority' -DefaultCategory 12 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 275 -RuleName 'Distribution Status - Default Boot Image' -DefaultCategory 20 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 276 -RuleName 'Distribution Status - Targeted Count' -DefaultCategory 20 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 277 -RuleName 'Distribution Status - Errors' -DefaultCategory 20 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 278 -RuleName 'Application - Hidden' -DefaultCategory 22 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 279 -RuleName 'Application - Devices with Failure (Error)' -DefaultCategory 22 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 280 -RuleName 'Application - Devices with Failure (Warning)' -DefaultCategory 22 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 281 -RuleName 'Application - Users with Failure (Error)' -DefaultCategory 22 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 282 -RuleName 'Application - Users with Failure (Warning)' -DefaultCategory 22 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 283 -RuleName 'Application - not used' -DefaultCategory 22 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 284 -RuleName 'Application - used by not deployed TS' -DefaultCategory 22 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 285 -RuleName 'NO_SMS_ON_DRIVE.SMS on SQL Drive' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 286 -RuleName 'Application - DT Folder does not exist' -DefaultCategory 22 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 287 -RuleName 'Application - DT allow User Interaction' -DefaultCategory 22 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 288 -RuleName 'Distribution Point Content - Not on DP Group' -DefaultCategory 22 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 289 -RuleName 'Distribution Point Content - Not on All DPs' -DefaultCategory 22 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 290 -RuleName 'Packages - Source Path does not exist' -DefaultCategory 23 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 291 -RuleName 'Packages - Source Path Local' -DefaultCategory 23 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 292 -RuleName 'Packages - Deployment Count not used by TS' -DefaultCategory 23 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 293 -RuleName 'Packages - Deployment Count used by not deployed TS' -DefaultCategory 23 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 294 -RuleName 'Operating System - Source File Exist' -DefaultCategory 16 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 295 -RuleName 'Operating System - Used by TS' -DefaultCategory 16 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 296 -RuleName 'Operating System Installer - Source Exist' -DefaultCategory 16 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 297 -RuleName 'Operating System Installer - Used by TS' -DefaultCategory 16 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 298 -RuleName 'Task Sequence - Enabled' -DefaultCategory 16 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 299 -RuleName 'Task Sequence - Deployment Count' -DefaultCategory 16 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 300 -RuleName 'Task Sequence - Reboot to WinPE' -DefaultCategory 16 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 301 -RuleName 'Task Sequence - Boot Image' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 302 -RuleName 'Task Sequence - Content Distributed' -DefaultCategory 16 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 303 -RuleName 'Task Sequence - Content Distributed with Error' -DefaultCategory 16 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 304 -RuleName 'Inbox - Count (Error)' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 305 -RuleName 'Inbox - Count (Warning)' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 306 -RuleName 'Driver Package' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 307 -RuleName 'Component Status - Summarization' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 308 -RuleName 'Component Message' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 309 -RuleName 'Heartbeat Discovery Schedule (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 310 -RuleName 'Forest Discovery Schedule (Higher)' -DefaultCategory 10 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 311 -RuleName 'SQL Server 2016 SP1' -DefaultCategory 3 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 312 -RuleName 'WSUS Windows Internal Database' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 313 -RuleName 'NO_SMS_ON_DRIVE.SMS on SystemDrive' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 314 -RuleName 'Multiple Software Update Point (WSUS) using same SQL Server' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 315 -RuleName 'Pending Approval Request' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 316 -RuleName 'Hierarchy Settings - Auto Upgrade Client Excluded specified clients from update' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 317 -RuleName 'Hierarchy Settings - Auto Upgrade Client Exclude Servers' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 318 -RuleName 'Hierarchy Settings - Auto Upgrade Client Automatically distribute client installation package' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 319 -RuleName 'Software Update - Windows 10 Express Updates' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 320 -RuleName 'Software Update - WSUS Cleanup' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 321 -RuleName 'Software Update - Synchronisation Alert' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 322 -RuleName 'Site Hierarchy - Conflicting Client Record' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 323 -RuleName 'Site Hierarchy - Client Approval Method - Manual' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 324 -RuleName 'Site Hierarchy - Client Approval Method - Automatically all' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 325 -RuleName 'Site Hierarchy - Script authors require approver' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 326 -RuleName 'Site Hierarchy - Clients prefer to use management point specified in boundary group' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 327 -RuleName 'ADK Version' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 328 -RuleName 'MDT Version' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 329 -RuleName 'SCCM Services on SCCM Servers' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 330 -RuleName 'Collection (Total) Incremental Warning' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 331 -RuleName 'Collection (Total) Incremental Error' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 332 -RuleName 'Distribution Status - InProgress Warning' -DefaultCategory 20 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 333 -RuleName 'Distribution Status - InProgress Error' -DefaultCategory 20 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 334 -RuleName 'Ping Response Time Warning' -DefaultCategory 1 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 335 -RuleName 'Ping Response Time Error' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 336 -RuleName 'Ping Drop Percentace Warning' -DefaultCategory 1 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 337 -RuleName 'Ping Drop Percentace Error' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 338 -RuleName 'Application - Number of DT' -DefaultCategory 22 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 339 -RuleName 'Intune Subscription' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 340 -RuleName 'IP Subnet Boundary' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 341 -RuleName 'Device Collection Schedule Too Often' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 342 -RuleName 'User Collection Schedule Too Often' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 343 -RuleName 'Boundary without GroupCount' -DefaultCategory 13 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 344 -RuleName 'Free Disk Space - Warning' -DefaultCategory 1 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 345 -RuleName 'Free Disk Space - Error' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 346 -RuleName 'Total Site Server RAM Memory' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 347 -RuleName 'Total Site Server CPU' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 348 -RuleName 'Total Remote Server RAM Memory' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 349 -RuleName 'Total Remote Server CPU' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 350 -RuleName 'Empty Folder' -DefaultCategory 2 -Criticality 'Low' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 351 -RuleName 'Deployment Errors - Warning' -DefaultCategory 21 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 352 -RuleName 'Deployment Errors - Error' -DefaultCategory 21 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 353 -RuleName 'Task Sequence advertise to Unknown Computers for only SCCM Clients' -DefaultCategory 21 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 354 -RuleName 'Baseline - not deployed' -DefaultCategory 21 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 355 -RuleName 'Baseline - disabled' -DefaultCategory 25 -Criticality 'Low' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 356 -RuleName 'Baseline - hidden' -DefaultCategory 25 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 357 -RuleName 'Baseline - failures warning' -DefaultCategory 25 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 358 -RuleName 'Baseline - failures error' -DefaultCategory 25 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 359 -RuleName 'Baseline - non-compliance warning' -DefaultCategory 25 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 360 -RuleName 'Baseline - non-compliance error' -DefaultCategory 25 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 361 -RuleName 'Baseline - evaluation Schedule Too Often' -DefaultCategory 21 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 362 -RuleName 'Account - Group Membership - Unable to collect' -DefaultCategory 8 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 363 -RuleName 'Component Message - Errors' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
     #endregion
 
     #region Script default variables
     $Script:ServerDown = @()
     $Script:ServiceAccountDoesNotExist = @()
     $Script:AdminDoesNotExist = @()
+    $SiteRoleList = @()
+    $SiteComponentList = @()
+    $Script:ServerHTTPAccessInformation = @()
+    $SQLConfigurationList = @()
+    $SQLServerPrimarySiteList = @()
+    $SQLServerInformationList = @()
+    $GroupMembershipErrorList = @()
+    $GroupMembershipList = @()
+    $ClientSettingsSettingsList = @()
+    $MaintenanceTaskList = @()
+    $BoundaryGroupRelationshipList = @()
+    $MalwarePolicySettingsList = @()
+    $TaskSequenceReferenceList = @()
+    $SoftwareUpdateDeploymentList = @()
+    $SoftwareUpdateGroupDeploymentList = @()
+    $SoftwareUpdateADRDeploymetList = @()
+    $AutoUpgradeConfigs = @()
+    $AutoUpgradeConfigsError = @()
+    $ADForestDiscoveryStatusList = @()
+    $DatabaseReplicationScheduleList = @()
+    $SiteSummarizationList = @()
+    $ProcessInfoList = @()
+    $ProcessAverageTimeList = @()
+    $ServerRegistryInformation = @()
+    $DistributionPointList = @()
+    $DistributionPointInformationList = @()
+    $DeploymentTypeList = @()
+    $PathDTInformationList = @()
+    $DPContentList = @()
+    $DPGroupContentList = @()
+    $PathPkgInformationList = @()
+    $PathOSImgInformationList  = @()
+    $PathOSInstallerInformationList = @()
+    $TaskSequenceRebootOptions = @()
+    $inboxList = @()
+    $ComponentStatusMessageList = @()
+    $ComponentStatusMessageListError = @()
+    $ComponentStatusMessageCompletedList = @()
+    $SUPWIDList = @()
+    $ServerNOSMSONDriveInformation = @()
+    $SUPSQL = @()
+    $SoftwareVersionList = @()
+    $ServiceList = @()
+    $PingList = @()
+    $LogicalDiskInfoList = @()
+    $ComputerInformationList = @()
+    #endregion
 
+    #region HealthCheck Table
     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1002)
     $Script:HealthCheckData = New-Object system.Data.DataTable "HealthCheck"
     $newCol = New-Object system.Data.DataColumn "Category",([string])
@@ -883,12 +968,8 @@ try {
     $Script:HealthCheckData.Columns.Add($newCol)
     $newCol = New-Object system.Data.DataColumn "RuleID",([int])
     $Script:HealthCheckData.Columns.Add($newCol)
-    #endregion
-
-    #region Host IP Address
-    #Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1003)
-    #$HostIpAddressList = @()
-    #$HostIpAddressList += (Get-NetIPConfiguration | Where-Object { ($_.IPv4DefaultGateway -ne $null) -and ($_.NetAdapter.Status -ne "Disconnected") }).IPv4Address.IPAddress
+    $newCol = New-Object system.Data.DataColumn "Criticality",([string])
+    $Script:HealthCheckData.Columns.Add($newCol)
     #endregion
 
     #region check SMS Provider Info
@@ -1053,8 +1134,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #endregion
 
         #region Site Role List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Role'))
-        $SiteRoleList = @()
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Role'))        
         $FileToImport = "$($SaveToFolder)\SiteRoleList.xml"
         if (Test-Path $FileToImport) {
             Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
@@ -1075,415 +1155,21 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         }
         #endregion
 
-        #region SQL Server
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Primary Site SQL Server'))
-        $arrRuleID = @(29, 30, 31 ,32, 33, 34, 285)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SQLServerPrimarySiteList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SQLServerPrimarySiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "SQLServerInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\SQLServerInformationList.xml") -Force -Option AllScope -Scope Script
-            } else {
-
-                $SQLServerPrimarySiteList = @()
-                $SiteList | Where-Object {$_.Type -eq 2} | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
-                    $item = $_
-                    $SQLServerPrimarySiteList += $SiteRoleList | Where-Object {($_.SiteCode -eq $item.SiteCode) -and ($_.RoleName -eq 'SMS SQL Server')}
-                }
-
-                $SQLServerInformationList = @()
-                $SQLServerPrimarySiteList | ForEach-Object {
-                    $item = $_
-                    $SQLServerName = $item.PropLists.values.Split(',')[1].Trim()
-
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $SQLServerName)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
-                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
-
-                        #todo: manage multiple instances
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server")
-                        $InstanceName = $RegKey.GetValue("InstalledInstances")
-                        $InstanceData = @()
-                        
-                        if ($InstanceName -is [Array]) {
-                            $InstanceData = $InstanceName
-                        } else {
-                            $InstanceData += $InstanceName
-                        }
-
-                        $InstanceData | ForEach-Object {
-                            $InstanceItem = $_
-
-                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
-                            $InstanceID = $RegKey.GetValue($InstanceItem)
-
-                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\Setup")
-                            $SQLProgramDir = $RegKey.GetValue("SqlProgramDir")
-
-                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\MSSQLServer\Parameters")
-                            $Arguments = @()
-                            $RegKey.GetValueNames() | ForEach-Object  {
-                                $Arguments += $RegKey.GetValue($_)
-                            }
-
-                            $SQLData = ''
-                            $SQLLogs = ''
-
-                            $Arguments | ForEach-Object {
-                                $subItem = $_
-                                $paramID = $subItem.Substring(0, 2).Tolower()
-                                switch ($paramID) {
-                                    '-d' { $SQLData = $subItem.Replace($paramID,'').Replace('\master.mdf','') }
-                                    '-l' { $SQLLogs = $subItem.Replace($paramID,'').Replace('\mastlog.ldf','') }
-                                }
-                            }
-
-                            $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
-                            $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
-
-                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                                $bPathExistDataRoot = $true
-                            } else {
-                                $bPathExistDataRoot = $false
-                            }
-
-                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                                $bPathExistLogRoot = $true
-                            } else {
-                                $bPathExistLogRoot = $false
-                            }
-
-                            $SQLServerInformationList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = $ProgramFIles; 'InstallationFolder' = $SQLProgramDir; 'DataFolder' = $SQLData; 'LogFolder' = $SQLLogs; 'NOSMSONData' = $bPathExistDataRoot; 'NOSMSONLog' = $bPathExistLogRoot }
-                        }                        
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $SQLServerName; 'InstanceID' = $InstanceID; 'ConnectionType' = 'SQL Server Remote Registry (RRP/RPC)' }
-                    }
-                }
-                Export-CEXMLFile -VariableName 'SQLServerPrimarySiteList'
-                Export-CEXMLFile -VariableName 'SQLServerInformationList'
-            }
-        }
-        #endregion
-
-        #region NO_SMS_ON_DRIVE.SMS
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('NO_SMS_ON_DRIVE.SMS'))
-        $arrRuleID = @(313)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\ServerNOSMSONDriveInformation.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "ServerNOSMSONDriveInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $ServerNOSMSONDriveInformation = @()
-                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                    $item = $_
-                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1047 @('NO_SMS_ON_DRIVE.SMS on SystemDrive', $RemoteComputer))
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
-                    
-                        $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
-                        if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                            $bPathExist = $true
-                        } else {
-                            $bPathExist = $false
-                        }
-
-                        $ServerNOSMSONDriveInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = 'C:\' }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'NO_SMS_ON_DRIVE.SMS' }
-
-                    }
-                }
-                Export-CEXMLFile -VariableName 'ServerNOSMSONDriveInformation'
-            }
-        }
-        #endregion
-
-        #region Collecting Short file name creation information
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Short file name creation'))
-
-        $arrRuleID = @(261, 262)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\ServerRegistryInformation.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "ServerRegistryInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $ServerRegistryInformation = @()
-                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                    $item = $_
-                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('Short file name creation', $RemoteComputer))
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
-                        $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
-                        if ($RegKey -eq $Null) {
-                            $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
-                        }
-
-                        $ShortNameCreation = $RegKey.GetValue("NtfsDisable8dot3NameCreation")
-
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
-                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
-
-                        $ServerRegistryInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = $ShortNameCreation; 'ProgramFiles' = $ProgramFiles }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'Short file name creation Remote Registry (RRP/RPC)' }
-
-                    }
-                }
-                Export-CEXMLFile -VariableName 'ServerRegistryInformation'
-            }
-        }
-        #endregion
-
-        #region Collecting Processor Information
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Process CPU Utilisation'))
-        $arrRuleID = @(259, 260)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\ProcessAverageTimeList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $NumberOfSamples = [math]::Round([int]$Script:ProcessListSamplesMinutes * 60 / [int]$Script:ProcessListSamplesWaitSeconds)
-                $ProcessInfoList = @()
-                $ProcessAverageTimeList = @()
-                $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                    $item = $_
-                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    For ($i=1; $i -le $NumberOfSamples; $i++) {
-                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1030 @($RemoteComputer, $i, $NumberOfSamples))
-                        try {
-                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
-                            if ($itemReturn -ne $null) {
-                                $ProcessInfoList += $itemReturn
-                            } else {
-                                $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
-                                break
-                            }
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
-                            break
-                        }
-                        if ($i -lt $NumberOfSamples) { start-sleep $Script:ProcessListSamplesWaitSeconds }
-                    }
-
-                    $ProcessInfoList | Select-Object PSComputerName | Get-Unique -AsString | ForEach-Object {
-                        $Item = $_
-                        $ProcessAverageTimeList += $ProcessInfoList | Where-Object {$_.PSComputerName -eq $item.PSComputerName} | Group-Object Name | Select-Object -Property  @{ Name = 'ComputerName'; Expression = { $item.PSComputerName }}, Name, @{ Name = 'Average'; Expression = { ($_.Group | Measure-Object -Property PercentProcessorTime -Sum).Sum / $NumberOfSamples } }
-                    }
-                }
-                Export-CEXMLFile -VariableName 'ProcessAverageTimeList'
-            }
-        }
-        #endregion
-
         #region Site Component List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Component'))
-
         $FileToImport = "$($SaveToFolder)\SiteComponentList.xml"
         if (Test-Path $FileToImport) {
             Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
             New-Variable -Name "SiteComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-        } else {
-
-            $SiteComponentList = @()
+        } else {            
             $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
                 Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Component List', $_.SiteCode))
                 $SiteComponentList += Get-CMSiteComponent -SiteCode $_.SiteCode
                 Export-CEXMLFile -VariableName 'SiteComponentList'
             }
         }
+        #endregion
         
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Management Point'))
-        $arrRuleID = @(14, 15, 16, 170, 171)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\MPList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "MPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $MPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Management Point'}
-                Export-CEXMLFile -VariableName 'MPList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('SQL Server'))
-        $arrRuleID = @(25, 26, 27, 28, 311)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\SQLList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SQLList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "SQLConfigurationList" -Value (Import-Clixml -Path "$($SaveToFolder)\SQLConfigurationList.xml") -Force -Option AllScope -Scope Script
-            } else {
-
-                $SQLList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SQL Server'}
-
-                $SQLConfigurationList = @()
-                $SQLList | Where-Object {$_.Type -eq 2} | ForEach-Object { #only looking for SQL Server on Primary Servers
-                    $item = $_
-                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
-
-                    #connect to SQL
-                    $SQLOpen = $false
-                    $conn = New-Object System.Data.SqlClient.SqlConnection
-                    try {
-                        $conn.ConnectionString = "Data Source=$($arrPropList[1]);Initial Catalog=$($arrPropList[2]);trusted_connection = true;"
-                        $conn.Open()
-                        $SQLOpen = $true
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SQL TCP)' }
-                    }
-
-                    if ($SQLOpen -eq $true) {
-                        try {
-                            $SqlCommand = $Conn.CreateCommand()
-                            $SqlCommand.CommandTimeOut = 0
-                            $SqlCommand.CommandText = "SELECT SERVERPROPERTY ('productversion'),SERVERPROPERTY ('productlevel'), SERVERPROPERTY ('edition')"
-                            $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
-                            $dataset = new-object System.Data.Dataset
-                            $DataAdapter.Fill($dataset) | Out-Null
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SERVERPROPERTY) (SQL TCP)' }
-                        }
-
-                        try {
-                            $SqlCommand2 = $Conn.CreateCommand()
-                            $SqlCommand2.CommandTimeOut = 0
-
-                            $SqlCommand2.CommandText = "select (select value FROM sys.configurations WHERE name = 'max server memory (MB)') as committed_kb, (select value FROM sys.configurations WHERE name = 'min server memory (MB)') as committed_target_kb"
-                            $DataAdapter2 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand2
-                            $dataset2 = new-object System.Data.Dataset
-                            $DataAdapter2.Fill($dataset2) | Out-Null
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (DM_OS_SYS_INFO) (SQL TCP)' }
-                        }
-
-                        try {
-                            $SqlCommand3 = $Conn.CreateCommand()
-                            $SqlCommand3.CommandTimeOut = 0
-                            $SqlCommand3.CommandText = "SELECT compatibility_level FROM sys.databases WHERE name = '$($arrPropList[2])'"
-                            $DataAdapter3 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand3
-                            $dataset3 = new-object System.Data.Dataset
-                            $DataAdapter3.Fill($dataset3) | Out-Null
-
-                            $SQLConfigurationList += New-Object -TypeName PSObject -Property @{'ServerName' = $arrPropList[1]; 'Version' = $dataset.Tables[0].Column1; 'MinMemory' = $dataset2.Tables[0].committed_kb; 'MaxMemory' = $dataset2.Tables[0].committed_target_kb; 'CompLevel' = $dataset3.Tables[0].compatibility_level; 'Database' = $arrPropList[2] }
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (COMPATIBILITY_LEVEL) (SQL TCP)' }
-                        } finally {
-                            $conn.Close()
-                        }
-                    }
-                    Export-CEXMLFile -VariableName 'SQLList'
-                    Export-CEXMLFile -VariableName 'SQLConfigurationList'
-                }
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Point'))
-        $arrRuleID = @(168, 169)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\DPList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "DPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
-                    $DPList = $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point') -and ($_.NetworkOSPath -notlike '*manage.microsoft.com')}
-                } else {
-                    $DPList = $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Distribution Point'}
-                }
-                Export-CEXMLFile -VariableName 'DPList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('State Migration Point'))
-        $arrRuleID = @(172, 173)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\SMPList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SMPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $SMPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS State Migration Point'}
-                Export-CEXMLFile -VariableName 'SMPList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('MP Control Manager'))
-        $arrRuleID = @(14,15,16)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $FileToImport = "$($SaveToFolder)\MPComponentList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "MPComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $MPComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_MP_CONTROL_MANAGER'}
-                Export-CEXMLFile -VariableName 'MPComponentList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Component Manager'))
+        #region Rules
         $arrRuleID = @(4,5,239)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1495,13 +1181,11 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SiteComponentManagerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-
                 $SiteComponentManagerList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_SITE_COMPONENT_MANAGER'}
                 Export-CEXMLFile -VariableName 'SiteComponentManagerList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('SMS Provider'))
+        
         $arrRuleID = @(6)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1518,158 +1202,54 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Application Catalog Web Service'))
-        $arrRuleID = @(18, 22)
+        $arrRuleID = @(7,8,9,10,11,102,104,321)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\AppCatalogWebServiceList.xml"
+            $FileToImport = "$($SaveToFolder)\AlertList.xml"
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "AppCatalogWebServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "AlertList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $AppCatalogWebServiceList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Application Web Service'}
-                Export-CEXMLFile -VariableName 'AppCatalogWebServiceList'
+                $AlertList = Get-CMAlert
+                Export-CEXMLFile -VariableName 'AlertList'
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Application Catalog Web Site'))
-        $arrRuleID = @(19, 22)
+        $arrRuleID = @(14,15,16)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\AppCatalogWebSiteList.xml"
+
+            $FileToImport = "$($SaveToFolder)\MPComponentList.xml"
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "AppCatalogWebSiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "MPComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $AppCatalogWebSiteList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Portal Web Site'}
-                Export-CEXMLFile -VariableName 'AppCatalogWebSiteList'
+                $MPComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_MP_CONTROL_MANAGER'}
+                Export-CEXMLFile -VariableName 'MPComponentList'
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Endpoint Protection Point'))
-        $arrRuleID = @(119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,163,176,177,178,179,180,181,182)
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Management Point'))
+        $arrRuleID = @(14, 15, 16, 17, 170, 171)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\EndpointProtectionList.xml"
+
+            $FileToImport = "$($SaveToFolder)\MPList.xml"
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "EndpointProtectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "MPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $EndpointProtectionList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Endpoint Protection Point'}
-                Export-CEXMLFile -VariableName 'EndpointProtectionList'
+                $MPList = $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Management Point'}
+                Export-CEXMLFile -VariableName 'MPList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Point'))
-        $arrRuleID = @(20,21,157,158,159,160,161,162,174,175,312,314)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SUPList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SUPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $SUPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Software Update Point'}
-                Export-CEXMLFile -VariableName 'SUPList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Point WID'))
-        $arrRuleID = @(312)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SUPWIDList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SUPWIDList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $SUPWIDList = @()
-                $SUPList | ForEach-Object {
-                    $item = $_
-                    $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
-
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services")
-                        $WIDExist = -not [String]::IsNullOrEmpty(($RegKey.GetValueNames() | Where-Object {$_ -eq 'UpdateServices-WidDatabase'}))
-
-                        if ($WIDExist) {
-                            $SUPWIDList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName;  }
-                        }
-
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WID Remote Registry (RRP/RPC)' }
-                    }
-                }
-                Export-CEXMLFile -VariableName 'SUPWIDList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Point SQL Server'))
-        $arrRuleID = @(314)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SUPSQL.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SUPSQL" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-
-                $SUPSQL = @()
-                $SUPList | ForEach-Object {
-                    $item = $_
-                    $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
-
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup")
-                        $WSUSSQL = $RegKey.GetValue('SqlServerName').ToString()
-
-                        $SUPSQL += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL }
-
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WSUS Remote Registry (RRP/RPC)' }
-                    }
-                }
-                Export-CEXMLFile -VariableName 'SUPSQL'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('SQL Reporting Service Point'))
-        $arrRuleID = @(23,24)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SRSList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SRSList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $SRSList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SRS Reporting Point'}
-                Export-CEXMLFile -VariableName 'SRSList'
-            }
-        }
-        #endregion
-
-        #region test MP URL
-        $Script:ServerHTTPAccessInformation = @()
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Test URL'))
+        
         $arrRuleID = @(14)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1739,9 +1319,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
             }
         }
-        #endregion
 
-        #region Application Catalog Web Service URL
+        $arrRuleID = @(18, 22)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\AppCatalogWebServiceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AppCatalogWebServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AppCatalogWebServiceList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Application Web Service'}
+                Export-CEXMLFile -VariableName 'AppCatalogWebServiceList'
+            }
+        }
+
         $arrRuleID = @(18)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1763,9 +1356,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
             }
         }
-        #endregion
 
-        #region Application Catalog Web Site URL
+        $arrRuleID = @(19, 22)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\AppCatalogWebSiteList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AppCatalogWebSiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AppCatalogWebSiteList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Portal Web Site'}
+                Export-CEXMLFile -VariableName 'AppCatalogWebSiteList'
+            }
+        }
+
         $arrRuleID = @(19)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1792,9 +1398,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
             }
         }
-        #endregion
 
-        #region SUP Web Site URL
+        $arrRuleID = @(20,21,157,158,159,160,161,162,174,175,312,314)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SUPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SUPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Software Update Point'}
+                Export-CEXMLFile -VariableName 'SUPList'
+            }
+        }
+
         $arrRuleID = @(20)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1817,7 +1436,6 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        ##check registration
         $arrRuleID = @(21)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1842,9 +1460,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
             }
         }
-        #endregion
 
-        #region SRS Reporting Point Web Site URL
+        $arrRuleID = @(23,24)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SRSList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SRSList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SRSList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SRS Reporting Point'}
+                Export-CEXMLFile -VariableName 'SRSList'
+            }
+        }
+
         $arrRuleID = @(23)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1880,11 +1511,201 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url ("$($ReportServerURI)/$($RootFolder)") -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
             }
         }
-        #endregion
 
-        #region Account Information
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Account'))
-        $arrRuleID = @(35,36,37, 258)
+        $arrRuleID = @(25, 26, 27, 28, 311)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\SQLList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SQL Server'}
+                Export-CEXMLFile -VariableName 'SQLList'
+            }
+        }
+                
+        $arrRuleID = @(25, 26, 27, 28, 311)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLConfigurationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLConfigurationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLList | Where-Object {$_.Type -eq 2} | ForEach-Object { #only looking for SQL Server on Primary Servers
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+
+                    #connect to SQL
+                    $SQLOpen = $false
+                    $conn = New-Object System.Data.SqlClient.SqlConnection
+                    try {
+                        $conn.ConnectionString = "Data Source=$($arrPropList[1]);Initial Catalog=$($arrPropList[2]);trusted_connection = true;"
+                        $conn.Open()
+                        $SQLOpen = $true
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SQL TCP)' }
+                    }
+
+                    if ($SQLOpen -eq $true) {
+                        try {
+                            $SqlCommand = $Conn.CreateCommand()
+                            $SqlCommand.CommandTimeOut = 0
+                            $SqlCommand.CommandText = "SELECT SERVERPROPERTY ('productversion'),SERVERPROPERTY ('productlevel'), SERVERPROPERTY ('edition')"
+                            $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                            $dataset = new-object System.Data.Dataset
+                            $DataAdapter.Fill($dataset) | Out-Null
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SERVERPROPERTY) (SQL TCP)' }
+                        }
+
+                        try {
+                            $SqlCommand2 = $Conn.CreateCommand()
+                            $SqlCommand2.CommandTimeOut = 0
+
+                            $SqlCommand2.CommandText = "select (select value FROM sys.configurations WHERE name = 'max server memory (MB)') as committed_kb, (select value FROM sys.configurations WHERE name = 'min server memory (MB)') as committed_target_kb"
+                            $DataAdapter2 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand2
+                            $dataset2 = new-object System.Data.Dataset
+                            $DataAdapter2.Fill($dataset2) | Out-Null
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (DM_OS_SYS_INFO) (SQL TCP)' }
+                        }
+
+                        try {
+                            $SqlCommand3 = $Conn.CreateCommand()
+                            $SqlCommand3.CommandTimeOut = 0
+                            $SqlCommand3.CommandText = "SELECT compatibility_level FROM sys.databases WHERE name = '$($arrPropList[2])'"
+                            $DataAdapter3 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand3
+                            $dataset3 = new-object System.Data.Dataset
+                            $DataAdapter3.Fill($dataset3) | Out-Null
+
+                            $SQLConfigurationList += New-Object -TypeName PSObject -Property @{'ServerName' = $arrPropList[1]; 'Version' = $dataset.Tables[0].Column1; 'MinMemory' = $dataset2.Tables[0].committed_kb; 'MaxMemory' = $dataset2.Tables[0].committed_target_kb; 'CompLevel' = $dataset3.Tables[0].compatibility_level; 'Database' = $arrPropList[2] }
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (COMPATIBILITY_LEVEL) (SQL TCP)' }
+                        } finally {
+                            $conn.Close()
+                        }
+                    }
+
+                    Export-CEXMLFile -VariableName 'SQLConfigurationList'
+                }
+            }
+        }
+
+        $arrRuleID = @(29, 30, 31 ,32, 33, 34, 285)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLServerPrimarySiteList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLServerPrimarySiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SiteList | Where-Object {$_.Type -eq 2} | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
+                    $item = $_
+                    $SQLServerPrimarySiteList += $SiteRoleList | Where-Object {($_.SiteCode -eq $item.SiteCode) -and ($_.RoleName -eq 'SMS SQL Server')}
+                }
+
+                Export-CEXMLFile -VariableName 'SQLServerPrimarySiteList'
+            }
+        }
+
+        $arrRuleID = @(29, 30, 31 ,32, 33, 34, 285)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLServerInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLServerInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLServerPrimarySiteList | ForEach-Object {
+                    $item = $_
+                    $SQLServerName = $item.PropLists.values.Split(',')[1].Trim()
+
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $SQLServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
+                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
+
+                        #todo: manage multiple instances
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server")
+                        $InstanceName = $RegKey.GetValue("InstalledInstances")
+                        $InstanceData = @()
+                        
+                        if ($InstanceName -is [Array]) {
+                            $InstanceData = $InstanceName
+                        } else {
+                            $InstanceData += $InstanceName
+                        }
+
+                        $InstanceData | ForEach-Object {
+                            $InstanceItem = $_
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
+                            $InstanceID = $RegKey.GetValue($InstanceItem)
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\Setup")
+                            $SQLProgramDir = $RegKey.GetValue("SqlProgramDir")
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\MSSQLServer\Parameters")
+                            $Arguments = @()
+                            $RegKey.GetValueNames() | ForEach-Object  {
+                                $Arguments += $RegKey.GetValue($_)
+                            }
+
+                            $SQLData = ''
+                            $SQLLogs = ''
+
+                            $Arguments | ForEach-Object {
+                                $subItem = $_
+                                $paramID = $subItem.Substring(0, 2).Tolower()
+                                switch ($paramID) {
+                                    '-d' { $SQLData = $subItem.Replace($paramID,'').Replace('\master.mdf','') }
+                                    '-l' { $SQLLogs = $subItem.Replace($paramID,'').Replace('\mastlog.ldf','') }
+                                }
+                            }
+
+                            $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
+                            $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
+
+                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                $bPathExistDataRoot = $true
+                            } else {
+                                $bPathExistDataRoot = $false
+                            }
+
+                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                $bPathExistLogRoot = $true
+                            } else {
+                                $bPathExistLogRoot = $false
+                            }
+
+                            $SQLServerInformationList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = $ProgramFIles; 'InstallationFolder' = $SQLProgramDir; 'DataFolder' = $SQLData; 'LogFolder' = $SQLLogs; 'NOSMSONData' = $bPathExistDataRoot; 'NOSMSONLog' = $bPathExistLogRoot }
+                        }                        
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $SQLServerName; 'InstanceID' = $InstanceID; 'ConnectionType' = 'SQL Server Remote Registry (RRP/RPC)' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLServerInformationList'
+            }
+        }
+
+        $arrRuleID = @(35,36,37,258)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1898,10 +1719,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ServiceAccountList'
             }
         }
-        #endregion
-
-        #region Administrative Account List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Administrative Account'))
+                
         $arrRuleID = @(37, 256, 257, 258)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1916,11 +1734,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'AdminAccountList'
             }
         }
-        #endregion
 
-        #region Getting Groups
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Account Group Membership'))
-        $arrRuleID = @(35,36,37,257,258)
+        $arrRuleID = @(35,36,37,254,255,257,258)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1929,37 +1744,41 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "GroupMembershipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+                New-Variable -Name "GroupMembershipErrorList" -Value (Import-Clixml -Path "$($SaveToFolder)\GroupMembershipErrorList.xml") -Force -Option AllScope -Scope Script
             } else {
-
                 $Root = [ADSI]"LDAP://RootDSE"
                 $oForestConfig = $Root.Get("configurationNamingContext")
                 $oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
                 $AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
                 $AdSearcher.SearchRoot = $oSearchRoot
                 $domains = $AdSearcher.FindAll()
-
-                $GroupMembershipList = @()
+                                
                 $ServiceAccountList | ForEach-Object {
                     $itemAccount = $_
                     #todo: need to get information about @ user, how the filter will be?
                     if ($itemAccount.UserName.Indexof('@') -lt 0) {
                         Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.UserName)"
-                        $arrAccountInfo = $itemAccount.UserName.Split('\')
-                        $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
+                        try {
+                            $arrAccountInfo = $itemAccount.UserName.Split('\')
+                            $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
 
-                        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
-                        $objSearcher.PageSize = 1000
-                        $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
-                        $objSearcher.SearchScope = "Subtree"
-                        $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
+                            $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
+                            $objSearcher.PageSize = $Script:ADPageSize
+                            $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
+                            $objSearcher.SearchScope = "Subtree"
+                            $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
 
-                        if ($objDN -eq $null) {
-                            $Script:ServiceAccountDoesNotExist += $itemAccount.UserName
-                        } else {
-                            $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
-                            ($objSearcher.FindAll()) | ForEach-Object {
-                                $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                            if ($objDN -eq $null) {
+                                $Script:ServiceAccountDoesNotExist += $itemAccount.UserName
+                            } else {
+                                $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
+                                ($objSearcher.FindAll()) | ForEach-Object {
+                                    $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                                }
                             }
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 $_)
+                            $GroupMembershipErrorList += $itemAccount
                         }
                     }
                 }
@@ -1968,32 +1787,35 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $itemAccount = $_
                     if ($itemAccount.LogonName.Indexof('@') -lt 0) {
                         Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.LogonName)"
-                        $arrAccountInfo = $itemAccount.LogonName.Split('\')
-                        $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
+                        try {
+                            $arrAccountInfo = $itemAccount.LogonName.Split('\')
+                            $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
 
-                        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
-                        $objSearcher.PageSize = 1000
-                        $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
-                        $objSearcher.SearchScope = "Subtree"
-                        $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
+                            $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
+                            $objSearcher.PageSize = $Script:ADPageSize
+                            $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
+                            $objSearcher.SearchScope = "Subtree"
+                            $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
 
-                        if ($objDN -eq $null) {
-                            $Script:AdminDoesNotExist = $itemAccount.LogonName
-                        } else {
-                            $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
-                            ($objSearcher.FindAll()) | ForEach-Object {
-                                $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                            if ($objDN -eq $null) {
+                                $Script:AdminDoesNotExist = $itemAccount.LogonName
+                            } else {
+                                $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
+                                ($objSearcher.FindAll()) | ForEach-Object {
+                                    $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
+                                }
                             }
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 $_)
+                            $GroupMembershipErrorList += $itemAccount
                         }
                     }
                 }
                 Export-CEXMLFile -VariableName 'GroupMembershipList'
+                Export-CEXMLFile -VariableName 'GroupMembershipErrorList'
             }
         }
-        #endregion
 
-        #region Client Status Information
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Client Status'))
         $arrRuleID = @(38,39,40,41,42,43,44,45,46,47,48,49)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2008,11 +1830,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ClientStatusSettings'
             }
         }
-        #endregion
-
-        #region Discovery Methods
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Discovery'))
-        $arrRuleID = @(50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,309,310)
+        
+        $arrRuleID = @(50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,309,310)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2026,10 +1845,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DiscoveryMethodList'
             }
         }
-        #endregion
 
-        #region Distribution Point Group
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Point Group'))
         $arrRuleID = @(84,85,289)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2044,10 +1860,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DPGroupList'
             }
         }
-        #endregion
-
-        #region Collection Membership Evaluation
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Collection Membership Evaluation'))
+        
         $arrRuleID = @(86,87)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2062,11 +1875,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'CollectionMembershipEvaluation'
             }
         }
-        #endregion
-
-        #region Device Collection List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Device Collection'))
-        $arrRuleID = @(88,89,90,91,92,93,330,331)
+        
+        $arrRuleID = @(88,89,90,91,92,93,330,331,341,361)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2081,7 +1891,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        $arrRuleID = @(93) #using if for the sccm version because lower than 1702 does not have the cmdlet
+        $arrRuleID = @(93) 
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2091,11 +1901,11 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "CollectionDeviceFilterCount" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                if ($ModuleSCCMVersionBuild -lt 1702) {
+                if ($ModuleSCCMVersionBuild -lt 1702) { #using if for the sccm version because lower than 1702 does not have the cmdlet
                     $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {
                         $item = $_
                         #cade
-                        $MembershipRules = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'"
+                        $MembershipRules = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'")
                         $MembershipRules.Get()
 
                         if (($MembershipRules.CollectionRules | Where-Object {$_.__CLASS -eq 'SMS_CollectionRuleDirect'} | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ }
@@ -2106,11 +1916,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'CollectionDeviceFilterCount'
             }
         }
-        #endregion
 
-        #region User Collection List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('User Collection'))
-        $arrRuleID = @(94,95,96,97,98,99,100,330,331)
+        $arrRuleID = @(94,95,96,97,98,99,100,330,331,342,361)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2125,7 +1932,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        $arrRuleID = @(99) #using if for the sccm version because lower than 1702 does not have the cmdlet
+        $arrRuleID = @(99) 
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2135,10 +1942,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "CollectionUserFilterCount" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                if ($ModuleSCCMVersionBuild -lt 1702) {
+                if ($ModuleSCCMVersionBuild -lt 1702) { #using if for the sccm version because lower than 1702 does not have the cmdlet
                     $CollectionUserFilterCount = ($UserCollectionList | ForEach-Object {
                         $item = $_
-                        $MembershipRules = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'"
+                        $MembershipRules = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'")
                         $MembershipRules.Get()
 
                         if (($MembershipRules.CollectionRules | Where-Object {$_.__CLASS -eq 'SMS_CollectionRuleDirect'} | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ }
@@ -2149,11 +1956,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'CollectionUserFilterCount'
             }
         }
-        #endregion
-
-        #region Deployment List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Deployment'))
-        $arrRuleID = @(100,101,284,292,293,299)
+        
+        $arrRuleID = @(100,101,284,292,293,299,351,352,353)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2167,26 +1971,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DeploymentList'
             }
         }
-        #endregion
 
-        #region Alert List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Alert'))
-        $arrRuleID = @(7,8,9,10,11,102,104,320)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\AlertList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "AlertList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $AlertList = Get-CMAlert
-                Export-CEXMLFile -VariableName 'AlertList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Alert Subscription'))
         $arrRuleID = @(103,104)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2201,91 +1986,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'AlertSubscriptionList'
             }
         }
-        #endregion
 
-        #region Active Directory Forests
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Active Directory Forest'))
-        $arrRuleID = @(228,229,230,231,232,233)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\ADForestist.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "ADForestist" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "ADForestDiscoveryStatusList" -Value (Import-Clixml -Path "$($SaveToFolder)\ADForestDiscoveryStatusList.xml") -Force -Option AllScope -Scope Script
-            } else {
-                $ADForestist = Get-CMActiveDirectoryForest
-
-                $ADForestDiscoveryStatusList = @()
-                $ADForestist | ForEach-Object {
-                    $item = $_
-
-                    #cade
-                    $StatusList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ADForestDiscoveryStatus WHERE ForestID = $($item.ForestID)"
-                    $StatusList | ForEach-Object {
-                        $dt1 = Get-Date -Date "01/01/1970"
-                        $dt2 = Get-Date -Date "01/01/1970"
-                        if (-not [string]::IsNullOrEmpty($_.LastDiscoveryTime)) {
-                            $dt1 = [datetime]::parseexact($_.LastDiscoveryTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
-                        }
-
-                        if (-not [string]::IsNullOrEmpty($_.LastPublishingTime)) {
-                            $dt2 = [datetime]::parseexact($_.LastPublishingTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
-                        }
-
-                        $ADForestDiscoveryStatusList += new-object HealthCheckClasses.SCCM.CEADForestDiscoveryStatus($_.DiscoveryEnabled, $_.DiscoveryStatus, $item.ForestFQDN, $dt1, $dt2, $_.PublishingEnabled, $_.PublishingStatus, $_.SiteCode)
-                    }
-                }
-                Export-CEXMLFile -VariableName 'ADForestist'
-                Export-CEXMLFile -VariableName 'ADForestDiscoveryStatusList'
-            }
-        }
-        #endregion
-
-        #region Database Replication Status
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Database Replication Status'))
-        $DatabaseReplicationScheduleList = @()
-        $arrRuleID = @(234,235,236,237,238)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\DatabaseReplicationStatusList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "DatabaseReplicationStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                if (($SiteList | Measure-Object).Count -gt 1) {
-                    $DatabaseReplicationStatusList = Get-CMDatabaseReplicationStatus
-                    Export-CEXMLFile -VariableName 'DatabaseReplicationStatusList'
-                }
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Database Replication Schedule'))
-        $arrRuleID = @(240,241)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\DatabaseReplicationScheduleList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "DatabaseReplicationScheduleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                if (($SiteList | Measure-Object).Count -gt 1) {
-                    #cade
-                    $DatabaseReplicationScheduleList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -class SMS_RcmSqlControl
-                    Export-CEXMLFile -VariableName 'DatabaseReplicationScheduleList'
-                }
-            }
-        }
-        #endregion
-
-        #region Device List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Device'))
         $arrRuleID = @(105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,279,280,281,282)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2299,7 +2000,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
                 #not using get-cmdevice anymore. on 1806 some properties have been removed and still on the wmi query
                 #if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $DeviceList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_CM_RES_COLL_SMS00001"
+                    $DeviceList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_CM_RES_COLL_SMS00001")
                 #} else {
                 #    $DeviceList = Get-CMDevice
                 #}
@@ -2308,10 +2009,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DeviceList'
             }
         }
-        #endregion
 
-        #region Client Settings List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Client Setting'))
+        $arrRuleID = @(119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,163,176,177,178,179,180,181,182)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\EndpointProtectionList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "EndpointProtectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $EndpointProtectionList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Endpoint Protection Point'}
+                Export-CEXMLFile -VariableName 'EndpointProtectionList'
+            }
+        }
+        
         $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2322,11 +2035,23 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ClientSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "ClientSettingsSettingsList" -Value (Import-Clixml -Path "$($SaveToFolder)\ClientSettingsSettingsList.xml") -Force -Option AllScope -Scope Script
             } else {
+                $ClientSettingsList = Get-CMClientSetting                
+                Export-CEXMLFile -VariableName 'ClientSettingsList'
+            }
+        }
 
-                $ClientSettingsList = Get-CMClientSetting
-                $ClientSettingsSettingsList = @()
+        $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\ClientSettingsSettingsList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ClientSettingsSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
                 $ClientSettingsList | ForEach-Object {
                     $item = $_
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Client Setting', $item.Name))
@@ -2342,14 +2067,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         }
                     }
                 }
-                Export-CEXMLFile -VariableName 'ClientSettingsList'
                 Export-CEXMLFile -VariableName 'ClientSettingsSettingsList'
             }
         }
-        #endregion
 
-        #region Maintenance Task List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Maintenance Task'))
         $arrRuleID = @(164,165)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2361,8 +2082,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "MaintenanceTaskList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
 
-                if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $MaintenanceTaskList = @()
+                if ($ModuleSCCMVersionBuild -lt 1702) {                    
                     $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
                         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Site Role List', $_.SiteCode))
                         $MaintenanceTaskList += Get-CMSiteMaintenanceTask -SiteCode $_.SiteCode
@@ -2374,10 +2094,6 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        #endregion
-
-        #region Boundary Group List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boundary Group'))
         $arrRuleID = @(166,167,168,169,170,171,172,173,174,175)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2392,27 +2108,62 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $BoundaryGroupList = Get-CMBoundaryGroup
                 Export-CEXMLFile -VariableName 'BoundaryGroupList'
             }
+        }
 
+        $arrRuleID = @(166,167,168,169,170,171,172,173,174,175)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
             $FileToImport = "$($SaveToFolder)\BoundaryGroupRelationshipList.xml"
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BoundaryGroupRelationshipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boundary Group Relationship'))
-                if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $BoundaryGroupRelationshipList = @()
-                } else {
+                if ($ModuleSCCMVersionBuild -gt 1702) {
                     $BoundaryGroupRelationshipList = Get-CMBoundaryGroupRelationship
                 }
             
                 Export-CEXMLFile -VariableName 'BoundaryGroupRelationshipList'
             }
         }
-        #endregion
 
-        #region Malware Detection List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Malware Detected'))
+        $arrRuleID = @(168, 169)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\DPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
+                    $DPList = $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point') -and ($_.NetworkOSPath -notlike '*manage.microsoft.com')}
+                } else {
+                    $DPList = $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Distribution Point'}
+                }
+                Export-CEXMLFile -VariableName 'DPList'
+            }
+        }
+
+        $arrRuleID = @(172, 173)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\SMPList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SMPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                $SMPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS State Migration Point'}
+                Export-CEXMLFile -VariableName 'SMPList'
+            }
+        }
+        
         $arrRuleID = @(176)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2429,10 +2180,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
             }
         }
-        #endregion
-
-        #region Endpoint Protection Policies & Firewall List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Anti-Malware Policy'))
+        
         $arrRuleID = @(177,178,179,180,181,182)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2445,8 +2193,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 if ($EndpointProtectionList -ne $null) {
                     $MalwarePolicyList = Get-CMAntimalwarePolicy
-
-                    $MalwarePolicySettingsList = @()
+                    
                     $MalwarePolicyList | ForEach-Object {
                         $item = $_
                         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Malware Policy', $item.Name))
@@ -2466,8 +2213,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     Export-CEXMLFile -VariableName 'MalwarePolicyList'
                 }
             }
+        }
 
-            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Firewall Policy'))
+        $arrRuleID = @(177,178,179,180,181,182)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\FirewallPolicyList.xml"
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
@@ -2478,10 +2230,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'FirewallPolicyList'
             }
         }
-        #endregion
-
-        #region Software Metering List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Metering Settings'))
+        
         $arrRuleID = @(183)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2497,7 +2246,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Metering Rules'))
+        
         $arrRuleID = @(184)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2512,10 +2261,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SwMeteringRuleList'
             }
         }
-        #endregion
-
-        #region Boot Image
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boot Image'))
+        
         $arrRuleID = @(185,186,187,188,189,190,191,192,275,301)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2530,10 +2276,93 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'BootList'
             }
         }
-        #endregion
 
-        #region Software Update Group
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Group'))
+        $arrRuleID = @(186,187,298,299,300,301,302,303)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\TaskSequenceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "TaskSequenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $TaskSequenceList = Get-CMTaskSequence
+                Export-CEXMLFile -VariableName 'TaskSequenceList'
+            }
+        }
+
+        $arrRuleID = @(186,283,284,292,293,295,297,301,302,303)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\TaskSequenceReferenceList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "TaskSequenceReferenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                #cade                
+                $TaskSequenceList | ForEach-Object {
+                    $item = $_
+                    $TaskSequenceReferenceList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ts.*, content.* FROM SMS_ObjectContentExtraInfo content INNER JOIN SMS_TaskSequencePackageReference tspr ON tspr.RefPackageID = content.PackageID INNER JOIN SMS_TaskSequencePackage ts on ts.PackageID = tspr.PackageID where ts.PackageID = '$($item.PackageID)'")
+                }
+                Export-CEXMLFile -VariableName 'TaskSequenceReferenceList'
+            }
+        }
+
+        $arrRuleID = @(193,194)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateSummarizationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SoftwareUpdateSummarizationList = Get-CMSoftwareUpdateSummarizationSchedule
+                Export-CEXMLFile -VariableName 'SoftwareUpdateSummarizationList'
+            }
+        }
+        
+        $arrRuleID = @(195,196,197,198)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if ($ModuleSCCMVersionBuild -lt 1702) {
+                    $SoftwareUpdateList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ci.* FROM SMS_SoftwareUpdate ci WHERE ci.CI_ID NOT IN ( SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='UpdateClassification:3689bdc8-b205-4af4-8d4a-a63924c5e9d5') AND ci.CI_ID NOT IN (SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='Product:30eb551c-6288-4716-9a78-f300ec36d72b') ORDER BY DateRevised DESC")
+                } else {
+                    $SoftwareUpdateList = Get-CMSoftwareUpdate -Fast
+                }
+                Export-CEXMLFile -VariableName 'SoftwareUpdateList'
+            }
+        }
+
+        
+        $arrRuleID = @(199)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateDeploymentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if ($ModuleSCCMVersionBuild -gt 1702) {
+                    $SoftwareUpdateDeploymentList = Get-CMSoftwareUpdateDeployment | Where-Object {$_.AssignmentType -eq 1}
+                }
+                Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentList'
+            }
+        }
+        
         $arrRuleID = @(200,201,202,203,204,205,206,207,208,209,210)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2549,7 +2378,6 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Group Deployment'))
         $arrRuleID = @(207,208,209)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2561,9 +2389,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SoftwareUpdateGroupDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $SoftwareUpdateGroupDeploymentList = @()
                     $SoftwareUpdateGroupList | ForEach-Object {
-                        $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment -UpdateGroup $_
+                        $SoftwareUpdateGroupDeploymentList += Get-CMUpdateGroupDeployment -UpdateGroup $_
                     }
                 } else {
                     $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment
@@ -2571,65 +2398,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SoftwareUpdateGroupDeploymentList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Deployment'))
-        $arrRuleID = @(199)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SoftwareUpdateDeploymentList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SoftwareUpdateDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                if ($ModuleSCCMVersionBuild -lt 1702) {
-                    #todo: test with gmi query: SELECT * FROM SMS_DeploymentSummary WHERE FeatureType = 5 and AssignmentType = 1
-                    $SoftwareUpdateDeploymentList = @()
-                } else {
-                    $SoftwareUpdateDeploymentList = Get-CMSoftwareUpdateDeployment | Where-Object {$_.AssignmentType -eq 1}
-                }
-                Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update'))
-        $arrRuleID = @(195,196,197,198)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SoftwareUpdateList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SoftwareUpdateList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $SoftwareUpdateList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ci.* FROM SMS_SoftwareUpdate ci WHERE ci.CI_ID NOT IN ( SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='UpdateClassification:3689bdc8-b205-4af4-8d4a-a63924c5e9d5') AND ci.CI_ID NOT IN (SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='Product:30eb551c-6288-4716-9a78-f300ec36d72b') ORDER BY DateRevised DESC"
-                } else {
-                    $SoftwareUpdateList = Get-CMSoftwareUpdate -Fast
-                }
-                Export-CEXMLFile -VariableName 'SoftwareUpdateList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Summarization'))
-        $arrRuleID = @(193,194)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SoftwareUpdateSummarizationList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SoftwareUpdateSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $SoftwareUpdateSummarizationList = Get-CMSoftwareUpdateSummarizationSchedule
-                Export-CEXMLFile -VariableName 'SoftwareUpdateSummarizationList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Automatic Deployment Rule'))
+        
         $arrRuleID = @(210,211,212,213,214,215,216,217,218,219,220,221)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2644,8 +2413,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SoftwareUpdateADRList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Automatic Deployment Rule Deployment'))
+        
         $arrRuleID = @(213,214,218,219,220,221)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2656,17 +2424,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateADRDeploymetList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $SoftwareUpdateADRDeploymetList = @() #cade Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_AutoDeployment"
-                } else {
+                if ($ModuleSCCMVersionBuild -gt 1702) {
                     $SoftwareUpdateADRDeploymetList = Get-CMAutoDeploymentRuleDeployment
                 }
                 Export-CEXMLFile -VariableName 'SoftwareUpdateADRDeploymetList'
             }
         }
-        #endregion
-
-        #region Hierarchy Settings List
+        
         $arrRuleID = @(222,223,224,316,317,318)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2677,11 +2441,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AutoUpgradeConfigs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
                 New-Variable -Name "AutoUpgradeConfigsError" -Value (Import-Clixml -Path "$($SaveToFolder)\AutoUpgradeConfigsError.xml") -Force -Option AllScope -Scope Script
-            } else {
-
-                $AutoUpgradeConfigs = @()
-                $AutoUpgradeConfigsError = @()
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Client Auto-Upgrade Configuration'))
+            } else {                
                 ($SiteList | Where-Object {$_.Type -eq 2}) | ForEach-Object {
                     $Class = [wmiclass]""
                     $class.psbase.path = "\\$($SMSProviderServer)\root\sms\site_$($_.SiteCode):SMS_Site"
@@ -2696,10 +2456,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'AutoUpgradeConfigsError'
             }
         }
-        #endregion
 
-        #region Email Notification Component List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('E-mail notification Component'))
         $arrRuleID = @(225,226,227)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2714,9 +2471,90 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'EmailNotificationList'
             }
         }
-        #endregion
 
-        #region Status Summarization for Primary Site
+        $arrRuleID = @(228,229,230,231,232,233)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\ADForestlist.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ADForestlist" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ADForestlist = Get-CMActiveDirectoryForest
+                Export-CEXMLFile -VariableName 'ADForestlist'
+            }
+        }
+
+        $arrRuleID = @(228,229,230,231,232,233)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\ADForestDiscoveryStatusList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ADForestDiscoveryStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ADForestlist | ForEach-Object {
+                    $item = $_
+                    #cade
+
+                    $StatusList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ADForestDiscoveryStatus WHERE ForestID = $($item.ForestID)")
+                    $StatusList | ForEach-Object {
+                        $dt1 = Get-Date -Date "01/01/1970"
+                        $dt2 = Get-Date -Date "01/01/1970"
+                        if (-not [string]::IsNullOrEmpty($_.LastDiscoveryTime)) {
+                            $dt1 = [datetime]::parseexact($_.LastDiscoveryTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
+                        }
+
+                        if (-not [string]::IsNullOrEmpty($_.LastPublishingTime)) {
+                            $dt2 = [datetime]::parseexact($_.LastPublishingTime.split('.')[0],"yyyyMMddHHmmss",[System.Globalization.CultureInfo]::InvariantCulture)
+                        }
+
+                        $ADForestDiscoveryStatusList += new-object HealthCheckClasses.SCCM.CEADForestDiscoveryStatus($_.DiscoveryEnabled, $_.DiscoveryStatus, $item.ForestFQDN, $dt1, $dt2, $_.PublishingEnabled, $_.PublishingStatus, $_.SiteCode)
+                    }
+                }
+                Export-CEXMLFile -VariableName 'ADForestDiscoveryStatusList'
+            }
+        }     
+        
+        $arrRuleID = @(234,235,236,237,238)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\DatabaseReplicationStatusList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DatabaseReplicationStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if (($SiteList | Measure-Object).Count -gt 1) {
+                    $DatabaseReplicationStatusList = Get-CMDatabaseReplicationStatus
+                    Export-CEXMLFile -VariableName 'DatabaseReplicationStatusList'
+                }
+            }
+        }
+
+        $arrRuleID = @(240,241)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\DatabaseReplicationScheduleList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DatabaseReplicationScheduleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if (($SiteList | Measure-Object).Count -gt 1) {
+                    #cade
+                    $DatabaseReplicationScheduleList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -class SMS_RcmSqlControl)
+                    Export-CEXMLFile -VariableName 'DatabaseReplicationScheduleList'
+                }
+            }
+        }
+
         $arrRuleID = @(242,243,244,245,246,247,248,249,250,251,252,253)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2726,9 +2564,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SiteSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $SiteSummarizationList = @()
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Status Summarization'))
+            } else {                
                 ($SiteList | Where-Object {$_.Type -eq 2}) | ForEach-Object {
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Status Summarization List', $_.SiteCode))
                     $Class = [wmiclass]""
@@ -2749,10 +2585,89 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SiteSummarizationList'
             }
         }
-        #endregion
 
-        #region Distribution Point
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Point'))
+        $arrRuleID = @(259, 260)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\ProcessAverageTimeList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+
+                $NumberOfSamples = [math]::Round([int]$Script:ProcessListSamplesMinutes * 60 / [int]$Script:ProcessListSamplesWaitSeconds)
+                $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    For ($i=1; $i -le $NumberOfSamples; $i++) {
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1030 @($RemoteComputer, $i, $NumberOfSamples))
+                        try {
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
+                            if ($itemReturn -ne $null) {
+                                $ProcessInfoList += $itemReturn
+                            } else {
+                                $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Performance' }
+                                break
+                            }
+                        } catch {
+                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Performance' }
+                            break
+                        }
+                        if ($i -lt $NumberOfSamples) { start-sleep $Script:ProcessListSamplesWaitSeconds }
+                    }
+
+                    $ProcessInfoList | Select-Object PSComputerName | Get-Unique -AsString | ForEach-Object {
+                        $Item = $_
+                        $ProcessAverageTimeList += $ProcessInfoList | Where-Object {$_.PSComputerName -eq $item.PSComputerName} | Group-Object Name | Select-Object -Property  @{ Name = 'ComputerName'; Expression = { $item.PSComputerName }}, Name, @{ Name = 'Average'; Expression = { ($_.Group | Measure-Object -Property PercentProcessorTime -Sum).Sum / $NumberOfSamples } }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'ProcessAverageTimeList'
+            }
+        }
+
+        $arrRuleID = @(261, 262)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\ServerRegistryInformation.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ServerRegistryInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('Short file name creation', $RemoteComputer))
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
+                        $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
+                        if ($RegKey -eq $Null) {
+                            $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
+                        }
+
+                        $ShortNameCreation = $RegKey.GetValue("NtfsDisable8dot3NameCreation")
+
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
+                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
+
+                        $ServerRegistryInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = $ShortNameCreation; 'ProgramFiles' = $ProgramFiles }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'Short file name creation Remote Registry (RRP/RPC)' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'ServerRegistryInformation'
+            }
+        }
+
         $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2762,36 +2677,66 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionPointList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "DistributionPointInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\DistributionPointInformationList.xml") -Force -Option AllScope -Scope Script
-                New-Variable -Name "BoundarySiteSystemsList" -Value (Import-Clixml -Path "$($SaveToFolder)\BoundarySiteSystemsList.xml") -Force -Option AllScope -Scope Script
-                New-Variable -Name "DistributionPointDriveInfo" -Value (Import-Clixml -Path "$($SaveToFolder)\DistributionPointDriveInfo.xml") -Force -Option AllScope -Scope Script
-            } else {
-                $DistributionPointList = @()
-                $DistributionPointInformationList = @()
+            } else {                
                 $SiteList | Select-Object SiteCode | Get-Unique -AsString | ForEach-Object {
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Distribution Point', $_.SiteCode))
                     $DistributionPointList += Get-CMDistributionPoint -SiteCode $_.SiteCode
                 }
 
+                Export-CEXMLFile -VariableName 'DistributionPointList'
+            }
+        }
+
+        $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\DistributionPointInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DistributionPointInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
                 $DistributionPointList | ForEach-Object {
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'Distribution Point', ($_.NetworkOSPath -replace '\\', '')))
                     $DistributionPointInformationList += Get-CMDistributionPointInfo -InputObject $_
                 }
-                #cade
-                $BoundarySiteSystemsList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_BoundaryGroupSiteSystems where Flags = 0"
-
-                #cade
-                $DistributionPointDriveInfo = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_DistributionPointDriveInfo"
-                Export-CEXMLFile -VariableName 'DistributionPointList'
                 Export-CEXMLFile -VariableName 'DistributionPointInformationList'
+            }
+        }
+
+        $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\BoundarySiteSystemsList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "BoundarySiteSystemsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                #cade
+                $BoundarySiteSystemsList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_BoundaryGroupSiteSystems where Flags = 0")
                 Export-CEXMLFile -VariableName 'BoundarySiteSystemsList'
+            }
+        }
+
+        $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\DistributionPointDriveInfo.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "DistributionPointDriveInfo" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                #cade
+                $DistributionPointDriveInfo = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_DistributionPointDriveInfo")
                 Export-CEXMLFile -VariableName 'DistributionPointDriveInfo'
             }
         }
-        #endregion
-
-        #region Distribution Status
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Status'))
+        
         $arrRuleID = @(275,276,277,332,333)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2803,17 +2748,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DistributionStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $DistributionStatusList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ObjectContentExtraInfo"
+                    $DistributionStatusList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ObjectContentExtraInfo")
                 } else {
                     $DistributionStatusList = Get-CMDistributionStatus
                 }
                 Export-CEXMLFile -VariableName 'DistributionStatusList'
             }
         }
-        #endregion
-
-        #region Application List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Application'))
+        
         $arrRuleID = @(278,279,280,281,282,283,284,286,287,338)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2828,8 +2770,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ApplicationList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Deployment Type'))
+        
         $arrRuleID = @(286,287)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2839,14 +2780,25 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DeploymentTypeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "PathDTInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathDTInformationList.xml") -Force -Option AllScope -Scope Script
-            } else {
-                $DeploymentTypeList = @()
+            } else {                
                 $ApplicationList | ForEach-Object {
                     $DeploymentTypeList += Get-CMDeploymentType -InputObject $_
                 }
+                
+                Export-CEXMLFile -VariableName 'DeploymentTypeList'
+            }
+        }
 
-                $PathDTInformationList = @()
+        $arrRuleID = @(286,287)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\PathDTInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "PathDTInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
                 $ApplicationList | ForEach-Object {
                     $item = $_
 
@@ -2881,14 +2833,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         }
                     }
                 }
-                Export-CEXMLFile -VariableName 'DeploymentTypeList'
                 Export-CEXMLFile -VariableName 'PathDTInformationList'
             }
         }
-        #endregion
-
-        #region Content List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Point Content List'))
+        
         $arrRuleID = @(288,289)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2898,18 +2846,16 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $DPContentList = @()
+            } else {                
                 $sqlQuery = 'select * from SMS_DPContentInfo'
                 if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
                     $sqlQuery += ' where NALPath not like "%manage.microsoft.com%"'
                 }
-                $DPContentList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query $sqlQuery
+                $DPContentList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query $sqlQuery)
                 Export-CEXMLFile -VariableName 'DPContentList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Distribution Point Group Content List'))
+        
         $arrRuleID = @(288,289)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2919,17 +2865,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPGroupContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $DPGroupContentList = @()
+            } else {                
                 #cade
-                $DPGroupContentList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'select * from SMS_DPGroupContentInfo'
+                $DPGroupContentList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'select * from SMS_DPGroupContentInfo')
                 Export-CEXMLFile -VariableName 'DPGroupContentList'
             }
         }
-        #endregion
-
-        #region Packages
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Package'))
+        
         $arrRuleID = @(290,291,292,293)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2939,10 +2881,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PackageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "PathPkgInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathPkgInformationList.xml") -Force -Option AllScope -Scope Script
             } else {
                 $PackageList = Get-CMPackage
-                $PathPkgInformationList = @()
+                Export-CEXMLFile -VariableName 'PackageList'
+            }
+        }
+
+        $arrRuleID = @(290,291,292,293)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\PathPkgInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "PathPkgInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
                 $PackageList | ForEach-Object {
                     $Item = $_
                     if (($item.Name -notin $Script:HiddenPackages) -and ($item.DefaultImageFlags -ne 2)) { #2=USMT package
@@ -2956,14 +2910,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         }
                     }
                 }
-                Export-CEXMLFile -VariableName 'PackageList'
                 Export-CEXMLFile -VariableName 'PathPkgInformationList'
             }
         }
-        #endregion
-
-        #region Operating System
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Operating System Image'))
+        
         $arrRuleID = @(294,295)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2973,10 +2923,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "OperatingSystemImageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "PathOSImgInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathOSImgInformationList.xml") -Force -Option AllScope -Scope Script
             } else {
-                $OperatingSystemImageList = Get-CMOperatingSystemImage
-                $PathOSImgInformationList  = @()
+                $OperatingSystemImageList = Get-CMOperatingSystemImage                
+                Export-CEXMLFile -VariableName 'OperatingSystemImageList'
+            }
+        }
+
+        $arrRuleID = @(294,295)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\PathOSImgInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "PathOSImgInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
                 $OperatingSystemImageList | ForEach-Object {
                     $Item = $_
                     if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
@@ -2988,12 +2950,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $PathOSImgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                     }
                 }
-                Export-CEXMLFile -VariableName 'OperatingSystemImageList'
                 Export-CEXMLFile -VariableName 'PathOSImgInformationList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Operating System Installer'))
+        
         $arrRuleID = @(296,297)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3003,10 +2963,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "OperatingSystemInstallerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "PathOSInstallerInformationList" -Value (Import-Clixml -Path "$($SaveToFolder)\PathOSInstallerInformationList.xml") -Force -Option AllScope -Scope Script
             } else {
-                $OperatingSystemInstallerList = Get-CMOperatingSystemInstaller
-                $PathOSInstallerInformationList = @()
+                $OperatingSystemInstallerList = Get-CMOperatingSystemInstaller                
+                Export-CEXMLFile -VariableName 'OperatingSystemInstallerList'
+            }
+        }
+
+        $arrRuleID = @(296,297)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\PathOSInstallerInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "PathOSInstallerInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
                 $OperatingSystemInstallerList | ForEach-Object {
                     $Item = $_
                     if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
@@ -3018,28 +2990,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $PathOSInstallerInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                     }
                 }
-                Export-CEXMLFile -VariableName 'OperatingSystemInstallerList'
                 Export-CEXMLFile -VariableName 'PathOSInstallerInformationList'
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Task Sequence'))
-        $arrRuleID = @(186,187,298,299,300,301,302,303)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\TaskSequenceList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "TaskSequenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $TaskSequenceList = Get-CMTaskSequence
-                Export-CEXMLFile -VariableName 'TaskSequenceList'
-            }
-        }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Task Sequence Reboot Step'))
         $arrRuleID = @(300)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3050,9 +3004,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "TaskSequenceRebootOptions" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $TaskSequenceRebootOptions = @()
-                if ($ModuleSCCMVersionBuild -lt 1702) {
-                } else {
+                
+                if ($ModuleSCCMVersionBuild -gt 1702) {
                     $TaskSequenceList | ForEach-Object {
                         $item = $_
 
@@ -3066,30 +3019,6 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             }
         }
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Task Sequence Reference'))
-        $arrRuleID = @(186,283,284,292,293,295,297,301,302,303)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\TaskSequenceReferenceList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "TaskSequenceReferenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                #cade
-                $TaskSequenceReferenceList = @()
-                $TaskSequenceList | ForEach-Object {
-                    $item = $_
-                    $TaskSequenceReferenceList += Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ts.*, content.* FROM SMS_ObjectContentExtraInfo content INNER JOIN SMS_TaskSequencePackageReference tspr ON tspr.RefPackageID = content.PackageID INNER JOIN SMS_TaskSequencePackage ts on ts.PackageID = tspr.PackageID where ts.PackageID = '$($item.PackageID)'"
-                }
-                Export-CEXMLFile -VariableName 'TaskSequenceReferenceList'
-            }
-        }
-        #endregion
-
-        #region inbox monitor
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Inbox Folder'))
         $arrRuleID = @(304,305)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3099,8 +3028,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "inboxList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $inboxList = @()
+            } else {                
                 $SiteList | ForEach-Object {
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Inbox Files', $_.SiteCode))
                     $item = $_
@@ -3130,10 +3058,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'inboxList'
             }
         }
-        #endregion
-
-        #region Driver Package List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Driver Package'))
+        
         $arrRuleID = @(306)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3148,10 +3073,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DriverPackageList'
             }
         }
-        #endregion
-
-        #region Component Status (Summarizer) List
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Component Status'))
+        
         $arrRuleID = @(307)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3165,13 +3087,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 #Tally Interval = https://msdn.microsoft.com/en-us/library/cc144112.aspx
                 #SMS_ComponentSummarizer = https://docs.microsoft.com/en-us/sccm/develop/reference/core/servers/manage/sms_componentsummarizer-server-wmi-class
                 #Status = 0=green, 1=warning, 2=red
-                $ComponentSummarizerList = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ComponentSummarizer WHERE TallyInterval='0001128000100008'"
+                $ComponentSummarizerList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ComponentSummarizer WHERE TallyInterval='0001128000100008'")
                 Export-CEXMLFile -VariableName 'ComponentSummarizerList'
             }
         }
-
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Component Status Message'))
-        $arrRuleID = @(308)
+                
+        $arrRuleID = @(308, 363)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -3180,17 +3101,37 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ComponentStatusMessageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-                New-Variable -Name "ComponentStatusMessageCompletedList" -Value (Import-Clixml -Path "$($SaveToFolder)\ComponentStatusMessageCompletedList.xml") -Force -Option AllScope -Scope Script
+                New-Variable -Name "ComponentStatusMessageListError" -Value (Import-Clixml -Path "$($SaveToFolder)\ComponentStatusMessageListError.xml") -Force -Option AllScope -Scope Script
             } else {
-                $ComponentStatusMessageList = @()
-                $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays(([int]$script:ComponentStatusMessageDateOld)*-1) -Severity Warning
-                $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays([int]($script:ComponentStatusMessageDateOld)*-1) -Severity Error
+                try {
+                    $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays(([int]$script:ComponentStatusMessageDateOld)*-1) -Severity Warning
+                    $ComponentStatusMessageList += Get-CMComponentStatusMessage -ViewingPeriod (Get-Date).AddDays([int]($script:ComponentStatusMessageDateOld)*-1) -Severity Error
+                } catch {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                    $ComponentStatusMessageList = @()
+                    $ComponentStatusMessageListError += New-Object -TypeName PSObject -Property @{'Error' = $true; }
+                }
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageList'
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageListError'
+            }
+        }
 
-                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Component Status Message Details'))
-                $ComponentStatusMessageCompletedList = @()
+        $arrRuleID = @(308, 363)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\ComponentStatusMessageCompletedList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ComponentStatusMessageCompletedList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
                 $i=1
                 $j=1
                 $total = $ComponentStatusMessageList.Count
+                if ($script:AddMultipleComponentStatusMessage -eq $false) {
+
+                }
                 $ComponentStatusMessageList | ForEach-Object {
                     if ($i -eq 500) {
                         Write-CELog -logtype "Info" -logmessage "Analysing $([int]500*$j) out of $total"
@@ -3208,7 +3149,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                             } else {
                                 $objMessageresult = $Win32FormatMessage::FormatMessage($flags, $ptrsrvModule, $item.Severity -bor $item.MessageID, 0, $stringOutput, $sizeOfBuffer, $stringArrayInput)
                             }
-                            $objRecordID = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "Select * from SMS_StatMsgInsStrings where recordid = $($item.RecordID)"
+                            $objRecordID = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "Select * from SMS_StatMsgInsStrings where recordid = $($item.RecordID)")
                             $objMessage = $stringOutput.toString().Replace("%11","").Replace("%12","").Replace("%3%4%5%6%7%8%9%10","")
                             $objRecordID | ForEach-Object {
                                 $objMessage = $objMessage.Replace("%$($_.InsStrIndex+1)", $_.InsStrValue)
@@ -3224,7 +3165,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                                         continue
                                     }
                                     $intPossibleCause = $arrMessage[$i].tolower().indexof('possible cause:')
-                                    if ($intPossibleCouse -lt 0) {
+                                    if ($intPossibleCause -lt 0) {
                                         $intPossibleCause = $arrMessage[$i].tolower().indexof('possible causes:')
                                     }
                                     $intSolution = $arrMessage[$i].tolower().indexof('solution:')
@@ -3251,14 +3192,110 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                     }
                 }
-                Export-CEXMLFile -VariableName 'ComponentStatusMessageList'
                 Export-CEXMLFile -VariableName 'ComponentStatusMessageCompletedList'
             }
         }
-        #endregion
 
-        #region Approval Request
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Driver Package'))
+        $arrRuleID = @(312)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SUPWIDList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPWIDList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SUPList | ForEach-Object {
+                    $item = $_
+                    $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
+
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services")
+                        $WIDExist = -not [String]::IsNullOrEmpty(($RegKey.GetValueNames() | Where-Object {$_ -eq 'UpdateServices-WidDatabase'}))
+
+                        if ($WIDExist) {
+                            $SUPWIDList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName;  }
+                        }
+
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WID Remote Registry (RRP/RPC)' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SUPWIDList'
+            }
+        }
+
+        $arrRuleID = @(313)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\ServerNOSMSONDriveInformation.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ServerNOSMSONDriveInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1047 @('NO_SMS_ON_DRIVE.SMS on SystemDrive', $RemoteComputer))
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+                    
+                        $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
+                        if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                            $bPathExist = $true
+                        } else {
+                            $bPathExist = $false
+                        }
+
+                        $ServerNOSMSONDriveInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = 'C:\' }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'NO_SMS_ON_DRIVE.SMS' }
+
+                    }
+                }
+                Export-CEXMLFile -VariableName 'ServerNOSMSONDriveInformation'
+            }
+        }
+        
+        $arrRuleID = @(314)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SUPSQL.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SUPSQL" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SUPList | ForEach-Object {
+                    $item = $_
+                    $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
+
+                    try {
+                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
+                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup")
+                        $WSUSSQL = $RegKey.GetValue('SqlServerName').ToString()
+
+                        $SUPSQL += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL }
+
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WSUS Remote Registry (RRP/RPC)' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SUPSQL'
+            }
+        }
+
         $arrRuleID = @(315)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3273,10 +3310,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ApprovalRequestList'
             }
         }
-        #endregion
 
-        #region sup component information
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Component - SyncManager'))
         $arrRuleID = @(319)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3291,9 +3325,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SUPComponentSyncManager'
             }
         }
-
-        #region sup component information
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Update Component'))
+        
         $arrRuleID = @(320)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3308,10 +3340,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SUPComponent'
             }
         }
-        #endregion
-
-        #region site definition
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Definition'))
+        
         $arrRuleID = @(325,326)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3325,12 +3354,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $SiteDefinition =  Get-CMSiteDefinition
                 Export-CEXMLFile -VariableName 'SiteDefinition'
             }
-        }
-        #endregion
-
-        #region software version
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Software Version'))
-        $SoftwareVersionList = @()
+        }        
+        
         $arrRuleID = @(327, 328)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3374,11 +3399,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SoftwareVersionList'
             }
         }
-        #endregion
-
-        #region service status
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Service Status'))
-        $ServiceList = @()
+        
         $arrRuleID = @(329)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3388,10 +3409,11 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $SiteList | ForEach-Object {
+            } else {                
+                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
-                    $RemoteComputer = $item.ServerName
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('SCCM Services', $RemoteComputer))
 
                     try {
                         $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "win32_Service" -ErrorAction SilentlyContinue) 
@@ -3401,23 +3423,17 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                                 $ServiceList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'Name' = $_.Name; 'Caption' = $_.Caption; 'Started' = $_.Started; 'StartMode' = $_.StartMode; 'State' = $_.State; 'Status' = $_.Status }
                             }
                         } else {
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
-                            break
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Service' }
                         }
                     } catch {
                         Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2)' }
-                        break
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Service' }
                     }
                 }
                 Export-CEXMLFile -VariableName 'ServiceList'
             }
         }
-        #endregion
 
-        #region ping
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Ping Status'))
-        $ServiceList = @()
         $arrRuleID = @(334,335,336,337)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3427,13 +3443,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PingList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $PingList = @()
+            } else {                
                 $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
                     $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
 
                     for($i=1; $i -le [int]$Script:MaxPingCount; $i++) {    
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1049 @($RemoteComputer, $i, $Script:MaxPingCount))
                         $pingreturn = Test-Connection -ComputerName $RemoteComputer -Count 1 -ErrorAction SilentlyContinue
                         if ($pingreturn -eq $null) {
                             $PingList += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.Source; 'Destination' = $Destination; 'IPV4' = ''; 'ResponseTime' = 4000; 'Success' = $false  }
@@ -3446,11 +3462,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'PingList'
             }
         }
-        #endregion
 
-        #region intune
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Intune Subscription'))
-        $ServiceList = @()
         $arrRuleID = @(339)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3465,12 +3477,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'IntuneSubscription'
             }
         }
-        #endregion
-
-        #region intune
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Boundary'))
-        $ServiceList = @()
-        $arrRuleID = @(340)
+        
+        $arrRuleID = @(340,343)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -3484,10 +3492,138 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'Boundary'
             }
         }
-        #endregion
-        Export-CEXMLFile -VariableName 'ServerDown'
-        Export-CEXMLFile -VariableName 'ServerHTTPAccessInformation'
 
+        $arrRuleID = @(344,345)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\LogicalDiskInfoList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "LogicalDiskInfoList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Logical Disk', $RemoteComputer))
+                    try {
+                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_LogicalDisk" -ErrorAction SilentlyContinue)
+                        if ($itemReturn -ne $null) {
+                            $itemReturn | ForEach-Object {
+                                $LogicalDiskInfoList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'DeviceID' = $_.DeviceID; 'DriveType' = $_.DriveType; 'FreeSpace' = $_.FreeSpace; 'Size' = $_.Size; 'Compressed' = $_.Compressed; 'FileSystem' = $_.FileSystem; 'VolumeSerialNumber' = $_.VolumeSerialNumber; 'ConfigManagerErrorCode' = $_.ConfigManagerErrorCode; }
+                            }
+                        } else {
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Disk' }
+                        }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Disk' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'LogicalDiskInfoList'
+            }
+        }
+        
+        $arrRuleID = @(346,347,348,349)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\ComputerInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ComputerInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Computer', $RemoteComputer))
+                    try {
+                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_ComputerSystem" -ErrorAction SilentlyContinue)
+                        if ($itemReturn -ne $null) {
+                            $ComputerInformationList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'BootupState' = $itemReturn.BootupState; 'Status' = $itemReturn.Status; 'DaylightInEffect' = $itemReturn.DaylightInEffect; 'DomainRole' = $itemReturn.DomainRole; 'Compressed' = $itemReturn.Compressed; 'HypervisorPresent' = $itemReturn.HypervisorPresent; 'Manufacturer' = $itemReturn.Manufacturer; 'Model' = $itemReturn.Model; 'NumberOfLogicalProcessors' = $itemReturn.NumberOfLogicalProcessors; 'NumberOfProcessors' = $itemReturn.NumberOfProcessors; 'PartOfDomain' = $itemReturn.PartOfDomain; 'SystemFamily' = $itemReturn.SystemFamily; 'SystemType' = $itemReturn.SystemType; 'TotalPhysicalMemory' = $itemReturn.TotalPhysicalMemory; }
+                        } else {
+                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Computer' }
+                        }
+                    } catch {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Computer' }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'ComputerInformationList'
+            }
+        }
+        
+        $arrRuleID = @(350)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\FolderInformationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "FolderInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $FolderInformationList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ObjectContainerNode")
+                Export-CEXMLFile -VariableName 'FolderInformationList'
+            }
+        }
+
+        $arrRuleID = @(353)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\AdvertisementList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "AdvertisementList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $AdvertisementList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Advertisement")
+                Export-CEXMLFile -VariableName 'AdvertisementList'
+            }
+        }
+
+        $arrRuleID = @(354,355,356,357,358,359,360,361)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\BaselineList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "BaselineList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $BaselineList = Get-CMBaseline
+                Export-CEXMLFile -VariableName 'BaselineList'
+            }
+        }
+
+        $arrRuleID = @(361)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\BaselineDeploymentList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "BaselineDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $BaselineDeploymentList = Get-CMBaselineDeployment
+                Export-CEXMLFile -VariableName 'BaselineDeploymentList'
+            }
+        }
+        #endregion
+
+
+        Export-CEXMLFile -VariableName 'ServerDown'
+        Export-CEXMLFile -VariableName 'ServerHTTPAccessInformation'        
         #endregion
 
         #region Saving XML Files
@@ -3510,6 +3646,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #$xmlList | ForEach-Object {
         #    Export-CEXMLFile -VariableName $_
         #}
+        #endregion
+
+        #region export error information
+        $Error | Export-Clixml -Path "$($SaveToFolder)\ErrorCapture.xml"
         #endregion
 
         #region Create Zip File on Desktop

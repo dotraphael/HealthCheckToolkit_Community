@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <DefaultValues>
+    <DefaultValue Name="ADPageSize" Type="int" value="2000" />
     <DefaultValue Name="ExcludeServers" Type="array" value="server1fqdn,server2fqdn" />
     <DefaultValue Name="MinimumSQLVersion" Type="string" value="11.0.0.0" />
     <DefaultValue Name="MinimumSQLMemory" Type="string" value="8192" />
@@ -135,5 +136,14 @@
     <DefaultValue Name="MaxPingDropPercentWarning" Type="int" value="5" />
     <DefaultValue Name="MaxPingDropPercentError" Type="int" value="10" />
     <DefaultValue Name="PingDelay" Type="int" value="2" />
-    <DefaultValue Name="MaxPingCount" Type="int" value="75" />
+    <DefaultValue Name="MaxPingCount" Type="int" value="30" />
+    <DefaultValue Name="MinScheduleInMinutes" Type="int" value="240" />
+    <DefaultValue Name="FreeDiskSpacePercentageWarning" Type="int" value="20" />
+    <DefaultValue Name="FreeDiskSpacePercentageError" Type="int" value="10" />
+    <DefaultValue Name="MinimumSiteServerRAMGB" Type="int" value="16" />
+    <DefaultValue Name="MinimumSiteServerCPUCore" Type="int" value="8" />
+    <DefaultValue Name="MinimumRemoteServerRAMGB" Type="int" value="8" />
+    <DefaultValue Name="MinimumRemoteServerCPUCore" Type="int" value="4" />
+    <DefaultValue Name="DeploymentErrorsWarning" Type="int" value="5" />
+    <DefaultValue Name="DeploymentErrorsError" Type="int" value="10" />
 </DefaultValues>
