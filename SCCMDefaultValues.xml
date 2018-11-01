@@ -146,4 +146,22 @@
     <DefaultValue Name="MinimumRemoteServerCPUCore" Type="int" value="4" />
     <DefaultValue Name="DeploymentErrorsWarning" Type="int" value="5" />
     <DefaultValue Name="DeploymentErrorsError" Type="int" value="10" />
+    <DefaultValue Name="IISRoles" Type="array" value="SMS Distribution Point,SMS Management Point,SMS Software Update Point,SMS Fallback Status Point,SMS Application Web Service,SMS Portal Web Site" />
+    <DefaultValue Name="IISExecutionTimeOut" Type="int" value="7200" />
+    <DefaultValue Name="IISmaxRequestLength" Type="int" value="20480" />
+    <DefaultValue Name="IISLogOldItemsWarning" Type="int" value="30" />
+    <DefaultValue Name="IISLogOldItemsError" Type="int" value="60" />
+    <DefaultValue Name="IISMaxBandwidth" Type="int" value="-1" />
+    <DefaultValue Name="IISConnectionTimeout" Type="int" value="300" />
+    <DefaultValue Name="IISMaxConnections" Type="int" value="0" />
+    <DefaultValue Name="IISWSUSAppPoolCPUResetInterval" Type="int" value="900" />
+    <DefaultValue Name="IISWSUSAppPoolPingingEnabled" Type="bool" value="false" />
+    <DefaultValue Name="IISWSUSAppPoolAppPoolRecyclePrivateMemory" Type="bool" value="false" />
+    <DefaultValue Name="IISWSUSAppPoolAppPoolQueueLength" Type="int" value="30000" />
+    <DefaultValue Name="IISWSUSAppPoolRapidFailProtection" Type="bool" value="false" />
+    <DefaultValue Name="IISWSUSAppPoolPeriodicRestartTime" Type="int" value="0" />
+    <DefaultValue Name="IISWSUSAppPoolPeriodicRestartRequests" Type="int" value="0" />
+    <DefaultValue Name="DPFeatures" Type="string" value="Internet Information Services,IIS-WebServerRole;World Wide Web Services,IIS-WebServer;Common HTTP Features, IIS-CommonHttpFeatures;Default Document,IIS-DefaultDocument;Directory Browsing,IIS-DirectoryBrowsing;HTTP Errors,IIS-HttpErrors;Static Content,IIS-StaticContent;HTTP Redirection,IIS-HttpRedirect;Health and Diagnostics,IIS-HealthAndDiagnostics;HTTP Logging,IIS-HttpLogging;Performance Features,IIS-Performance;Static Content Compression,IIS-HttpCompressionStatic;Security,IIS-Security;Request Filtering,IIS-RequestFiltering;Windows Authentication,IIS-WindowsAuthentication;Application Development Features,IIS-ApplicationDevelopment;ISAPI Extensions,IIS-ISAPIExtensions;Web Management Tools,IIS-WebServerManagementTools;IIS Management Console,IIS-ManagementConsole;IIS 6 Management Compatibility,IIS-IIS6ManagementCompatibility;IIS Metabase and IIS 6 configuration compatibility,IIS-Metabase;IIS 6 WMI Compatibility,IIS-WMICompatibility;IIS Management Scripts and Tools,IIS-ManagementScriptingTools;Remote Differential Compression API Support,MSRDC-Infrastructure" />
+    <DefaultValue Name="MPFeatures" Type="string" value="Internet Information Services,IIS-WebServerRole;World Wide Web Services,IIS-WebServer;Common HTTP Features,IIS-CommonHttpFeatures;Default Document,IIS-DefaultDocument;Directory Browsing,IIS-DirectoryBrowsing;HTTP Errors,IIS-HttpErrors;Static Content,IIS-StaticContent;HTTP Redirection,IIS-HttpRedirect;Health and Diagnostics,IIS-HealthAndDiagnostics;HTTP Logging,IIS-HttpLogging;Logging Tools,IIS-LoggingLibraries;Request Monitor,IIS-RequestMonitor;Tracing,IIS-HttpTracing;Performance Features,IIS-Performance;Static Content Compression,IIS-HttpCompressionStatic;Security,IIS-Security;Request Filtering,IIS-RequestFiltering;Windows Authentication,IIS-WindowsAuthentication;Application Development Features,IIS-ApplicationDevelopment;.NET Extensibility 3.5,IIS-NetFxExtensibility;.NET Extensibility 4.6,IIS-NetFxExtensibility45;ISAPI Extensions,IIS-ISAPIExtensions;ISAPI Filters,IIS-ISAPIFilter;ASP.NET 3.5,IIS-ASPNET;ASP.NET 4.6,IIS-ASPNET45;Web Management Tools,IIS-WebServerManagementTools;IIS Management Console,IIS-ManagementConsole;IIS 6 Management Compatibility,IIS-IIS6ManagementCompatibility;IIS Metabase and IIS 6 configuration compatibility,IIS-Metabase;IIS 6 WMI Compatibility,IIS-WMICompatibility;IIS Management Scripts and Tools,IIS-ManagementScriptingTools;IIS Management Service,IIS-ManagementService;Background Intelligent Transfer Service (BITS),BITS;Background Intelligent Transfer Service (BITS) Server Extensions for File Upload,BITSExtensions-Upload" />
+    <DefaultValue Name="MaxThreads" Type="int" value="30" />
 </DefaultValues>

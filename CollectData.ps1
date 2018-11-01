@@ -1,48 +1,101 @@
-﻿########################################################################################
-# Name: CollectData.ps1
-# Version: 1.3
-# Author: Raphael Perez - raphael@perez.net.br
-# Date: 28/09/2018
-# Comment: This script will check the health of a System Center Configuration Manager
-#          Infrastructure based on user's rights.
-#
-#          It uses the SCCM PowerShell modules, so the SCCM Console must be installed
-#          and connected to the server to be able to run the tool
-#
-#          The tool supports only execution against a Primary Site. CAS is not supported
-#
-# Test: CM1702 Primary site installed on a WS2012R2
-#       CM1702 Primary site installed on a WS2016
-#       CM1710 Primary site installed on a WS2016
-#       CM1802 Primary site installed on a WS2016
-#       CM1806 Primary site installed on a WS2016
-#
-# Updates:
-#        1.0 - Raphael Perez - 03/08/2018 - Initial Script
-#        1.1 - Raphael Perez - 28/08/2018
-#        1.2 - Raphael Perez - 10/09/2018
-#        1.3 - Raphael Perez - 28/09/2018
-#
-# Usage:
-#		 Option 1: powershell.exe -ExecutionPolicy Bypass .\SCCM.ps1 [Parameters]
-#        Option 2: Open Powershell and execute .\SCCM.ps1 [Parameters]
-#
-# Parameters:
-#
-# Examples:
-#        .\CollectData.ps1 -AuthorizedSiteCodes '001' -MessageFilePath .\Messages.xml -RulesOverrideFilePath .\SCCMRulesOverride.xml -DefaultValuesOverrideFilePath .\SCCMDefaultValues.xml
-########################################################################################
+﻿<#
+    .SYNOPSIS
+        Collect Data from a SCCM environment as part of the HealthCheck toolkit
+        
+	.DESCRIPTION
+        Collect related data from a SCCM environment to be used later on for healthcheck analysis
+        
+    .PARAMETER SaveToFolder
+        Path where the collected files should be saved. if not passed, default 'C:\Temp\SCCMHealthCheck' will be used
+
+    .PARAMETER CreateZipFiles
+        Create a zip file with all collected data into the user's desktop
+
+	.PARAMETER AuthorizedSiteCodes
+        List of SCCM Site Codes. If multiple site codes, use comma (',') 
+        
+	.PARAMETER MessagesFilePath
+        Path for the Messages.xml file.
+        This file contain a list of the text messages used by the script
+
+	.PARAMETER RulesOverrideFilePath
+        Path for the SCCMRulesOverride.xml file
+        This file contain all the overrides for the rules that can be changed from the default values (i.e. Enabled True/False, Category, Classifications and Criticality)
+        if there is no override to be done, a file with the following information should be used:
+<?xml version="1.0" encoding="utf-8" ?>
+<Rules>
+    <Rule ID="0" Name="Default Rule" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+</Rules>
+
+	.PARAMETER DefaultValuesOverrideFilePath
+        Path for the SCCMDefaultValues.xml file
+        This file contain all the default values used by the tool and can be changed if required
+        if there is no changes to the default values, a file with the following information should be used:
+<?xml version="1.0" encoding="utf-8" ?>
+<DefaultValues>
+    <DefaultValue Name="DefaultValue" Type="int" value="1" />
+</DefaultValues>
+
+    .INPUTS
+        None
+
+    .OUTPUTS
+        None
+
+	.NOTES
+        Author: Raphael Perez (raphael@perez.net.br)
+        Website: http://www.thedesktopteam.com
+        Twitter: @dotraphael
+
+        DateCreated: 03/08/2018 (v1.0)
+        Update: 28/08/2018 (v1.1)
+        Update: 10/09/2018 (v1.2)
+        Update: 28/09/2018 (v1.3)
+        Update: 01/11/2018 (v1.4)
+        LastUpdate: 01/11/2018 (v1.4)
+
+        Test:
+            CM1702 Primary site installed on a WS2012R2
+            CM1702 Primary site installed on a WS2016
+            CM1710 Primary site installed on a WS2016
+            CM1802 Primary site installed on a WS2016
+            CM1806 Primary site installed on a WS2016
+
+        Requirements: 
+            SCCM Console must be installed and connected to the SCCM infrastructure to be able to run the tool
+            SCCM Primary Site environment. CAS is not supported
+            Tool must be run as administrator and account must have full admin access to the SCCM infrastructure
+
+    .LINK
+        http://www.thedesktopteam.com
+        http://www.rflsystems.co.uk
+        http://www.github.com/dotraphael/healthchecktoolkit
+
+    .EXAMPLE
+        Run the tool against sitecode 001 and use files message.xml, sccmrulesoverride.xml and sccmdefaultvalues.xml located on the same folder as the script
+        and will save all the data into the default location 'C:\Temp\SCCMHealthCheck'
+
+        .\CollectData.ps1 -AuthorizedSiteCodes '001' -MessagesFilePath .\Messages.xml -RulesOverrideFilePath .\SCCMRulesOverride.xml -DefaultValuesOverrideFilePath .\SCCMDefaultValues.xml
+    .EXAMPLE
+        Run the tool against sitecode 001 and use files message.xml, sccmrulesoverride.xml and sccmdefaultvalues.xml located on the same folder as the script
+        and will save all the data into the location 'C:\Temp\SCCMHealthCheckNewLocation' and will create a Zip File with all collected files into the user's desktop
+
+        .\CollectData.ps1 -AuthorizedSiteCodes '001' -MessagesFilePath .\Messages.xml -RulesOverrideFilePath .\SCCMRulesOverride.xml -DefaultValuesOverrideFilePath .\SCCMDefaultValues.xml -CreateZipFiles -SaveToFolder 'C:\Temp\SCCMHealthCheckNewLocation'
 #>
 #region param
 [CmdletBinding()]param (
     [parameter(Mandatory=$true)][string]$AuthorizedSiteCodes,
-    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Message File Path given: $_"}})][string]$MessageFilePath,
+    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Message File Path given: $_"}})][string]$MessagesFilePath,
     [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Rules Override File Path given: $_"}})][string]$RulesOverrideFilePath,
-    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Default Values Override File Path given: $_"}})][string]$DefaultValuesOverrideFilePath    
+    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Default Values Override File Path given: $_"}})][string]$DefaultValuesOverrideFilePath,
+    [switch]$CreateZipFiles,
+    $SaveToFolder = 'C:\Temp\SCCMHealthCheck'
 )
 #endregion
 
 #region Starting Script, Verbose variables
+$Script:StartDateTime = get-date
+$Script:RemoveVariable = $true
 if ($Verbose) {
     $DebugPreference = 2
     $VerbosePreference = 2
@@ -59,10 +112,27 @@ Add-Type -Assembly System.IO.Compression.FileSystem | Out-Null
 
 #region Functions
 
+#region Remove-CEVariable
+function Remove-CEVariable {
+    param (
+        [Parameter(Position=1, Mandatory=$true)][string]$VariableName
+    )
+    if ($Script:RemoveVariable -eq $true) {
+        try {
+            Remove-Variable -Name $VariableName -Force -Scope Script 
+        } catch {
+            Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1000 "Unable to remove variable $($VariableName)")
+            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+        }
+    }
+}
+#endregion
+
 #region Export-CEXMLFile
 function Export-CEXMLFile {
     param (
-        [Parameter(Position=1, Mandatory=$true)][string]$VariableName
+        [Parameter(Position=1, Mandatory=$true)][string]$VariableName,
+        [switch]$ClearVariable = $false
     )
     $VarInfo = Get-Variable $VariableName -ErrorAction SilentlyContinue
     if ($VarInfo -eq $null) {
@@ -70,6 +140,9 @@ function Export-CEXMLFile {
     } else {
         Write-CELog -logtype "INFO" -logmessage "Exporting $($VarInfo.Name)"
         $VarInfo.Value | Export-Clixml -Path "$($SaveToFolder)\$($VarInfo.Name).xml"
+        if ($ClearVariable) {
+            Remove-CEVariable -VariableName ($VarInfo.Name)
+        }
     }
 }
 #endregion
@@ -100,28 +173,113 @@ function Write-ZipFiles {
 #region Test-CEUrl
 function Test-CEUrl {
     param (
-        [int]$InfoMessageID,
-        [string]$url,
-        [int]$MessageIDNameSuccess,
-        [int]$MessageIDError,
-        [string]$ServerName,
+        $ListOfServers,
+        [Parameter(Mandatory=$true)][ValidateSet('mplist','mpcert','sitesigncert','appcatalogwebservice','appcatalogwebsite','wsussimpleauth','ssrsreporturi','ssrsreportserveruri')]
+        [string]$ServerType,
+        [int]$RuleID,
         [int]$CommentIDError,
+        [int]$MessageIDError,
         [int]$CommentIDException,
-        [switch]$UserCredentials,
-        $RuleIDInfo
+        [switch]$UserCredentials
     )
-    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage $InfoMessageID $url)
-    try {
-        if ($UserCredentials) {
-            $WebRequest = Invoke-WebRequest -Uri $url -UseDefaultCredentials -UseBasicParsing
-        } else {
-            $WebRequest = Invoke-WebRequest -Uri $url -UseBasicParsing
-        }
+    $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
 
-        $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDError; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleIDInfo.ID; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url }
-    } catch {
-        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-        $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDException; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleIDInfo.ID; 'ServerName' = $ServerName; 'StatusCode' = 'Unable to connect'; 'URL' = $url }
+    $ListOfServers | ForEach-Object {
+        $item = $_
+        $servername = $_.NetworkOSPath -replace '\\', ''
+        if ($ServerType.ToLower() -eq 'mplist') {
+            $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
+            $MPProtocol = 'HTTP'
+            if ($_.sslState -in (1,3)) {
+                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
+                $MPProtocol = 'HTTPS'
+            }
+            $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mplist"
+        } elseif ($servertype.tolower() -eq 'mpcert') {
+            $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
+            $MPProtocol = 'HTTP'
+            if ($_.sslState -in (1,3)) {
+                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
+                $MPProtocol = 'HTTPS'
+            }
+            $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mpcert"
+        } elseif ($servertype.tolower() -eq 'sitesigncert') {
+            $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
+            $MPProtocol = 'HTTP'
+            if ($_.sslState -in (1,3)) {
+                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
+                $MPProtocol = 'HTTPS'
+            }
+            $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?SITESIGNCERT"
+        } elseif ($servertype.tolower() -eq 'appcatalogwebservice') {
+            $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'ServicePort' }).Value
+            $ServiceName = ($_.Props | Where-Object {$_.PropertyName -eq 'ServiceName' }).Value1
+            $HTTPProtocol = 'HTTP'
+            if ($_.sslState -in (1,3)) {
+                $HTTPProtocol = 'HTTPS'
+            }
+            $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)/ApplicationOfferService.svc"
+        } elseif ($servertype.tolower() -eq 'appcatalogwebsite') {
+            $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalPort' }).Value
+            $ServiceName = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalPath' }).Value1
+            if ([string]::IsNullOrEmpty($ServiceName)) {
+                $ServiceName = 'CMApplicationCatalog'
+            }
+
+            $HTTPProtocol = 'HTTP'
+            if ($_.sslState -in (1,3)) {
+                $HTTPProtocol = 'HTTPS'
+                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalSslPort' }).Value
+            }
+            $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)"
+        } elseif ($servertype.tolower() -eq 'wsussimpleauth') {
+            $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISPort' }).Value
+            $HTTPProtocol = 'HTTP'
+            if ($_.sslState -in (1,3)) {
+                $HTTPProtocol = 'HTTPS'
+                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISSSLPort' }).Value
+            }
+            $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
+        } elseif ($servertype.tolower() -eq 'ssrsreporturi') {
+            $RootFolder = ($_.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
+            $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
+            $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
+            $url = "$($ReportsURI)/$($RootFolder)"
+        } elseif ($servertype.tolower() -eq 'ssrsreportserveruri') {
+            $RootFolder = ($_.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
+            $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
+            $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
+            $url = "$($ReportServerURI)/$($RootFolder)"
+        } else {
+            throw 'Invalid Server Type information'
+        }
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @($servertype, $servername))
+        $Code = {
+            Param (
+                [string]$url,
+                [string]$servername,
+                [switch]$UserCredentials
+            )
+            try {
+                if ($UserCredentials) {
+                    $WebRequest = Invoke-WebRequest -Uri $url -UseDefaultCredentials -UseBasicParsing
+                } else {
+                    $WebRequest = Invoke-WebRequest -Uri $url -UseBasicParsing
+                }
+                New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url;'Error'='' }
+            } catch {
+                New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url;'Error'=$_ }
+            }
+        }
+        $returnInfo = Execute-CERunSpace -code $Code -ParameterList @($url, $servername, $UserCredentials)
+
+        $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+            $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDError; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleID; 'ServerName' = $_.ServerName; 'StatusCode' = $_.StatusCode; 'URL' = $_.URL }
+        }
+        $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+            $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDException; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleID; 'ServerName' = $_.ServerName; 'StatusCode' = 'Unable to connect'; 'URL' = $_.URL }
+        }
     }
 }
 #endregion
@@ -298,6 +456,17 @@ function Write-CEHealthCheckData {
     $newRow.Comment = " $($Comment) "
     $newRow.RuleID = $RuleIDInfo.ID
     $newRow.Criticality = $RuleIDInfo.Criticality
+    switch ($RuleIDInfo.Criticality.ToUpper()) {
+        "HIGH" {
+            $newRow.CriticalityID = 1
+        }
+        "MEDIUM" {
+            $newRow.CriticalityID = 2
+        }
+        default {
+            $newRow.CriticalityID = 3
+        }
+    }
     $Script:HealthCheckData.Rows.Add($newRow)
     Write-CELog -logtype "$($newRow.Classification)" -logmessage "$($newRow.Category) - $Description"
 }
@@ -353,13 +522,105 @@ function Write-CELog {
 }
 #endregion
 
+#region Get-CEAccountMembership
+function Get-CEAccountMembership {
+    param (
+        $AccountList,
+        [string]$PropertyName,
+        [bool]$isServiceAccount
+    )
+    $Root = [ADSI]"LDAP://RootDSE"
+    $oForestConfig = $Root.Get("configurationNamingContext")
+    $oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
+    $AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
+    $AdSearcher.SearchRoot = $oSearchRoot
+    $domains = $AdSearcher.FindAll()
+
+    $AccountList | ForEach-Object {
+        $itemAccount = $_
+        if ($itemAccount.$PropertyName.Indexof('@') -lt 0) {
+            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('group membership for', "$($itemAccount.$PropertyName)"))
+            $ReturnInfo = @()
+            try {
+                $arrAccountInfo = $itemAccount.$PropertyName.Split('\')
+                $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
+                if ($domainNC -eq $null) {
+                    $domainNC = ($domains | Where-Object {$_.Properties.dnsroot -eq $arrAccountInfo[0]}).Properties.ncname
+                }
+                $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
+                $objSearcher.PageSize = $Script:ADPageSize
+
+                $objSearcher.SearchScope = "Subtree"
+                $objSearcher.Filter = "(sAMAccountName=$($arrAccountInfo[1]))"
+                $objSearchReturn = $objSearcher.FindOne()
+                if ($objSearchReturn -eq $null) {
+                    $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 0; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
+                } else {
+                    $objDN = $objSearchReturn.Properties.distinguishedname
+                    if ($objDN -eq $null) {
+                        $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 0; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
+                    } else {
+                        $groupName = $null
+                        ([adsisearcher]"(distinguishedname=$($objDN[0]))").FindOne().Properties.memberof | foreach-object {
+                            $groupName = $_
+                        }
+                        if ($groupName -eq $null) {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 0; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
+                        } else {
+                            $group = [adsi]"LDAP://$($groupName)"
+                            $Group.Member | ForEach-Object {
+                                $Searcher = [adsisearcher]"(distinguishedname=$_)"
+                                $props = $searcher.FindOne().Properties
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $arrAccountInfo[1]; 'isServiceAccount' = $false; 'AccountDN' = $objDN; 'GroupDN' = $props.distinguishedname; 'GroupName' = $props.name; 'ConnectionType' = ''; 'Error'='' }
+                            }
+                        }
+                    }
+                }
+            } catch {
+                $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'DomainNetbios' = ''; 'DomainDN' = ''; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'=$_ }
+            }
+
+            $returninfo | where-object {$_.ReturnType -eq 0} | foreach-object {
+                $Script:AccountDoesNotExist += New-Object -TypeName PSObject -Property @{'AccountName' = $_.AccountName; 'isServiceAccount' = $isServiceAccount }
+            }
+
+            $returninfo | where-object {$_.ReturnType -eq 1} | ForEach-Object {
+                $Script:GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($_.DomainNetbios, $_DomainDN, $_.AccountName, $_.isServiceAccount, $_.AccountDN, $_.GroupDN, $_.GroupName)
+            } 
+
+            $returninfo | where-object {$_.ReturnType -eq 2} | foreach-object {
+                Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                $Script:GroupMembershipErrorList += $_.AccountName
+            }
+        }
+    }
+}
+#endregion
+
+#region Execute-CERunSpace
+function Execute-CERunSpace {
+    param (
+        [ScriptBlock]$code,
+        [object[]]$ParameterList
+    )
+    $newPowerShell = [PowerShell]::Create().AddScript($code)
+    $newPowerShell.AddParameters( $ParameterList ) | out-null
+    $job = $newPowerShell.BeginInvoke()
+    While (-Not $job.IsCompleted) {}
+    $returnInfo = $newPowerShell.EndInvoke($job)
+    $newPowerShell.Dispose()
+
+    $returnInfo
+}
+#endregion
+
 #endregion
 
 #region Main Script
 try {
     #region Temporary Folder
     #$SaveToFolder = "$($env:TEMP)\$((Get-Date).Ticks)"
-    $SaveToFolder = 'C:\Temp\SCCMHealthCheck'
+    #$SaveToFolder = 'C:\Temp\SCCMHealthCheck'
     New-Item -Path $SaveToFolder -Type Directory -Force | out-null
     #endregion
 
@@ -367,7 +628,7 @@ try {
         
     #region Recommendations ID's
     Write-CELog -logtype "Info" -logmessage "Message Database"
-    $Script:HealthCheckMessageData = [xml](get-content -path $MessageFilePath)
+    $Script:HealthCheckMessageData = [xml](get-content -path $MessagesFilePath)
     #endregion
 
     #region Rules Override
@@ -535,6 +796,24 @@ try {
     Set-CEHealthCheckDefaultValue -ValueName 'MinimumRemoteServerCPUCore' -ValueNonExist 4
     Set-CEHealthCheckDefaultValue -ValueName 'DeploymentErrorsWarning' -ValueNonExist 5
     Set-CEHealthCheckDefaultValue -ValueName 'DeploymentErrorsError' -ValueNonExist 10
+    Set-CEHealthCheckDefaultValue -ValueName 'IISRoles' -ValueNonExist @('SMS Distribution Point','SMS Management Point','SMS Software Update Point','SMS Fallback Status Point','SMS Application Web Service','SMS Portal Web Site')
+    Set-CEHealthCheckDefaultValue -ValueName 'IISExecutionTimeOut' -ValueNonExist 7200
+    Set-CEHealthCheckDefaultValue -ValueName 'IISmaxRequestLength' -ValueNonExist 20480
+    Set-CEHealthCheckDefaultValue -ValueName 'IISLogOldItemsWarning' -ValueNonExist 30
+    Set-CEHealthCheckDefaultValue -ValueName 'IISLogOldItemsError' -ValueNonExist 60
+    Set-CEHealthCheckDefaultValue -ValueName 'IISMaxBandwidth' -ValueNonExist -1
+    Set-CEHealthCheckDefaultValue -ValueName 'IISConnectionTimeout' -ValueNonExist 300
+    Set-CEHealthCheckDefaultValue -ValueName 'IISMaxConnections' -ValueNonExist 0
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolCPUResetInterval' -ValueNonExist 900
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolPingingEnabled' -ValueNonExist $false
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolAppPoolRecyclePrivateMemory' -ValueNonExist $false
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolAppPoolQueueLength' -ValueNonExist 30000
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolRapidFailProtection' -ValueNonExist $false
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolPeriodicRestartTime' -ValueNonExist 0
+    Set-CEHealthCheckDefaultValue -ValueName 'IISWSUSAppPoolPeriodicRestartRequests' -ValueNonExist 0
+    Set-CEHealthCheckDefaultValue -ValueName 'DPFeatures' -ValueNonExist 'Internet Information Services,IIS-WebServerRole;World Wide Web Services,IIS-WebServer;Common HTTP Features, IIS-CommonHttpFeatures;Default Document,IIS-DefaultDocument;Directory Browsing,IIS-DirectoryBrowsing;HTTP Errors,IIS-HttpErrors;Static Content,IIS-StaticContent;HTTP Redirection,IIS-HttpRedirect;Health and Diagnostics,IIS-HealthAndDiagnostics;HTTP Logging,IIS-HttpLogging;Performance Features,IIS-Performance;Static Content Compression,IIS-HttpCompressionStatic;Security,IIS-Security;Request Filtering,IIS-RequestFiltering;Windows Authentication,IIS-WindowsAuthentication;Application Development Features,IIS-ApplicationDevelopment;ISAPI Extensions,IIS-ISAPIExtensions;Web Management Tools,IIS-WebServerManagementTools;IIS Management Console,IIS-ManagementConsole;IIS 6 Management Compatibility,IIS-IIS6ManagementCompatibility;IIS Metabase and IIS 6 configuration compatibility,IIS-Metabase;IIS 6 WMI Compatibility,IIS-WMICompatibility;IIS Management Scripts and Tools,IIS-ManagementScriptingTools;Remote Differential Compression API Support,MSRDC-Infrastructure'
+    Set-CEHealthCheckDefaultValue -ValueName 'MPFeatures' -ValueNonExist 'Internet Information Services,IIS-WebServerRole;World Wide Web Services,IIS-WebServer;Common HTTP Features,IIS-CommonHttpFeatures;Default Document,IIS-DefaultDocument;Directory Browsing,IIS-DirectoryBrowsing;HTTP Errors,IIS-HttpErrors;Static Content,IIS-StaticContent;HTTP Redirection,IIS-HttpRedirect;Health and Diagnostics,IIS-HealthAndDiagnostics;HTTP Logging,IIS-HttpLogging;Logging Tools,IIS-LoggingLibraries;Request Monitor,IIS-RequestMonitor;Tracing,IIS-HttpTracing;Performance Features,IIS-Performance;Static Content Compression,IIS-HttpCompressionStatic;Security,IIS-Security;Request Filtering,IIS-RequestFiltering;Windows Authentication,IIS-WindowsAuthentication;Application Development Features,IIS-ApplicationDevelopment;.NET Extensibility 3.5,IIS-NetFxExtensibility;.NET Extensibility 4.6,IIS-NetFxExtensibility45;ISAPI Extensions,IIS-ISAPIExtensions;ISAPI Filters,IIS-ISAPIFilter;ASP.NET 3.5,IIS-ASPNET;ASP.NET 4.6,IIS-ASPNET45;Web Management Tools,IIS-WebServerManagementTools;IIS Management Console,IIS-ManagementConsole;IIS 6 Management Compatibility,IIS-IIS6ManagementCompatibility;IIS Metabase and IIS 6 configuration compatibility,IIS-Metabase;IIS 6 WMI Compatibility,IIS-WMICompatibility;IIS Management Scripts and Tools,IIS-ManagementScriptingTools;IIS Management Service,IIS-ManagementService;Background Intelligent Transfer Service (BITS),BITS;Background Intelligent Transfer Service (BITS) Server Extensions for File Upload,BITSExtensions-Upload'
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxThreads' -ValueNonExist 30
     #endregion
 
     #region set Override Rules
@@ -901,20 +1180,47 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 361 -RuleName 'Baseline - evaluation Schedule Too Often' -DefaultCategory 21 -Criticality 'High' -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 362 -RuleName 'Account - Group Membership - Unable to collect' -DefaultCategory 8 -Criticality 'High' -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 363 -RuleName 'Component Message - Errors' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 364 -RuleName 'IIS - httpRuntime executionTimeout' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 365 -RuleName 'IIS - httpRuntime maxRequestLength' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 366 -RuleName 'IIS - Log Folder - Location' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 367 -RuleName 'IIS - Log Folder - Old Items Warning' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 368 -RuleName 'IIS - Log Folder - Old Items Error' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 369 -RuleName 'IIS - WSUS Administration - MaxBandwidth' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 370 -RuleName 'IIS - WSUS Administration - ConnectionTimeout' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 371 -RuleName 'IIS - WSUS Administration - MaxConnections' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 372 -RuleName 'IIS - WSUS Administration - AppPool - CPU Reset Interval' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 373 -RuleName 'IIS - WSUS Administration - AppPool - Pinging Enabled' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 374 -RuleName 'IIS - WSUS Administration - AppPool - Recycle Private Memory' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 375 -RuleName 'IIS - WSUS Administration - AppPool - Pool Queue Length' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 376 -RuleName 'IIS - WSUS Administration - AppPool - Rapid Fail Protection' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 377 -RuleName 'IIS - WSUS Administration - AppPool - Periodic Restart Time' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 378 -RuleName 'IIS - WSUS Administration - AppPool - Periodic Restart Requests' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 379 -RuleName 'Packages - Binary Delta Replication' -DefaultCategory 23 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 380 -RuleName 'Packages - Copy to a Package Share' -DefaultCategory 23 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 381 -RuleName 'Ping - Unable to ping computer' -DefaultCategory 1 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 382 -RuleName 'Boot Images - Copy to a Package Share' -DefaultCategory 16 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 383 -RuleName 'Hirarchy Updates' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 384 -RuleName 'Device Collection - invalid Schedule' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 385 -RuleName 'User Collection - invalid Schedule' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 386 -RuleName 'Windows Features - DP' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 387 -RuleName 'Windows Features - MP' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 388 -RuleName 'Software Update - Packages - Binary Delta Replication' -DefaultCategory 17 -Criticality 'Warning' -DefaultClassification 'Medium'
+    Set-CEHealthCheckRulesOverride -RuleID 389 -RuleName 'Software Update - Packages - Copy to a Package Share' -DefaultCategory 17 -Criticality 'Warning' -DefaultClassification 'Medium'
     #endregion
 
     #region Script default variables
     $Script:ServerDown = @()
-    $Script:ServiceAccountDoesNotExist = @()
-    $Script:AdminDoesNotExist = @()
+    $Script:AccountDoesNotExist = @()
+    $script:GroupMembershipErrorList = @()
+    $script:GroupMembershipList = @()
+    $IISList = @()
     $SiteRoleList = @()
+    $SiteRoleListWOCDP = @()
     $SiteComponentList = @()
     $Script:ServerHTTPAccessInformation = @()
     $SQLConfigurationList = @()
     $SQLServerPrimarySiteList = @()
     $SQLServerInformationList = @()
-    $GroupMembershipErrorList = @()
-    $GroupMembershipList = @()
     $ClientSettingsSettingsList = @()
     $MaintenanceTaskList = @()
     $BoundaryGroupRelationshipList = @()
@@ -953,6 +1259,13 @@ try {
     $PingList = @()
     $LogicalDiskInfoList = @()
     $ComputerInformationList = @()
+    $IISClientWebService = @()
+    $IISWebServerSetting = @()
+    $IisWebVirtualDirSetting = @()
+    $IIsApplicationPoolSetting = @()
+    $IISLogs = @()
+    $DPList = @()
+    $OptionalFeaturesList = @()
     #endregion
 
     #region HealthCheck Table
@@ -969,6 +1282,8 @@ try {
     $newCol = New-Object system.Data.DataColumn "RuleID",([int])
     $Script:HealthCheckData.Columns.Add($newCol)
     $newCol = New-Object system.Data.DataColumn "Criticality",([string])
+    $Script:HealthCheckData.Columns.Add($newCol)
+    $newCol = New-Object system.Data.DataColumn "CriticalityID",([int])
     $Script:HealthCheckData.Columns.Add($newCol)
     #endregion
 
@@ -1111,6 +1426,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
         #region Collecting Data
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1025)
+        $Script:StartCollectingDateTime = get-date
 
         #region Site Information
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site'))
@@ -1121,7 +1437,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             $SiteList = Get-CMSite
             Export-CEXMLFile -VariableName 'SiteList'
-        }        
+        }
 
         #getting the main SCCM Site (Primary Site) - There is no CAS here
         $MainSiteCode = ($SiteList | Where-Object {$_.Type -eq 2}).SiteCode
@@ -1150,8 +1466,34 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $SiteRoleList += $item
                     }
                 }
-                Export-CEXMLFile -VariableName 'SiteRoleList'
             }
+            Export-CEXMLFile -VariableName 'SiteRoleList'
+        }
+        #endregion
+
+        #region Site Role List without CloudDP
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Role'))        
+        $FileToImport = "$($SaveToFolder)\SiteRoleListWOCDP.xml"
+        if (Test-Path $FileToImport) {
+            Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+            New-Variable -Name "SiteRoleListWOCDP" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+        } else {
+            $SiteRoleList | ForEach-Object {
+                $item = $_
+                $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                $CloudDP = $false
+                $CloudDPInfo = $item | Where-Object {($_.NetworkOSPath -eq $item.NetworkOSPath) -and ($_.RoleName -eq 'SMS Distribution Point')}
+                if ($CloudDPInfo -ne $null) {
+                    if ($CloudDPInfo.Props | Where-Object {($_.PropertyName -eq 'IsCloud') -and ($_.Value -eq 1)}) {
+                        $CloudDP = $true
+                    }
+                }
+
+                if ($CloudDP -eq $false) {
+                    $SiteRoleListWOCDP += $item
+                }
+            }
+            Export-CEXMLFile -VariableName 'SiteRoleListWOCDP'
         }
         #endregion
 
@@ -1170,6 +1512,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #endregion
         
         #region Rules
+
+        #region sub-Rules
         $arrRuleID = @(4,5,239)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1182,10 +1526,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SiteComponentManagerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SiteComponentManagerList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_SITE_COMPONENT_MANAGER'}
-                Export-CEXMLFile -VariableName 'SiteComponentManagerList'
+                Export-CEXMLFile -VariableName 'SiteComponentManagerList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(6)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1198,10 +1544,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SMSPolProvComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SMSPolProvComponentList = $SiteComponentList | where-object {$_.ComponentName -eq 'SMS_POLICY_PROVIDER'}
-                Export-CEXMLFile -VariableName 'SMSPolProvComponentList'
+                Export-CEXMLFile -VariableName 'SMSPolProvComponentList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(7,8,9,10,11,102,104,321)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1213,10 +1561,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "AlertList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $AlertList = Get-CMAlert
-                Export-CEXMLFile -VariableName 'AlertList'
+                Export-CEXMLFile -VariableName 'AlertList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(14,15,16)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1232,8 +1582,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'MPComponentList'
             }
         }
+        #endregion
 
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Management Point'))
+        #region sub-Rules
         $arrRuleID = @(14, 15, 16, 17, 170, 171)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1249,77 +1600,39 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'MPList'
             }
         }
-        
+        #endregion
+
+        #region sub-Rules 
         $arrRuleID = @(14)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-
-            $MPList | ForEach-Object {
-                $item = $_
-                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
-                $MPProtocol = 'HTTP'
-                if ($_.sslState -in (1,3)) {
-                    $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
-                    $MPProtocol = 'HTTPS'
-                }
-                $servername = $_.NetworkOSPath -replace '\\', ''
-
-                $RuleID = 14
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mplist"
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
-            }
+            Test-CEUrl -ListOfServers $MPlist -ServerType 'mplist' -RuleID 14 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules 
         $arrRuleID = @(15)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $MPList | ForEach-Object {
-                $item = $_
-                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
-                $MPProtocol = 'HTTP'
-                if ($_.sslState -in (1,3)) {
-                    $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
-                    $MPProtocol = 'HTTPS'
-                }
-                $servername = $_.NetworkOSPath -replace '\\', ''
-
-                $RuleID = 15
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mpcert"
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
-            }
+            Test-CEUrl -ListOfServers $MPlist -ServerType 'mpcert' -RuleID 15 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules 
         $arrRuleID = @(16)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $MPList | ForEach-Object {
-                $item = $_
-                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
-                $MPProtocol = 'HTTP'
-                if ($_.sslState -in (1,3)) {
-                    $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
-                    $MPProtocol = 'HTTPS'
-                }
-                $servername = $_.NetworkOSPath -replace '\\', ''
-
-                $RuleID = 16
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?SITESIGNCERT"
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
-            }
+            Test-CEUrl -ListOfServers $MPlist -ServerType 'sitesigncert' -RuleID 16 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(18, 22)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1334,29 +1647,19 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'AppCatalogWebServiceList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(18)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AppCatalogWebServiceList | ForEach-Object {
-                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'ServicePort' }).Value
-                $ServiceName = ($_.Props | Where-Object {$_.PropertyName -eq 'ServiceName' }).Value1
-                $HTTPProtocol = 'HTTP'
-                if ($_.sslState -in (1,3)) {
-                    $HTTPProtocol = 'HTTPS'
-                }
-                $servername = $_.NetworkOSPath -replace '\\', ''
-
-                $RuleID = 18
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)/ApplicationOfferService.svc"
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004
-            }
+            Test-CEUrl -ListOfServers $AppCatalogWebServiceList -ServerType 'appcatalogwebservice' -RuleID 18 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(19, 22)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1371,34 +1674,19 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'AppCatalogWebSiteList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(19)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $AppCatalogWebSiteList | ForEach-Object {
-                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalPort' }).Value
-                $ServiceName = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalPath' }).Value1
-                if ([string]::IsNullOrEmpty($ServiceName)) {
-                    $ServiceName = 'CMApplicationCatalog'
-                }
-
-                $HTTPProtocol = 'HTTP'
-                if ($_.sslState -in (1,3)) {
-                    $HTTPProtocol = 'HTTPS'
-                    $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalSslPort' }).Value
-                }
-                $servername = $_.NetworkOSPath -replace '\\', ''
-
-                $RuleID = 19
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)"
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
-            }
+            Test-CEUrl -ListOfServers $AppCatalogWebSiteList -ServerType 'appcatalogwebsite' -RuleID 19 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(20,21,157,158,159,160,161,162,174,175,312,314)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1413,29 +1701,19 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SUPList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(20)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SUPList | ForEach-Object {
-                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISPort' }).Value
-                $HTTPProtocol = 'HTTP'
-                if ($_.sslState -in (1,3)) {
-                    $HTTPProtocol = 'HTTPS'
-                    $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISSSLPort' }).Value
-                }
-                $servername = $_.NetworkOSPath -replace '\\', ''
-
-                $RuleID = 20
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url $url -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
-            }
+            Test-CEUrl -ListOfServers $SUPList -ServerType 'wsussimpleauth' -RuleID 20 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(21)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1450,17 +1728,26 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
                 $servername = $_.NetworkOSPath -replace '\\', ''
                 $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
-                try {
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1038 @($url, "GetAuthorizationCookie"))
-                    $SUPProxy = New-WebServiceProxy -Uri $url -UseDefaultCredential
-                    $SUPProxy.GetAuthorizationCookie('SCCMHealthCheckID', $null, 'CreatedBySCCMHealthCheck') | out-null
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1036)
-                } catch {
-                    $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = 5004; 'MessageIDError' = 3128; 'RuleInfo' = 21; 'ServerName' = $ServerName; 'StatusCode' = "$_"; 'URL' = $url }
+                Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1038 @($url, "GetAuthorizationCookie"))
+                $code = {
+                    Param (
+                        $url,
+                        $servername
+                    )
+                    try {
+                        $SUPProxy = New-WebServiceProxy -Uri $url -UseDefaultCredential
+                        $SUPProxy.GetAuthorizationCookie('SCCMHealthCheckID', $null, 'CreatedBySCCMHealthCheck') | out-null
+                        New-Object -TypeName PSObject -Property @{'CommentIDError' = 5004; 'MessageIDError' = 3128; 'RuleInfo' = 21; 'ServerName' = $ServerName; 'StatusCode' = 200; 'URL' = $url }
+                    } catch {
+                        New-Object -TypeName PSObject -Property @{'CommentIDError' = 5004; 'MessageIDError' = 3128; 'RuleInfo' = 21; 'ServerName' = $ServerName; 'StatusCode' = "Unable to connect"; 'URL' = $url }
+                    }
                 }
+                $Script:ServerHTTPAccessInformation += Execute-CERunSpace -code $Code -ParameterList @($url, $servername)                
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(23,24)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1475,43 +1762,29 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SRSList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(23)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SRSList | ForEach-Object {
-                $servername = $_.NetworkOSPath -replace '\\', ''
-                $RootFolder = ($_.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
-                $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
-                $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
-
-                $RuleID = 23
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url ("$($ReportsURI)/$($RootFolder)") -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
-            }
+            Test-CEUrl -ListOfServers $SRSList -ServerType 'ssrsreporturi' -RuleID 23 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules 
         $arrRuleID = @(24)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $SRSList | ForEach-Object {
-                $servername = $_.NetworkOSPath -replace '\\', ''
-                $RootFolder = ($_.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
-                $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
-                $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
-
-                $RuleID = 24
-                $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-                Test-CEUrl -RuleIDInfo $RuleIDInfo -InfoMessageID 1035 -url ("$($ReportServerURI)/$($RootFolder)") -MessageIDNameSuccess 1036 -MessageIDError 3128 -ServerName $servername -CommentIDError 5004 -CommentIDException 5004 -UserCredentials
-            }
+            Test-CEUrl -ListOfServers $SRSList -ServerType 'ssrsreportserveruri' -RuleID 24 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(25, 26, 27, 28, 311)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1524,86 +1797,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SQLList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SQLList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS SQL Server'}
-                Export-CEXMLFile -VariableName 'SQLList'
+                Export-CEXMLFile -VariableName 'SQLList' -ClearVariable
             }
         }
-                
-        $arrRuleID = @(25, 26, 27, 28, 311)
-        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
-            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
-        } else {
-            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            $FileToImport = "$($SaveToFolder)\SQLConfigurationList.xml"
-            if (Test-Path $FileToImport) {
-                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
-                New-Variable -Name "SQLConfigurationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {
-                $SQLList | Where-Object {$_.Type -eq 2} | ForEach-Object { #only looking for SQL Server on Primary Servers
-                    $item = $_
-                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+        #endregion
 
-                    #connect to SQL
-                    $SQLOpen = $false
-                    $conn = New-Object System.Data.SqlClient.SqlConnection
-                    try {
-                        $conn.ConnectionString = "Data Source=$($arrPropList[1]);Initial Catalog=$($arrPropList[2]);trusted_connection = true;"
-                        $conn.Open()
-                        $SQLOpen = $true
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SQL TCP)' }
-                    }
-
-                    if ($SQLOpen -eq $true) {
-                        try {
-                            $SqlCommand = $Conn.CreateCommand()
-                            $SqlCommand.CommandTimeOut = 0
-                            $SqlCommand.CommandText = "SELECT SERVERPROPERTY ('productversion'),SERVERPROPERTY ('productlevel'), SERVERPROPERTY ('edition')"
-                            $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
-                            $dataset = new-object System.Data.Dataset
-                            $DataAdapter.Fill($dataset) | Out-Null
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (SERVERPROPERTY) (SQL TCP)' }
-                        }
-
-                        try {
-                            $SqlCommand2 = $Conn.CreateCommand()
-                            $SqlCommand2.CommandTimeOut = 0
-
-                            $SqlCommand2.CommandText = "select (select value FROM sys.configurations WHERE name = 'max server memory (MB)') as committed_kb, (select value FROM sys.configurations WHERE name = 'min server memory (MB)') as committed_target_kb"
-                            $DataAdapter2 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand2
-                            $dataset2 = new-object System.Data.Dataset
-                            $DataAdapter2.Fill($dataset2) | Out-Null
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (DM_OS_SYS_INFO) (SQL TCP)' }
-                        }
-
-                        try {
-                            $SqlCommand3 = $Conn.CreateCommand()
-                            $SqlCommand3.CommandTimeOut = 0
-                            $SqlCommand3.CommandText = "SELECT compatibility_level FROM sys.databases WHERE name = '$($arrPropList[2])'"
-                            $DataAdapter3 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand3
-                            $dataset3 = new-object System.Data.Dataset
-                            $DataAdapter3.Fill($dataset3) | Out-Null
-
-                            $SQLConfigurationList += New-Object -TypeName PSObject -Property @{'ServerName' = $arrPropList[1]; 'Version' = $dataset.Tables[0].Column1; 'MinMemory' = $dataset2.Tables[0].committed_kb; 'MaxMemory' = $dataset2.Tables[0].committed_target_kb; 'CompLevel' = $dataset3.Tables[0].compatibility_level; 'Database' = $arrPropList[2] }
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.NetworkOSPath.Replace('\\','')); 'ConnectionType' = 'SQL Server (COMPATIBILITY_LEVEL) (SQL TCP)' }
-                        } finally {
-                            $conn.Close()
-                        }
-                    }
-
-                    Export-CEXMLFile -VariableName 'SQLConfigurationList'
-                }
-            }
-        }
-
-        $arrRuleID = @(29, 30, 31 ,32, 33, 34, 285)
+        #region sub-Rules
+        $arrRuleID = @(25,26,27,28,29, 30, 31 ,32, 33, 34, 285,311)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1617,11 +1817,102 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $item = $_
                     $SQLServerPrimarySiteList += $SiteRoleList | Where-Object {($_.SiteCode -eq $item.SiteCode) -and ($_.RoleName -eq 'SMS SQL Server')}
                 }
-
                 Export-CEXMLFile -VariableName 'SQLServerPrimarySiteList'
             }
         }
+        #endregion
 
+        #region sub-Rules 
+        $arrRuleID = @(25, 26, 27, 28, 311)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLConfigurationList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLConfigurationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLServerPrimarySiteList | ForEach-Object { 
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    $ServerName = $item.NetworkOSPath.Replace('\\','')
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+                    $code = {
+                        Param (
+                            $servername,
+                            $databasename
+                        )
+                        $ReturnInfo = @()
+                        #connect to SQL
+                        $SQLOpen = $false
+                        $conn = New-Object System.Data.SqlClient.SqlConnection
+                        try {
+                            $conn.ConnectionString = "Data Source=$($servername);Initial Catalog=$($databasename);trusted_connection = true;"
+                            $conn.Open()
+                            $SQLOpen = $true
+                        } catch {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $arrPropList; 'Version' = ''; 'MinMemory' = 0; 'MaxMemory' = 0; 'CompLevel' = 0; 'Database' = ''; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                        }
+
+                        if ($SQLOpen -eq $true) {
+                            try {
+                                $SqlCommand = $Conn.CreateCommand()
+                                $SqlCommand.CommandTimeOut = 0
+                                $SqlCommand.CommandText = "SELECT SERVERPROPERTY ('productversion'),SERVERPROPERTY ('productlevel'), SERVERPROPERTY ('edition')"
+                                $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                                $dataset = new-object System.Data.Dataset
+                                $DataAdapter.Fill($dataset) | Out-Null
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $servername; 'Version' = ''; 'MinMemory' = 0; 'MaxMemory' = 0; 'CompLevel' = 0; 'Database' = ''; 'ConnectionType' = 'SQL Server (SERVERPROPERTY) (SQL TCP)' ; 'Error'= $_}
+                            }
+
+                            try {
+                                $SqlCommand2 = $Conn.CreateCommand()
+                                $SqlCommand2.CommandTimeOut = 0
+
+                                $SqlCommand2.CommandText = "select (select value FROM sys.configurations WHERE name = 'max server memory (MB)') as committed_kb, (select value FROM sys.configurations WHERE name = 'min server memory (MB)') as committed_target_kb"
+                                $DataAdapter2 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand2
+                                $dataset2 = new-object System.Data.Dataset
+                                $DataAdapter2.Fill($dataset2) | Out-Null
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $servername; 'Version' = ''; 'MinMemory' = 0; 'MaxMemory' = 0; 'CompLevel' = 0; 'Database' = ''; 'ConnectionType' = 'SQL Server (DM_OS_SYS_INFO) (SQL TCP)' ; 'Error'= $_}
+                            }
+
+                            try {
+                                $SqlCommand3 = $Conn.CreateCommand()
+                                $SqlCommand3.CommandTimeOut = 0
+                                $SqlCommand3.CommandText = "SELECT compatibility_level FROM sys.databases WHERE name = '$($databasename)'"
+                                $DataAdapter3 = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand3
+                                $dataset3 = new-object System.Data.Dataset
+                                $DataAdapter3.Fill($dataset3) | Out-Null
+
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $servername; 'Version' = $dataset.Tables[0].Column1; 'MinMemory' = $dataset2.Tables[0].committed_kb; 'MaxMemory' = $dataset2.Tables[0].committed_target_kb; 'CompLevel' = $dataset3.Tables[0].compatibility_level; 'Database' = $databasename; 'ConnectionType' = ''; 'Error'='' }
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $servername; 'Version' = ''; 'MinMemory' = 0; 'MaxMemory' = 0; 'CompLevel' = 0; 'Database' = ''; 'ConnectionType' = 'SQL Server (COMPATIBILITY_LEVEL) (SQL TCP)' ; 'Error'= $_}
+                            } finally {
+                                $conn.Close()
+                            }
+                        }
+                        $ReturnInfo
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($arrPropList[1], $arrPropList[2])
+
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SQLConfigurationList += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'Version' = $_.Version; 'MinMemory' = $_.MinMemory; 'MaxMemory' = $_.MaxMemory; 'CompLevel' = $_.CompLevel; 'Database' = $_.Database }
+                    }
+
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLConfigurationList' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules 
         $arrRuleID = @(29, 30, 31 ,32, 33, 34, 285)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1635,76 +1926,94 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $SQLServerPrimarySiteList | ForEach-Object {
                     $item = $_
                     $SQLServerName = $item.PropLists.values.Split(',')[1].Trim()
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server Instance Info', $SQLServerName))
+                    $code = {
+                        Param (
+                            $SQLServerName,
+                            $SiteCode
+                        )
+                        $ReturnInfo = @()
+                        try {
+                            $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $SQLServerName)
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
+                            $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
 
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $SQLServerName)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
-                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
-
-                        #todo: manage multiple instances
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server")
-                        $InstanceName = $RegKey.GetValue("InstalledInstances")
-                        $InstanceData = @()
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server")
+                            $InstanceName = $RegKey.GetValue("InstalledInstances")
+                            $InstanceData = @()
                         
-                        if ($InstanceName -is [Array]) {
-                            $InstanceData = $InstanceName
-                        } else {
-                            $InstanceData += $InstanceName
-                        }
-
-                        $InstanceData | ForEach-Object {
-                            $InstanceItem = $_
-
-                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
-                            $InstanceID = $RegKey.GetValue($InstanceItem)
-
-                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\Setup")
-                            $SQLProgramDir = $RegKey.GetValue("SqlProgramDir")
-
-                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\MSSQLServer\Parameters")
-                            $Arguments = @()
-                            $RegKey.GetValueNames() | ForEach-Object  {
-                                $Arguments += $RegKey.GetValue($_)
+                            if ($InstanceName -is [Array]) {
+                                $InstanceData = $InstanceName
+                            } else {
+                                $InstanceData += $InstanceName
                             }
 
-                            $SQLData = ''
-                            $SQLLogs = ''
+                            $InstanceData | ForEach-Object {
+                                $InstanceItem = $_
 
-                            $Arguments | ForEach-Object {
-                                $subItem = $_
-                                $paramID = $subItem.Substring(0, 2).Tolower()
-                                switch ($paramID) {
-                                    '-d' { $SQLData = $subItem.Replace($paramID,'').Replace('\master.mdf','') }
-                                    '-l' { $SQLLogs = $subItem.Replace($paramID,'').Replace('\mastlog.ldf','') }
+                                $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL")
+                                $InstanceID = $RegKey.GetValue($InstanceItem)
+
+                                $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\Setup")
+                                $SQLProgramDir = $RegKey.GetValue("SqlProgramDir")
+
+                                $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Microsoft SQL Server\$($InstanceID)\MSSQLServer\Parameters")
+                                $Arguments = @()
+                                $RegKey.GetValueNames() | ForEach-Object  {
+                                    $Arguments += $RegKey.GetValue($_)
                                 }
-                            }
 
-                            $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
-                            $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
+                                $SQLData = ''
+                                $SQLLogs = ''
 
-                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                                $bPathExistDataRoot = $true
-                            } else {
-                                $bPathExistDataRoot = $false
-                            }
+                                $Arguments | ForEach-Object {
+                                    $subItem = $_
+                                    $paramID = $subItem.Substring(0, 2).Tolower()
+                                    switch ($paramID) {
+                                        '-d' { $SQLData = $subItem.Replace($paramID,'').Replace('\master.mdf','') }
+                                        '-l' { $SQLLogs = $subItem.Replace($paramID,'').Replace('\mastlog.ldf','') }
+                                    }
+                                }
 
-                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                                $bPathExistLogRoot = $true
-                            } else {
-                                $bPathExistLogRoot = $false
-                            }
+                                $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
+                                $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
 
-                            $SQLServerInformationList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = $ProgramFIles; 'InstallationFolder' = $SQLProgramDir; 'DataFolder' = $SQLData; 'LogFolder' = $SQLLogs; 'NOSMSONData' = $bPathExistDataRoot; 'NOSMSONLog' = $bPathExistLogRoot }
-                        }                        
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $SQLServerName; 'InstanceID' = $InstanceID; 'ConnectionType' = 'SQL Server Remote Registry (RRP/RPC)' }
+                                if (Test-Path -Path "filesystem::\\$($SQLServerName)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                    $bPathExistDataRoot = $true
+                                } else {
+                                    $bPathExistDataRoot = $false
+                                }
+
+                                if (Test-Path -Path "filesystem::\\$($SQLServerName)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                    $bPathExistLogRoot = $true
+                                } else {
+                                    $bPathExistLogRoot = $false
+                                }
+
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'SiteCode' = $SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = $ProgramFiles; 'InstallationFolder' = $SQLProgramDir; 'DataFolder' = $SQLData; 'LogFolder' = $SQLLogs; 'NOSMSONData' = $bPathExistDataRoot; 'NOSMSONLog' = $bPathExistLogRoot; 'ConnectionType' = ''; 'Error'='' }
+                            }                        
+                        } catch {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'SiteCode' = $SiteCode; 'ServerName' = $SQLServerName; 'ProgramFiles' = ''; 'InstallationFolder' = ''; 'DataFolder' = ''; 'LogFolder' = ''; 'NOSMSONData' = ''; 'NOSMSONLog' = ''; 'ConnectionType' = 'SQL Server Remote Registry (RRP/RPC)'; 'Error'=$_ }
+                        }
+                        $ReturnInfo
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($SQLServerName, $item.SiteCode)
+
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SQLServerInformationList += New-Object -TypeName PSObject -Property @{'SiteCode' = $_.SiteCode; 'ServerName' = $_.ServerName; 'ProgramFiles' = $_.ProgramFiles; 'InstallationFolder' = $_.InstallationFolder; 'DataFolder' = $_.DataFolder; 'LogFolder' = $_.LogFolder; 'NOSMSONData' = $_.NOSMSONData; 'NOSMSONLog' = $_.NOSMSONLog }
+                    }
+
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
                     }
                 }
-                Export-CEXMLFile -VariableName 'SQLServerInformationList'
+                Export-CEXMLFile -VariableName 'SQLServerInformationList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(35,36,37,258)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1719,8 +2028,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ServiceAccountList'
             }
         }
-                
-        $arrRuleID = @(37, 256, 257, 258)
+        #endregion
+             
+        #region sub-Rules
+        $arrRuleID = @(37,256,257,258)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1734,8 +2045,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'AdminAccountList'
             }
         }
+        #endregion
 
-        $arrRuleID = @(35,36,37,254,255,257,258)
+        #region sub-Rules
+        $arrRuleID = @(35,36,37,256,257,258)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1745,77 +2058,23 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "GroupMembershipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
                 New-Variable -Name "GroupMembershipErrorList" -Value (Import-Clixml -Path "$($SaveToFolder)\GroupMembershipErrorList.xml") -Force -Option AllScope -Scope Script
+                New-Variable -Name "AccountDoesNotExist" -Value (Import-Clixml -Path "$($SaveToFolder)\AccountDoesNotExist.xml") -Force -Option AllScope -Scope Script
             } else {
-                $Root = [ADSI]"LDAP://RootDSE"
-                $oForestConfig = $Root.Get("configurationNamingContext")
-                $oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
-                $AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
-                $AdSearcher.SearchRoot = $oSearchRoot
-                $domains = $AdSearcher.FindAll()
-                                
-                $ServiceAccountList | ForEach-Object {
-                    $itemAccount = $_
-                    #todo: need to get information about @ user, how the filter will be?
-                    if ($itemAccount.UserName.Indexof('@') -lt 0) {
-                        Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.UserName)"
-                        try {
-                            $arrAccountInfo = $itemAccount.UserName.Split('\')
-                            $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
-
-                            $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
-                            $objSearcher.PageSize = $Script:ADPageSize
-                            $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
-                            $objSearcher.SearchScope = "Subtree"
-                            $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
-
-                            if ($objDN -eq $null) {
-                                $Script:ServiceAccountDoesNotExist += $itemAccount.UserName
-                            } else {
-                                $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
-                                ($objSearcher.FindAll()) | ForEach-Object {
-                                    $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
-                                }
-                            }
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 $_)
-                            $GroupMembershipErrorList += $itemAccount
-                        }
-                    }
+                if ($ServiceAccountList.Count -ne 0) {
+                    Get-CEAccountMembership -AccountList $ServiceAccountList -PropertyName 'UserName' -isServiceAccount $true
+                }
+                if ($AdminAccountList.Count -ne 0) {
+                    Get-CEAccountMembership -AccountList $AdminAccountList -PropertyName 'LogonName' -isServiceAccount $false
                 }
 
-                $AdminAccountList | ForEach-Object {
-                    $itemAccount = $_
-                    if ($itemAccount.LogonName.Indexof('@') -lt 0) {
-                        Write-CELog -logtype "INFO" -logmessage "Checking group membership for $($itemAccount.LogonName)"
-                        try {
-                            $arrAccountInfo = $itemAccount.LogonName.Split('\')
-                            $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
-
-                            $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
-                            $objSearcher.PageSize = $Script:ADPageSize
-                            $objSearcher.Filter = "samaccountname=$($arrAccountInfo[1])" #$strFilter
-                            $objSearcher.SearchScope = "Subtree"
-                            $objDN = ($objSearcher.FindAll()).Properties.distinguishedname
-
-                            if ($objDN -eq $null) {
-                                $Script:AdminDoesNotExist = $itemAccount.LogonName
-                            } else {
-                                $objSearcher.Filter = "(member:1.2.840.113556.1.4.1941:=$objDN)"
-                                ($objSearcher.FindAll()) | ForEach-Object {
-                                    $GroupMembershipList += new-object HealthCheckClasses.SCCM.CEAccountMembership($arrAccountInfo[0], $domainNC, $arrAccountInfo[1], $false, $objDN, $_.Properties.distinguishedname, $_.Properties.name)
-                                }
-                            }
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 $_)
-                            $GroupMembershipErrorList += $itemAccount
-                        }
-                    }
-                }
-                Export-CEXMLFile -VariableName 'GroupMembershipList'
-                Export-CEXMLFile -VariableName 'GroupMembershipErrorList'
+                Export-CEXMLFile -VariableName 'GroupMembershipList' -ClearVariable
+                Export-CEXMLFile -VariableName 'GroupMembershipErrorList' -ClearVariable
+                Export-CEXMLFile -VariableName 'AccountDoesNotExist' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(38,39,40,41,42,43,44,45,46,47,48,49)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1827,10 +2086,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "ClientStatusSettings" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $ClientStatusSettings = Get-CMClientStatusSetting
-                Export-CEXMLFile -VariableName 'ClientStatusSettings'
+                Export-CEXMLFile -VariableName 'ClientStatusSettings' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,309,310)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1842,10 +2103,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DiscoveryMethodList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $DiscoveryMethodList = Get-CMDiscoveryMethod
-                Export-CEXMLFile -VariableName 'DiscoveryMethodList'
+                Export-CEXMLFile -VariableName 'DiscoveryMethodList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(84,85,289)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1857,10 +2120,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DPGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $DPGroupList = Get-CMDistributionPointGroup
-                Export-CEXMLFile -VariableName 'DPGroupList'
+                Export-CEXMLFile -VariableName 'DPGroupList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(86,87)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1872,11 +2137,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "CollectionMembershipEvaluation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $CollectionMembershipEvaluation = Get-CMCollectionMembershipEvaluationComponent
-                Export-CEXMLFile -VariableName 'CollectionMembershipEvaluation'
+                Export-CEXMLFile -VariableName 'CollectionMembershipEvaluation' -ClearVariable
             }
         }
+        #endregion
         
-        $arrRuleID = @(88,89,90,91,92,93,330,331,341,361)
+        #region sub-Rules
+        $arrRuleID = @(88,89,90,91,92,93,330,331,341,361,384)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1890,7 +2157,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DeviceCollectionList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(93) 
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1904,7 +2173,6 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 if ($ModuleSCCMVersionBuild -lt 1702) { #using if for the sccm version because lower than 1702 does not have the cmdlet
                     $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {
                         $item = $_
-                        #cade
                         $MembershipRules = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'")
                         $MembershipRules.Get()
 
@@ -1913,11 +2181,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 } else {
                     $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {if ((Get-CMCollectionDirectMembershipRule -CollectionName $_.Name | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ } } | Measure-Object).Count
                 }
-                Export-CEXMLFile -VariableName 'CollectionDeviceFilterCount'
+                Export-CEXMLFile -VariableName 'CollectionDeviceFilterCount' -ClearVariable
             }
         }
+        #endregion
 
-        $arrRuleID = @(94,95,96,97,98,99,100,330,331,342,361)
+        #region sub-Rules
+        $arrRuleID = @(94,95,96,97,98,99,100,330,331,342,361,385)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -1931,7 +2201,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'UserCollectionList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(99) 
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1953,10 +2225,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 } else {
                     $CollectionUserFilterCount = ($UserCollectionList | ForEach-Object {if ((Get-CMCollectionDirectMembershipRule -CollectionName $_.Name | Measure-Object).Count -gt $script:MaxCollectionMembershipDirectRule) { $_ } } | Measure-Object).Count
                 }
-                Export-CEXMLFile -VariableName 'CollectionUserFilterCount'
+                Export-CEXMLFile -VariableName 'CollectionUserFilterCount' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(100,101,284,292,293,299,351,352,353)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1968,10 +2242,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $DeploymentList = Get-CMDeployment
-                Export-CEXMLFile -VariableName 'DeploymentList'
+                Export-CEXMLFile -VariableName 'DeploymentList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(103,104)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1983,10 +2259,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "AlertSubscriptionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $AlertSubscriptionList = Get-CMAlertSubscription
-                Export-CEXMLFile -VariableName 'AlertSubscriptionList'
+                Export-CEXMLFile -VariableName 'AlertSubscriptionList' -ClearVariable
             }
         }
-
+        #endregion
+ 
+        #region sub-Rules
         $arrRuleID = @(105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,279,280,281,282)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -1997,19 +2275,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DeviceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-
-                #not using get-cmdevice anymore. on 1806 some properties have been removed and still on the wmi query
-                #if ($ModuleSCCMVersionBuild -lt 1702) {
-                    $DeviceList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_CM_RES_COLL_SMS00001")
-                #} else {
-                #    $DeviceList = Get-CMDevice
-                #}
-
+                $DeviceList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_CM_RES_COLL_SMS00001")
                 $ManagedDeviceCount = ($DeviceList | Where-Object {$_.IsClient -eq $true}).Count
-                Export-CEXMLFile -VariableName 'DeviceList'
+                Export-CEXMLFile -VariableName 'DeviceList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,163,176,177,178,179,180,181,182)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2024,7 +2297,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'EndpointProtectionList'
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2040,7 +2315,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ClientSettingsList'
             }
         }
+        #endregion
 
+        #region sub-Rules-- parallel (to verify)
         $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2067,10 +2344,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         }
                     }
                 }
-                Export-CEXMLFile -VariableName 'ClientSettingsSettingsList'
+                Export-CEXMLFile -VariableName 'ClientSettingsSettingsList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(164,165)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2090,10 +2369,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 } else {
                     $MaintenanceTaskList = Get-CMSiteMaintenanceTask
                 }
-                Export-CEXMLFile -VariableName 'MaintenanceTaskList'
+                Export-CEXMLFile -VariableName 'MaintenanceTaskList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(166,167,168,169,170,171,172,173,174,175)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2106,10 +2387,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "BoundaryGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $BoundaryGroupList = Get-CMBoundaryGroup
-                Export-CEXMLFile -VariableName 'BoundaryGroupList'
+                Export-CEXMLFile -VariableName 'BoundaryGroupList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(166,167,168,169,170,171,172,173,174,175)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2123,10 +2406,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $BoundaryGroupRelationshipList = Get-CMBoundaryGroupRelationship
                 }
             
-                Export-CEXMLFile -VariableName 'BoundaryGroupRelationshipList'
+                Export-CEXMLFile -VariableName 'BoundaryGroupRelationshipList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(168, 169)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2139,14 +2424,22 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
-                    $DPList = $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point') -and ($_.NetworkOSPath -notlike '*manage.microsoft.com')}
+                    $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point')} | ForEach-Object {
+                        $item = $_
+                        if ($item.Props | Where-Object {($_.PropertyName -eq 'IsCloud') -and ($_.Value -eq 1)}) {
+                        } else {
+                            $DPList += $item
+                        }
+                    }
                 } else {
                     $DPList = $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS Distribution Point'}
                 }
-                Export-CEXMLFile -VariableName 'DPList'
+                Export-CEXMLFile -VariableName 'DPList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(172, 173)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2160,10 +2453,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
 
                 $SMPList =  $SiteRoleList | Where-Object {$_.RoleName -eq 'SMS State Migration Point'}
-                Export-CEXMLFile -VariableName 'SMPList'
+                Export-CEXMLFile -VariableName 'SMPList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(176)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2176,11 +2471,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 if ($EndpointProtectionList -ne $null) {
                     $MalwareDetectedList = Get-CMDetectedMalware -CollectionId 'SMS00001'
-                    Export-CEXMLFile -VariableName 'MalwareDetectedList'
+                    Export-CEXMLFile -VariableName 'MalwareDetectedList' -ClearVariable
                 }
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(177,178,179,180,181,182)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2193,7 +2490,24 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 if ($EndpointProtectionList -ne $null) {
                     $MalwarePolicyList = Get-CMAntimalwarePolicy
-                    
+                    Export-CEXMLFile -VariableName 'MalwarePolicyList'
+                }
+            }
+        }
+        #endregion
+
+        #region sub-Rules-- parallel verify
+        $arrRuleID = @(177,178,179,180,181,182)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\MalwarePolicySettingsList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "MalwarePolicySettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                if ($EndpointProtectionList -ne $null) {
                     $MalwarePolicyList | ForEach-Object {
                         $item = $_
                         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Malware Policy', $item.Name))
@@ -2210,12 +2524,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                             }
                         }
                     }
-                    Export-CEXMLFile -VariableName 'MalwarePolicyList'
+                    Export-CEXMLFile -VariableName 'MalwarePolicySettingsList' -ClearVariable
                 }
             }
         }
+        #endregion
 
-        $arrRuleID = @(177,178,179,180,181,182)
+        #region sub-Rules
+        $arrRuleID = @(181,182)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2227,10 +2543,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 $CMPSSuppressFastNotUsedCheck = $true
                 $FirewallPolicyList = Get-CMWindowsFirewallPolicy
-                Export-CEXMLFile -VariableName 'FirewallPolicyList'
+                Export-CEXMLFile -VariableName 'FirewallPolicyList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(183)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2242,11 +2560,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SwMeteringSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SwMeteringSettingsList = Get-CMSoftwareMeteringSetting
-                Export-CEXMLFile -VariableName 'SwMeteringSettingsList'
+                Export-CEXMLFile -VariableName 'SwMeteringSettingsList' -ClearVariable
             }
         }
+        #endregion
 
-        
+        #region sub-Rules
         $arrRuleID = @(184)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2258,11 +2577,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SwMeteringRuleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SwMeteringRuleList = Get-CMSoftwareMeteringRule
-                Export-CEXMLFile -VariableName 'SwMeteringRuleList'
+                Export-CEXMLFile -VariableName 'SwMeteringRuleList' -ClearVariable
             }
         }
+        #endregion
         
-        $arrRuleID = @(185,186,187,188,189,190,191,192,275,301)
+        #region sub-Rules
+        $arrRuleID = @(185,186,187,188,189,190,191,192,275,301,382)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2273,10 +2594,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "BootList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $BootList = Get-CMBootImage
-                Export-CEXMLFile -VariableName 'BootList'
+                Export-CEXMLFile -VariableName 'BootList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(186,187,298,299,300,301,302,303)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2291,7 +2614,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'TaskSequenceList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(186,283,284,292,293,295,297,301,302,303)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2302,15 +2627,27 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "TaskSequenceReferenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                #cade                
                 $TaskSequenceList | ForEach-Object {
                     $item = $_
-                    $TaskSequenceReferenceList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ts.*, content.* FROM SMS_ObjectContentExtraInfo content INNER JOIN SMS_TaskSequencePackageReference tspr ON tspr.RefPackageID = content.PackageID INNER JOIN SMS_TaskSequencePackage ts on ts.PackageID = tspr.PackageID where ts.PackageID = '$($item.PackageID)'")
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'Task Sequence', $item.Name))
+
+                    $Code = {
+                        Param (
+                            $SMSProviderServer,
+                            $MainSiteCode,
+                            $PackageID
+                        )
+                        (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ts.*, content.* FROM SMS_ObjectContentExtraInfo content INNER JOIN SMS_TaskSequencePackageReference tspr ON tspr.RefPackageID = content.PackageID INNER JOIN SMS_TaskSequencePackage ts on ts.PackageID = tspr.PackageID where ts.PackageID = '$($PackageID)'")
+                    }
+
+                    $TaskSequenceReferenceList += Execute-CERunSpace -code $Code -ParameterList @($SMSProviderServer, $MainSiteCode, $item.PackageID)
                 }
-                Export-CEXMLFile -VariableName 'TaskSequenceReferenceList'
+                Export-CEXMLFile -VariableName 'TaskSequenceReferenceList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(193,194)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2322,10 +2659,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SoftwareUpdateSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SoftwareUpdateSummarizationList = Get-CMSoftwareUpdateSummarizationSchedule
-                Export-CEXMLFile -VariableName 'SoftwareUpdateSummarizationList'
+                Export-CEXMLFile -VariableName 'SoftwareUpdateSummarizationList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(195,196,197,198)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2339,13 +2678,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 if ($ModuleSCCMVersionBuild -lt 1702) {
                     $SoftwareUpdateList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT ci.* FROM SMS_SoftwareUpdate ci WHERE ci.CI_ID NOT IN ( SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='UpdateClassification:3689bdc8-b205-4af4-8d4a-a63924c5e9d5') AND ci.CI_ID NOT IN (SELECT CI_ID FROM SMS_CIAllCategories WHERE CategoryInstance_UniqueID='Product:30eb551c-6288-4716-9a78-f300ec36d72b') ORDER BY DateRevised DESC")
                 } else {
-                    $SoftwareUpdateList = Get-CMSoftwareUpdate -Fast
+                    $SoftwareUpdateList = Get-CMSoftwareUpdate
                 }
-                Export-CEXMLFile -VariableName 'SoftwareUpdateList'
+                Export-CEXMLFile -VariableName 'SoftwareUpdateList' -ClearVariable
             }
         }
-
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(199)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2359,10 +2699,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 if ($ModuleSCCMVersionBuild -gt 1702) {
                     $SoftwareUpdateDeploymentList = Get-CMSoftwareUpdateDeployment | Where-Object {$_.AssignmentType -eq 1}
                 }
-                Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentList'
+                Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(200,201,202,203,204,205,206,207,208,209,210)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2377,7 +2719,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'SoftwareUpdateGroupList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(207,208,209)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2395,10 +2739,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 } else {
                     $SoftwareUpdateGroupDeploymentList = Get-CMUpdateGroupDeployment
                 }
-                Export-CEXMLFile -VariableName 'SoftwareUpdateGroupDeploymentList'
+                Export-CEXMLFile -VariableName 'SoftwareUpdateGroupDeploymentList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(210,211,212,213,214,215,216,217,218,219,220,221)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2410,10 +2756,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SoftwareUpdateADRList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SoftwareUpdateADRList = Get-CMSoftwareUpdateAutoDeploymentRule
-                Export-CEXMLFile -VariableName 'SoftwareUpdateADRList'
+                Export-CEXMLFile -VariableName 'SoftwareUpdateADRList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(213,214,218,219,220,221)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2427,10 +2775,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 if ($ModuleSCCMVersionBuild -gt 1702) {
                     $SoftwareUpdateADRDeploymetList = Get-CMAutoDeploymentRuleDeployment
                 }
-                Export-CEXMLFile -VariableName 'SoftwareUpdateADRDeploymetList'
+                Export-CEXMLFile -VariableName 'SoftwareUpdateADRDeploymetList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(222,223,224,316,317,318)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2452,11 +2802,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $AutoUpgradeConfigsError += $SiteList
                     }
                 }
-                Export-CEXMLFile -VariableName 'AutoUpgradeConfigs'
-                Export-CEXMLFile -VariableName 'AutoUpgradeConfigsError'
+                Export-CEXMLFile -VariableName 'AutoUpgradeConfigs' -ClearVariable
+                Export-CEXMLFile -VariableName 'AutoUpgradeConfigsError' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(225,226,227)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2468,10 +2820,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "EmailNotificationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $EmailNotificationList = Get-CMEmailNotificationComponent
-                Export-CEXMLFile -VariableName 'EmailNotificationList'
+                Export-CEXMLFile -VariableName 'EmailNotificationList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(228,229,230,231,232,233)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2486,7 +2840,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ADForestlist'
             }
         }
+        #endregion
 
+        #region sub-Rules-- parallel verify
         $arrRuleID = @(228,229,230,231,232,233)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2499,7 +2855,6 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 $ADForestlist | ForEach-Object {
                     $item = $_
-                    #cade
 
                     $StatusList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ADForestDiscoveryStatus WHERE ForestID = $($item.ForestID)")
                     $StatusList | ForEach-Object {
@@ -2516,10 +2871,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $ADForestDiscoveryStatusList += new-object HealthCheckClasses.SCCM.CEADForestDiscoveryStatus($_.DiscoveryEnabled, $_.DiscoveryStatus, $item.ForestFQDN, $dt1, $dt2, $_.PublishingEnabled, $_.PublishingStatus, $_.SiteCode)
                     }
                 }
-                Export-CEXMLFile -VariableName 'ADForestDiscoveryStatusList'
+                Export-CEXMLFile -VariableName 'ADForestDiscoveryStatusList' -ClearVariable
             }
-        }     
+        }
+        #endregion     
         
+        #region sub-Rules
         $arrRuleID = @(234,235,236,237,238)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2532,11 +2889,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 if (($SiteList | Measure-Object).Count -gt 1) {
                     $DatabaseReplicationStatusList = Get-CMDatabaseReplicationStatus
-                    Export-CEXMLFile -VariableName 'DatabaseReplicationStatusList'
+                    Export-CEXMLFile -VariableName 'DatabaseReplicationStatusList' -ClearVariable
                 }
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(240,241)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2548,13 +2907,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DatabaseReplicationScheduleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 if (($SiteList | Measure-Object).Count -gt 1) {
-                    #cade
                     $DatabaseReplicationScheduleList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -class SMS_RcmSqlControl)
-                    Export-CEXMLFile -VariableName 'DatabaseReplicationScheduleList'
+                    Export-CEXMLFile -VariableName 'DatabaseReplicationScheduleList' -ClearVariable
                 }
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(242,243,244,245,246,247,248,249,250,251,252,253)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2582,10 +2942,83 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
                     $SiteSummarizationList += New-Object HealthCheckClasses.SCCM.CESummarizationInterval($_.SiteCode, "Application Statistics Summarizer", $returnSiteSummarization.FirstIntervalMins, $returnSiteSummarization.SecondIntervalMins, $returnSiteSummarization.ThirdIntervalMins)
                 }
-                Export-CEXMLFile -VariableName 'SiteSummarizationList'
+                Export-CEXMLFile -VariableName 'SiteSummarizationList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
+        $arrRuleID = @(259, 260)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+
+            $FileToImport = "$($SaveToFolder)\ProcessInfoList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $NumberOfSamples = [math]::Round([int]$Script:ProcessListSamplesMinutes * 60 / [int]$Script:ProcessListSamplesWaitSeconds)
+                $SiteRoleListWOCDP | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Processor CPU Utilization', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer,
+                            $NumberOfSamples,
+                            $WaitSeconds
+                        )
+                        $ReturnInfo = @()
+                        For ($i=1; $i -le $NumberOfSamples; $i++) {
+                            try {
+                                $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
+                                if ($itemReturn -ne $null) {
+                                    $itemReturn | foreach-object {
+                                        $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $RemoteComputer; 'ConnectionType' = '' ; 'Error'= ''; 'Caption' = $_.Caption; 'CreatingProcessID' = $_.CreatingProcessID; 'Description' = $_.Description; 'ElapsedTime' = $_.ElapsedTime; 'Frequency_Object' = $_.Frequency_Object; 'Frequency_PerfTime' = $_.Frequency_PerfTime; 'Frequency_Sys100NS' = $_.Frequency_Sys100NS; 'HandleCount' = $_.HandleCount; 'IDProcess' = $_.IDProcess; 'IODataOperationsPerSec' = $_.IODataOperationsPerSec; 'IOOtherOperationsPerSec' = $_.IOOtherOperationsPerSec; 'IOReadBytesPerSec' = $_.IOReadBytesPerSec; 'IOReadOperationsPerSec' = $_.IOReadOperationsPerSec; 'IOWriteBytesPerSec' = $_.IOWriteBytesPerSec; 'IOWriteOperationsPerSec' = $_.IOWriteOperationsPerSec; 'IODataBytesPerSec' = $_.IODataBytesPerSec; 'IOOtherBytesPerSec' = $_.IOOtherBytesPerSec; 'Name' = $_.Name; 'PageFaultsPerSec' = $_.PageFaultsPerSec; 'PageFileBytes' = $_.PageFileBytes; 'PageFileBytesPeak' = $_.PageFileBytesPeak; 'PercentPrivilegedTime' = $_.PercentPrivilegedTime; 'PercentProcessorTime' = $_.PercentProcessorTime; 'PercentUserTime' = $_.PercentUserTime; 'PoolNonpagedBytes' = $_.PoolNonpagedBytes; 'PoolPagedBytes' = $_.PoolPagedBytes; 'PriorityBase' = $_.PriorityBase; 'PrivateBytes' = $_.PrivateBytes; 'ThreadCount' = $_.ThreadCount; 'Timestamp_Object' = $_.Timestamp_Object; 'Timestamp_PerfTime' = $_.Timestamp_PerfTime; 'Timestamp_Sys100NS' = $_.Timestamp_Sys100NS; 'VirtualBytes' = $_.VirtualBytes; 'VirtualBytesPeak' = $_.VirtualBytesPeak; 'WorkingSet' = $_.WorkingSet; 'WorkingSetPeak' = $_.WorkingSetPeak; }
+                                    }
+                                } else {
+                                    $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Performance' ; 'Error'= ''; 'Caption' = ''; 'CreatingProcessID' = 0; 'Description' = ''; 'ElapsedTime' = 0; 'Frequency_Object' = 0; 'Frequency_PerfTime' = 0; 'Frequency_Sys100NS' = 0; 'HandleCount' = 0; 'IDProcess' = 0; 'IODataOperationsPerSec' = 0; 'IOOtherOperationsPerSec' = 0; 'IOReadBytesPerSec' = 0; 'IOReadOperationsPerSec' = 0; 'IOWriteBytesPerSec' = 0; 'IOWriteOperationsPerSec' = 0; 'IODataBytesPerSec' = 0; 'IOOtherBytesPerSec' = 0; 'Name' = ''; 'PageFaultsPerSec' = 0; 'PageFileBytes' = 0; 'PageFileBytesPeak' = 0; 'PercentPrivilegedTime' = 0; 'PercentProcessorTime' = 0; 'PercentUserTime' = 0; 'PoolNonpagedBytes' = 0; 'PoolPagedBytes' = 0; 'PriorityBase' = 0; 'PrivateBytes' = 0; 'ThreadCount' = 0; 'Timestamp_Object' = 0; 'Timestamp_PerfTime' = 0; 'Timestamp_Sys100NS' = 0; 'VirtualBytes' = 0; 'VirtualBytesPeak' = 0; 'WorkingSet' = 0; 'WorkingSetPeak' = 0; }
+                                    break
+                                }
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Performance' ; 'Error'= $_; 'Caption' = ''; 'CreatingProcessID' = 0; 'Description' = ''; 'ElapsedTime' = 0; 'Frequency_Object' = 0; 'Frequency_PerfTime' = 0; 'Frequency_Sys100NS' = 0; 'HandleCount' = 0; 'IDProcess' = 0; 'IODataOperationsPerSec' = 0; 'IOOtherOperationsPerSec' = 0; 'IOReadBytesPerSec' = 0; 'IOReadOperationsPerSec' = 0; 'IOWriteBytesPerSec' = 0; 'IOWriteOperationsPerSec' = 0; 'IODataBytesPerSec' = 0; 'IOOtherBytesPerSec' = 0; 'Name' = ''; 'PageFaultsPerSec' = 0; 'PageFileBytes' = 0; 'PageFileBytesPeak' = 0; 'PercentPrivilegedTime' = 0; 'PercentProcessorTime' = 0; 'PercentUserTime' = 0; 'PoolNonpagedBytes' = 0; 'PoolPagedBytes' = 0; 'PriorityBase' = 0; 'PrivateBytes' = 0; 'ThreadCount' = 0; 'Timestamp_Object' = 0; 'Timestamp_PerfTime' = 0; 'Timestamp_Sys100NS' = 0; 'VirtualBytes' = 0; 'VirtualBytesPeak' = 0; 'WorkingSet' = 0; 'WorkingSetPeak' = 0; }
+                                break
+                            }
+                            if ($i -lt $NumberOfSamples) { start-sleep $WaitSeconds }
+                        }
+                        $ReturnInfo
+                    }
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer, $NumberOfSamples, $Script:ProcessListSamplesWaitSeconds) | out-null
+                }
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+
+                $returninfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+
+                $ProcessInfoList = $returninfo | where-object {$_.Success -eq $true} 
+                
+                $returninfo | where-object {$_.Success -eq $false} | ForEach-Object {
+                    if (-not [string]::IsNullOrEmpty($_.Error)) {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1051 @($_.ServerName, $_.Error))
+                    }
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+
+                Export-CEXMLFile -VariableName 'ProcessInfoList'
+            }
+        }
+        #endregion
+
+        #region sub-Rules
         $arrRuleID = @(259, 260)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2597,39 +3030,18 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-
                 $NumberOfSamples = [math]::Round([int]$Script:ProcessListSamplesMinutes * 60 / [int]$Script:ProcessListSamplesWaitSeconds)
-                $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
-                    $item = $_
-                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    For ($i=1; $i -le $NumberOfSamples; $i++) {
-                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1030 @($RemoteComputer, $i, $NumberOfSamples))
-                        try {
-                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
-                            if ($itemReturn -ne $null) {
-                                $ProcessInfoList += $itemReturn
-                            } else {
-                                $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Performance' }
-                                break
-                            }
-                        } catch {
-                            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Performance' }
-                            break
-                        }
-                        if ($i -lt $NumberOfSamples) { start-sleep $Script:ProcessListSamplesWaitSeconds }
-                    }
-
-                    $ProcessInfoList | Select-Object PSComputerName | Get-Unique -AsString | ForEach-Object {
-                        $Item = $_
-                        $ProcessAverageTimeList += $ProcessInfoList | Where-Object {$_.PSComputerName -eq $item.PSComputerName} | Group-Object Name | Select-Object -Property  @{ Name = 'ComputerName'; Expression = { $item.PSComputerName }}, Name, @{ Name = 'Average'; Expression = { ($_.Group | Measure-Object -Property PercentProcessorTime -Sum).Sum / $NumberOfSamples } }
-                    }
+                $ProcessInfoList | Select-Object ServerName | Get-Unique -AsString | ForEach-Object {
+                    $Item = $_
+                    $ProcessAverageTimeList += $ProcessInfoList | Where-Object {$_.ServerName -eq $Item.ServerName} | Group-Object Name | Select-Object -Property  @{ Name = 'ComputerName'; Expression = { $Item.ServerName }}, Name, @{ Name = 'Average'; Expression = { ($_.Group | Measure-Object -Property PercentProcessorTime -Sum).Sum / $NumberOfSamples } }
                 }
-                Export-CEXMLFile -VariableName 'ProcessAverageTimeList'
+                Export-CEXMLFile -VariableName 'ProcessAverageTimeList' -ClearVariable
+                Remove-CEVariable -VariableName 'ProcessInfoList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(261, 262)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2641,33 +3053,48 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServerRegistryInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                $SiteRoleListWOCDP | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
                     $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('Short file name creation', $RemoteComputer))
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
-                        $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
-                        if ($RegKey -eq $Null) {
-                            $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
+                    $code = {
+                        Param (
+                            $RemoteComputer,
+                            $SiteCode
+                        )
+                        try {
+                            $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
+                            $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
+                            if ($RegKey -eq $Null) {
+                                $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
+                            }
+
+                            $ShortNameCreation = $RegKey.GetValue("NtfsDisable8dot3NameCreation")
+
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
+                            $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
+
+                            $ReturnInfo = New-Object -TypeName PSObject -Property @{'Success' = $true; 'SiteCode' = $SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = $ShortNameCreation; 'ProgramFiles' = $ProgramFiles; 'ConnectionType' = ''; 'Error'='' }
+                        } catch {
+                            $ReturnInfo = New-Object -TypeName PSObject -Property @{'Success' = $false; 'SiteCode' = $SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = ''; 'ProgramFiles' = ''; 'ConnectionType' = 'Short file name creation Remote Registry (RRP/RPC)'; 'Error'=$_ }
                         }
+                        $ReturnInfo
+                    }
+                    $ReturnInfo = Execute-CERunSpace -code $Code -ParameterList @($RemoteComputer, $item.SiteCode)
 
-                        $ShortNameCreation = $RegKey.GetValue("NtfsDisable8dot3NameCreation")
+                    $ServerRegistryInformation += $ReturnInfo | where-object {$_.Success -eq $true}
 
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion")
-                        $ProgramFiles = $RegKey.GetValue("ProgramFilesDir")
-
-                        $ServerRegistryInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'ShortNameCreation' = $ShortNameCreation; 'ProgramFiles' = $ProgramFiles }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'Short file name creation Remote Registry (RRP/RPC)' }
+                    $ReturnInfo | where-object {$_.Success -eq $false} | ForEach-Object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
                     }
                 }
-                Export-CEXMLFile -VariableName 'ServerRegistryInformation'
+                Export-CEXMLFile -VariableName 'ServerRegistryInformation' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2686,7 +3113,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DistributionPointList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2701,10 +3130,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'Distribution Point', ($_.NetworkOSPath -replace '\\', '')))
                     $DistributionPointInformationList += Get-CMDistributionPointInfo -InputObject $_
                 }
-                Export-CEXMLFile -VariableName 'DistributionPointInformationList'
+                Export-CEXMLFile -VariableName 'DistributionPointInformationList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2715,12 +3146,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BoundarySiteSystemsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                #cade
                 $BoundarySiteSystemsList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_BoundaryGroupSiteSystems where Flags = 0")
-                Export-CEXMLFile -VariableName 'BoundarySiteSystemsList'
+                Export-CEXMLFile -VariableName 'BoundarySiteSystemsList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(263,264,265,266,267,268,269,270,271,272,273,274)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2731,12 +3163,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionPointDriveInfo" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                #cade
                 $DistributionPointDriveInfo = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_DistributionPointDriveInfo")
-                Export-CEXMLFile -VariableName 'DistributionPointDriveInfo'
+                Export-CEXMLFile -VariableName 'DistributionPointDriveInfo' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(275,276,277,332,333)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2752,10 +3185,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 } else {
                     $DistributionStatusList = Get-CMDistributionStatus
                 }
-                Export-CEXMLFile -VariableName 'DistributionStatusList'
+                Export-CEXMLFile -VariableName 'DistributionStatusList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(278,279,280,281,282,283,284,286,287,338)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2770,7 +3205,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'ApplicationList'
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(286,287)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2788,7 +3225,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'DeploymentTypeList'
             }
         }
+        #endregion
 
+        #region sub-Rules-- parallel
         $arrRuleID = @(286,287)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2804,13 +3243,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
                     $DeploymentTypeList | Where-Object {$_.AppModelName -eq $item.ModelName} | ForEach-Object {
                         $subItem = $_
-                        #todo: needneed to ignore more?
-                        #query for all technology
-                        #SELECT distinct SDMPackageDigest.value('declare namespace p1="http://schemas.microsoft.com/SystemCenterConfigurationManager/2009/AppMgmtDigest"; (p1:AppMgmtDigest/p1:DeploymentType/p1:Installer/@Technology)[1]','nvarchar(max)')AS DTTechnology FROM[v_ConfigurationItems] WHERE CIType_ID = 21 
                         if (@('AndroidDeepLink', 'iOSDeepLink', 'WinPhone8Deeplink', 'Deeplink', 'WebApp') -contains $subitem.Technology)  {
                             #ignoring
                         } else {
+                            While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                                Start-Sleep -Seconds 3
+                            }
                             Write-CELog -logtype "INFO" -logmessage "Checking folder information for application '$($item.LocalizedDisplayName)' and DeploymentType $($subItem.LocalizedDisplayName)"
+
                             if ([string]::IsNullOrEmpty($Item.SDMPackageXML) -eq $true) {
                                 $arrItem = $subitem.ModelName.Split('/')
                                 $itemxml = ([xml]$item.SDMPackageXML)
@@ -2833,10 +3273,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         }
                     }
                 }
-                Export-CEXMLFile -VariableName 'PathDTInformationList'
+                Export-CEXMLFile -VariableName 'PathDTInformationList' -ClearVariable
+                Remove-CEVariable -VariableName 'ApplicationList'
+                Remove-CEVariable -VariableName 'DeploymentTypeList'
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(288,289)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2849,13 +3293,23 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {                
                 $sqlQuery = 'select * from SMS_DPContentInfo'
                 if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
-                    $sqlQuery += ' where NALPath not like "%manage.microsoft.com%"'
+                    $ignoreItemList = ''
+                    $SiteRoleList | Where-Object {($_.RoleName -eq 'SMS Distribution Point')} | ForEach-Object {
+                        $item = $_
+                        if ($item.Props | Where-Object {($_.PropertyName -eq 'IsCloud') -and ($_.Value -eq 1)}) {
+                            if (-not [string]::IsNullOrEmpty($ignoreItemList)) { $ignoreItemList += ','}
+                            $ignoreItemList = "'$($item.NetworkOSPath)'"
+                        }
+                    }
+                    $sqlQuery += " where NALPath not in ($($ignoreItemList))"
                 }
                 $DPContentList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query $sqlQuery)
-                Export-CEXMLFile -VariableName 'DPContentList'
+                Export-CEXMLFile -VariableName 'DPContentList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(288,289)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2866,13 +3320,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPGroupContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                #cade
                 $DPGroupContentList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'select * from SMS_DPGroupContentInfo')
-                Export-CEXMLFile -VariableName 'DPGroupContentList'
+                Export-CEXMLFile -VariableName 'DPGroupContentList' -ClearVariable
             }
         }
+        #endregion
         
-        $arrRuleID = @(290,291,292,293)
+        #region sub-Rules
+        $arrRuleID = @(290,291,292,293,379,380)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -2886,7 +3341,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'PackageList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(290,291,292,293)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2899,21 +3356,30 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {
                 $PackageList | ForEach-Object {
                     $Item = $_
-                    if (($item.Name -notin $Script:HiddenPackages) -and ($item.DefaultImageFlags -ne 2)) { #2=USMT package
-                        if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
-                            if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
-                                $bPathExist = $true
-                            } else {
-                                $bPathExist = $false
-                            }
-                            $PathPkgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
-                        }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Package', $item.Name))
+                    $code = {
+                            Param (
+                            $pkgName,
+                            $PkgSourcePath,
+                            $HiddenPackages,
+                            $pkgID
+                        )
+                        if (Test-Path -Path "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                            $bPathExist = $true
+                        } else {
+                            $bPathExist = $false
+                       }
+                        New-Object -TypeName PSObject -Property @{'Name' = $pkgName; 'ID' = $pkgID; 'Folder' = $PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                     }
+                    $PathPkgInformationList += Execute-CERunSpace -code $Code -ParameterList @($item.Name, $Item.PkgSourcePath,  $Script:HiddenPackages, $item.PackageID)
                 }
-                Export-CEXMLFile -VariableName 'PathPkgInformationList'
+                Export-CEXMLFile -VariableName 'PathPkgInformationList' -ClearVariable
+                Remove-CEVariable -VariableName 'PackageList'
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(294,295)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2928,7 +3394,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'OperatingSystemImageList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(294,295)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2942,18 +3410,31 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $OperatingSystemImageList | ForEach-Object {
                     $Item = $_
                     if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
-                        if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
-                            $bPathExist = $true
-                        } else {
-                            $bPathExist = $false
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Operating System Image', $item.Name))
+                        $code = {
+                            Param (
+                                $pkgName,
+                                $PkgSourcePath,
+                                $HiddenPackages,
+                                $pkgID
+                            )
+                            if (Test-Path -Path "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                                $bPathExist = $true
+                            } else {
+                                $bPathExist = $false
+                            }
+                            New-Object -TypeName PSObject -Property @{'Name' = $pkgName; 'ID' = $pkgID; 'Folder' = $PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                         }
-                        $PathOSImgInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
+                        $PathOSImgInformationList += Execute-CERunSpace -code $Code -ParameterList @($item.Name, $Item.PkgSourcePath,  $Script:HiddenPackages, $item.PackageID)
                     }
                 }
-                Export-CEXMLFile -VariableName 'PathOSImgInformationList'
+                Export-CEXMLFile -VariableName 'PathOSImgInformationList' -ClearVariable
+                Remove-CEVariable -VariableName 'OperatingSystemImageList'
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(296,297)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2968,7 +3449,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Export-CEXMLFile -VariableName 'OperatingSystemInstallerList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(296,297)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -2982,18 +3465,31 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $OperatingSystemInstallerList | ForEach-Object {
                     $Item = $_
                     if (-not [string]::IsNullOrEmpty($Item.PkgSourcePath)) {
-                        if (Test-Path -Path "filesystem::$($Item.PkgSourcePath)" -ErrorAction SilentlyContinue) {
-                            $bPathExist = $true
-                        } else {
-                            $bPathExist = $false
+                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Operating System Installer', $item.Name))
+                        $code = {
+                            Param (
+                                $pkgName,
+                                $PkgSourcePath,
+                                $HiddenPackages,
+                                $pkgID
+                            )
+                            if (Test-Path -Path "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                                $bPathExist = $true
+                            } else {
+                                $bPathExist = $false
+                            }
+                            New-Object -TypeName PSObject -Property @{'Name' = $pkgName; 'ID' = $pkgID; 'Folder' = $PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
                         }
-                        $PathOSInstallerInformationList += New-Object -TypeName PSObject -Property @{'Name' = $Item.Name; 'ID' = $item.PackageID; 'Folder' = $Item.PkgSourcePath; 'Username' = "$($env:USERDOMAIN)\$($env:USERNAME)"; 'Exist' = $bPathExist }
+                        $PathOSInstallerInformationList += Execute-CERunSpace -code $Code -ParameterList @($item.Name, $Item.PkgSourcePath,  $Script:HiddenPackages, $item.PackageID)
                     }
                 }
-                Export-CEXMLFile -VariableName 'PathOSInstallerInformationList'
+                Export-CEXMLFile -VariableName 'PathOSInstallerInformationList' -ClearVariable
+                Remove-CEVariable -VariableName 'OperatingSystemInstallerList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(300)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3015,10 +3511,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         }
                     }
                 }
-                Export-CEXMLFile -VariableName 'TaskSequenceRebootOptions'
+                Export-CEXMLFile -VariableName 'TaskSequenceRebootOptions' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(304,305)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3032,33 +3530,57 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $SiteList | ForEach-Object {
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', 'Inbox Files', $_.SiteCode))
                     $item = $_
-
-                    try {
-                        if (Test-Path -Path "filesystem::\\$($item.ServerName)\SMS_$($item.SiteCode)\inboxes") {
-                            $ChildFolders = Get-ChildItem "filesystem::\\$($item.ServerName)\SMS_$($item.SiteCode)\inboxes" -Recurse -ErrorAction Stop | Where-Object {$_.PSIsContainer}
-                            foreach($subitem in $ChildFolders) {
-                                if(Test-Path "filesystem::$($subitem.FullName)")
-                                {
-                                    $fcount = (Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Count
-                                    $fsize = "{0:N2}" -f ((Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Sum / 1MB)
-                                    $inboxList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $item.ServerName; 'FolderName' = $subitem.Name; 'FolderPath' = $subitem.FullName; 'FolderCount' = $fCount; 'FolderSize' = $fsize}
-                                } else {
-                                    Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @($subitem.FullName))
+                    $code = {
+                        Param (
+                            $servername,
+                            $siteCode
+                        )
+                        $returninfo = @()
+                        try {
+                            if (Test-Path -Path "filesystem::\\$($ServerName)\SMS_$($SiteCode)\inboxes") {
+                                $ChildFolders = Get-ChildItem "filesystem::\\$($ServerName)\SMS_$($SiteCode)\inboxes" -Recurse -ErrorAction Stop | Where-Object {$_.PSIsContainer}
+                                foreach($subitem in $ChildFolders) {
+                                    if(Test-Path "filesystem::$($subitem.FullName)")
+                                    {
+                                        $fcount = (Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Count
+                                        $fsize = "{0:N2}" -f ((Get-ChildItem "filesystem::$($subitem.FullName)" | Where-Object {!$_.PSIsContainer} | Measure-Object).Sum / 1MB)
+                                        $returninfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'SiteCode' = $SiteCode; 'ServerName' = $ServerName; 'FolderName' = $subitem.Name; 'FolderPath' = $subitem.FullName; 'FolderCount' = $fCount; 'FolderSize' = $fsize; 'ConnectionType'='';'Error'=''}
+                                    } else {
+                                        $returninfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'SiteCode' = $SiteCode; 'ServerName' = $ServerName; 'FolderName' = $subitem.FullName; 'FolderPath' = $subitem.FullName; 'FolderCount' = 0; 'FolderSize' = 0; 'ConnectionType'='';'Error'=''}
+                                    }
                                 }
+                            } else {
+                                $returninfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'SiteCode' = $SiteCode; 'ServerName' = $ServerName; 'FolderName' = "$($erverName)\SMS_$($SiteCode)\inboxes"; 'FolderPath' = "$($erverName)\SMS_$($SiteCode)\inboxes"; 'FolderCount' = 0; 'FolderSize' = 0; 'ConnectionType'='';'Error'=''}
                             }
-                        } else {
-                            Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @("$($item.ServerName)\SMS_$($item.SiteCode)\inboxes"))
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.ServerName); 'ConnectionType' = 'Folder Access (inbox) (SMB)' }
+                        } catch {
+                            $returninfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 4; 'SiteCode' = $SiteCode; 'ServerName' = $ServerName; 'FolderName' = ''; 'FolderPath' = ''; 'FolderCount' = 0; 'FolderSize' = 0; 'ConnectionType'='Folder Access (inbox) (SMB)';'Error'=$_}
                         }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($item.ServerName); 'ConnectionType' = 'Folder Access (inbox) (SMB)' }
+                        $returninfo
                     }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($item.ServerName, $item.SiteCode)
+
+                    $inboxList += $returninfo | where-object {$_.ReturnType -eq 1}
+
+                    $returninfo | where-object {$_.ReturnType -eq 2} | foreach-object {
+                        Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @($_.FolderPath))
+                    }
+
+                    $returninfo | where-object {$_.ReturnType -eq 3} | foreach-object {
+                        Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @($_.FolderPath))
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($_.ServerName); 'ConnectionType' = $_.ConnectionType }
+                    }
+
+                    $returninfo | where-object {$_.ReturnType -eq 3} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($_.ServerName); 'ConnectionType' = $_.ConnectionType }
+                    }    
                 }
-                Export-CEXMLFile -VariableName 'inboxList'
+                Export-CEXMLFile -VariableName 'inboxList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(306)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3070,10 +3592,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DriverPackageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $DriverPackageList = Get-CMDriverPackage
-                Export-CEXMLFile -VariableName 'DriverPackageList'
+                Export-CEXMLFile -VariableName 'DriverPackageList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(307)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3088,10 +3612,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 #SMS_ComponentSummarizer = https://docs.microsoft.com/en-us/sccm/develop/reference/core/servers/manage/sms_componentsummarizer-server-wmi-class
                 #Status = 0=green, 1=warning, 2=red
                 $ComponentSummarizerList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ComponentSummarizer WHERE TallyInterval='0001128000100008'")
-                Export-CEXMLFile -VariableName 'ComponentSummarizerList'
+                Export-CEXMLFile -VariableName 'ComponentSummarizerList' -ClearVariable
             }
         }
-                
+        #endregion
+        
+        #region sub-Rules
         $arrRuleID = @(308, 363)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3112,10 +3638,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $ComponentStatusMessageListError += New-Object -TypeName PSObject -Property @{'Error' = $true; }
                 }
                 Export-CEXMLFile -VariableName 'ComponentStatusMessageList'
-                Export-CEXMLFile -VariableName 'ComponentStatusMessageListError'
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageListError' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(308, 363)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3192,10 +3720,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
                     }
                 }
-                Export-CEXMLFile -VariableName 'ComponentStatusMessageCompletedList'
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageCompletedList' -ClearVariable
+                Remove-CEVariable -VariableName 'ComponentStatusMessageList'
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(312)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3209,25 +3740,41 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $SUPList | ForEach-Object {
                     $item = $_
                     $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('WSUS', $WSUSServerName))
+                    $code = {
+                        Param (
+                            $sitecode,
+                            $WSUSServerName,
+                            $HiddenPackages,
+                            $pkgID
+                        )
+                        try {
+                            $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services")
+                            $WIDExist = -not [String]::IsNullOrEmpty(($RegKey.GetValueNames() | Where-Object {$_ -eq 'UpdateServices-WidDatabase'}))
 
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup\Installed Role Services")
-                        $WIDExist = -not [String]::IsNullOrEmpty(($RegKey.GetValueNames() | Where-Object {$_ -eq 'UpdateServices-WidDatabase'}))
-
-                        if ($WIDExist) {
-                            $SUPWIDList += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName;  }
+                            if ($WIDExist) {
+                                New-Object -TypeName PSObject -Property @{'Success' = $true; 'SiteCode' = $sitecode; 'ServerName' = $WSUSServerName; 'ConnectionType' = ''; 'Error'=''  }
+                            }
+                        } catch {
+                            New-Object -TypeName PSObject -Property @{'Success' = $false; 'SiteCode' = $sitecode; 'ServerName' = $WSUSServerName; 'ConnectionType' = 'WID Remote Registry (RRP/RPC)'; 'Error'= $_  }
                         }
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($item.SiteCode, $WSUSServerName)
 
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WID Remote Registry (RRP/RPC)' }
+                    $SUPWIDList += $returninfo | where-object {$_.Success -eq $true}
+
+                    $returninfo | where-object {$_.Success -eq $false} | ForEach-Object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
                     }
                 }
-                Export-CEXMLFile -VariableName 'SUPWIDList'
+                Export-CEXMLFile -VariableName 'SUPWIDList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(313)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3239,33 +3786,49 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServerNOSMSONDriveInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                $SiteRoleListWOCDP | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
                     $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1047 @('NO_SMS_ON_DRIVE.SMS on SystemDrive', $RemoteComputer))
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+                    $code = {
+                        Param (
+                            $RemoteComputer,
+                            $siteCode,
+                            $HiddenPackages,
+                            $pkgID
+                        )
+                        try {
+                            $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
                     
-                        $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
-                        if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
-                            $bPathExist = $true
-                        } else {
-                            $bPathExist = $false
+                            $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
+                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                $bPathExist = $true
+                            } else {
+                                $bPathExist = $false
+                            }
+                            New-Object -TypeName PSObject -Property @{'Success' = $true; 'SiteCode' = $SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = $SystemRoot; 'ConnectionType'='';'Error' =''; }
+                        } catch {
+                            New-Object -TypeName PSObject -Property @{'Success' = $false; 'SiteCode' = $SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = 'C:\'; 'ConnectionType'='NO_SMS_ON_DRIVE.SMS';'Error' = $_; }
                         }
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($RemoteComputer, $item.SiteCode)
 
-                        $ServerNOSMSONDriveInformation += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $RemoteComputer; 'FileExist' = $bPathExist; 'Folder' = 'C:\' }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'NO_SMS_ON_DRIVE.SMS' }
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $ServerNOSMSONDriveInformation += $_
+                    }
 
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
                     }
                 }
-                Export-CEXMLFile -VariableName 'ServerNOSMSONDriveInformation'
+                Export-CEXMLFile -VariableName 'ServerNOSMSONDriveInformation' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(314)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3279,23 +3842,38 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $SUPList | ForEach-Object {
                     $item = $_
                     $WSUSServerName = ($item.NetworkOSPath.Replace('\\',''))
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('WSUS Information', $WSUSServerName))
+                    $code = {
+                        Param (
+                            [string]$WSUSServerName,
+                            $siteCode
+                        )
+                        try {
+                            $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
+                            $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup")
+                            $WSUSSQL = $RegKey.GetValue('SqlServerName').ToString()    
+                            New-Object -TypeName PSObject -Property @{'Success' = $true;'SiteCode' = $SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL; 'ConnectionType' = ''; 'Error' = '' }
+                        } catch {
+                            New-Object -TypeName PSObject -Property @{'Success' = $false;'SiteCode' = $SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL; 'ConnectionType' = 'WSUS Remote Registry (RRP/RPC)'; 'Error' = $_ }
+                        }
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($WSUSServerName, $item.SiteCode)
 
-                    try {
-                        $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $WSUSServerName)
-                        $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Update Services\Server\Setup")
-                        $WSUSSQL = $RegKey.GetValue('SqlServerName').ToString()
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SUPSQL += $_
+                    }
 
-                        $SUPSQL += New-Object -TypeName PSObject -Property @{'SiteCode' = $item.SiteCode; 'ServerName' = $WSUSServerName; 'SQLServer' = $WSUSSQL }
-
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $WSUSServerName; 'ConnectionType' = 'WSUS Remote Registry (RRP/RPC)' }
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
                     }
                 }
-                Export-CEXMLFile -VariableName 'SUPSQL'
+                Export-CEXMLFile -VariableName 'SUPSQL' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(315)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3307,10 +3885,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "ApprovalRequestList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $ApprovalRequestList = Get-CMApprovalRequest
-                Export-CEXMLFile -VariableName 'ApprovalRequestList'
+                Export-CEXMLFile -VariableName 'ApprovalRequestList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(319)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3322,10 +3902,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SUPComponentSyncManager" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SUPComponentSyncManager = Get-CMSoftwareUpdatePointComponent -WsusSyncManager
-                Export-CEXMLFile -VariableName 'SUPComponentSyncManager'
+                Export-CEXMLFile -VariableName 'SUPComponentSyncManager' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(320)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3337,10 +3919,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SUPComponent" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SUPComponent = Get-CMSoftwareUpdatePointComponent
-                Export-CEXMLFile -VariableName 'SUPComponent'
+                Export-CEXMLFile -VariableName 'SUPComponent' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(325,326)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3352,10 +3936,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "SiteDefinition" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SiteDefinition =  Get-CMSiteDefinition
-                Export-CEXMLFile -VariableName 'SiteDefinition'
+                Export-CEXMLFile -VariableName 'SiteDefinition' -ClearVariable
             }
-        }        
+        }
+        #endregion        
         
+        #region sub-Rules
         $arrRuleID = @(327, 328)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3396,10 +3982,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
                     }
                 }
-                Export-CEXMLFile -VariableName 'SoftwareVersionList'
+                Export-CEXMLFile -VariableName 'SoftwareVersionList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(329)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3410,31 +3998,60 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                $SiteRoleListWOCDP | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
                     $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('SCCM Services', $RemoteComputer))
-
-                    try {
-                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "win32_Service" -ErrorAction SilentlyContinue) 
-                    
-                        if ($itemReturn -ne $null) {
-                            $itemReturn | ForEach-Object {
-                                $ServiceList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'Name' = $_.Name; 'Caption' = $_.Caption; 'Started' = $_.Started; 'StartMode' = $_.StartMode; 'State' = $_.State; 'Status' = $_.Status }
-                            }
-                        } else {
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Service' }
-                        }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Service' }
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
                     }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('SCCM Services', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        $returnInfo = @()
+                        try {
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "win32_Service" -ErrorAction SilentlyContinue) 
+                    
+                            if ($itemReturn -ne $null) {
+                                $itemReturn | ForEach-Object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer; 'AcceptPause' = $_.AcceptPause; 'AcceptStop' = $_.AcceptStop; 'Caption' = $_.Caption; 'CheckPoint' = $_.CheckPoint; 'CreationClassName' = $_.CreationClassName; 'DelayedAutoStart' = $_.DelayedAutoStart; 'Description'=$_.Description;'DesktopInteract'=$_.DesktopInteract;'DisplayName'=$_.DisplayName;'ErrorControl'=$_.ErrorControl;'ExitCode'=$_.ExitCode;'InstallDate'=$_.InstallDate;'Name'=$_.Name;'PathName'=$_.PathName;'ProcessId'=$_.ProcessId;'ServiceSpecificExitCode'=$_.ServiceSpecificExitCode;'ServiceType'=$_.ServiceType;'Started'=$_.Started;'StartMode'=$_.StartMode;'StartName'=$_.StartName;'State'=$_.State;'Status'=$_.Status;'SystemCreationClassName'=$_.SystemCreationClassName;'SystemName'=$_.SystemName;'TagId'=$_.TagId;'WaitHint'=$_.WaitHint; }
+                                }
+                            } else {
+                                $returnInfo = New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ConnectionType'='WMI (root\cimv2) Service';'Error'=''; 'ServerName' = $RemoteComputer; 'AcceptPause' = $false; 'AcceptStop' = $false; 'Caption' = ''; 'CheckPoint' = 0; 'CreationClassName' = ''; 'DelayedAutoStart' = $false; 'Description'='';'DesktopInteract'=$false;'DisplayName'='';'ErrorControl'='';'ExitCode'=0;'InstallDate'=(Get-Date);'Name'='';'PathName'='';'ProcessId'=0;'ServiceSpecificExitCode'=0;'ServiceType'='';'Started'=$false;'StartMode'='';'StartName'='';'State'='';'Status'='';'SystemCreationClassName'='';'SystemName'='';'TagId'=0;'WaitHint'=0; }
+                                break
+                            }
+                        } catch {
+                            $returnInfo = New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'ConnectionType'='WMI (root\cimv2) Service';'Error'=$_; 'ServerName' = $RemoteComputer; 'AcceptPause' = $false; 'AcceptStop' = $false; 'Caption' = ''; 'CheckPoint' = 0; 'CreationClassName' = ''; 'DelayedAutoStart' = $false; 'Description'='';'DesktopInteract'=$false;'DisplayName'='';'ErrorControl'='';'ExitCode'=0;'InstallDate'=(Get-Date);'Name'='';'PathName'='';'ProcessId'=0;'ServiceSpecificExitCode'=0;'ServiceType'='';'Started'=$false;'StartMode'='';'StartName'='';'State'='';'Status'='';'SystemCreationClassName'='';'SystemName'='';'TagId'=0;'WaitHint'=0; }
+                            break
+                        }
+                        $returnInfo
+                    }
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
                 }
-                Export-CEXMLFile -VariableName 'ServiceList'
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                
+                $returninfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+                $ServiceList = $returninfo | where-object {$_.ReturnType -eq 1}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'ServiceList' -ClearVariable
             }
         }
+        #endregion
 
-        $arrRuleID = @(334,335,336,337)
+        #region sub-Rules
+        $arrRuleID = @(334,335,336,337,381)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
@@ -3443,26 +4060,54 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             if (Test-Path $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PingList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
-            } else {                
-                $SiteRoleList | Where-Object {$_.NetworkOSPath -notlike "*manage.microsoft.com"} | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+            } else {
+                if ([Convert]::ToBoolean($script:IgnoreCloudDP) -eq $true) {
+                    $tmpServerList = $SiteRoleListWOCDP
+                } else {
+                    $tmpServerList = $SiteRoleList
+                }
+
+                $tmpServerList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
                     $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    for($i=1; $i -le [int]$Script:MaxPingCount; $i++) {    
-                        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1049 @($RemoteComputer, $i, $Script:MaxPingCount))
-                        $pingreturn = Test-Connection -ComputerName $RemoteComputer -Count 1 -ErrorAction SilentlyContinue
-                        if ($pingreturn -eq $null) {
-                            $PingList += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.Source; 'Destination' = $Destination; 'IPV4' = ''; 'ResponseTime' = 4000; 'Success' = $false  }
-                        } else {
-                            $PingList += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.Source; 'Destination' = $RemoteComputer; 'IPV4' = $pingreturn.IPV4Address.IPAddressToString; 'ResponseTime' = $pingreturn.ResponseTime; 'Success' = $true  }
-                        }
-                        Start-Sleep $Script:PingDelay
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
                     }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Ping Information', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            [string]$CN,
+                            [int]$MaxPingCount,
+                            [int]$PingDelay
+                        )
+                        $returnInfo = @()
+                        for($i=1; $i -le $MaxPingCount; $i++) {
+                            $pingreturn = Test-Connection -ComputerName $CN -Count 1 -ErrorAction SilentlyContinue
+                            if ($pingreturn -eq $null) {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.__SERVER; 'Destination' = $CN; 'IPV4' = ''; 'ResponseTime' = 4000; 'Success' = $false  }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.__SERVER; 'Destination' = $pingreturn.Address; 'IPV4' = $pingreturn.IPV4Address.IPAddressToString; 'ResponseTime' = $pingreturn.ResponseTime; 'Success' = $true  }
+                            }
+                            Start-Sleep $PingDelay
+                        }
+                        $returnInfo
+                    }
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer, [int]$Script:MaxPingCount, $Script:PingDelay) | out-null
                 }
-                Export-CEXMLFile -VariableName 'PingList'
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                
+                $PingList = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+                Export-CEXMLFile -VariableName 'PingList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(339)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3474,10 +4119,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "IntuneSubscription" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $IntuneSubscription = Get-CMIntuneSubscription
-                Export-CEXMLFile -VariableName 'IntuneSubscription'
+                Export-CEXMLFile -VariableName 'IntuneSubscription' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(340,343)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3488,11 +4135,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "Boundary" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $Boundary = Get-CMIntuneSubscription
-                Export-CEXMLFile -VariableName 'Boundary'
+                $Boundary = Get-CMBoundary
+                Export-CEXMLFile -VariableName 'Boundary' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(344,345)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3506,27 +4155,54 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             } else {                
                 $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
-                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Logical Disk', $RemoteComputer))
-                    try {
-                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_LogicalDisk" -ErrorAction SilentlyContinue)
-                        if ($itemReturn -ne $null) {
-                            $itemReturn | ForEach-Object {
-                                $LogicalDiskInfoList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'DeviceID' = $_.DeviceID; 'DriveType' = $_.DriveType; 'FreeSpace' = $_.FreeSpace; 'Size' = $_.Size; 'Compressed' = $_.Compressed; 'FileSystem' = $_.FileSystem; 'VolumeSerialNumber' = $_.VolumeSerialNumber; 'ConfigManagerErrorCode' = $_.ConfigManagerErrorCode; }
-                            }
-                        } else {
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Disk' }
-                        }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Disk' }
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
                     }
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Logical Disk', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        $returnInfo = @()
+                        try {
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_LogicalDisk" -ErrorAction SilentlyContinue)
+                            if ($itemReturn -ne $null) {
+                                $itemReturn | ForEach-Object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer; 'Access'=$_.Access; 'Availability'=$_.Availability; 'BlockSize'=$_.BlockSize; 'Caption'=$_.Caption; 'Compressed'=$_.Compressed; 'ConfigManagerErrorCode'=$_.ConfigManagerErrorCode; 'ConfigManagerUserConfig'=$_.ConfigManagerUserConfig; 'CreationClassName'=$_.CreationClassName; 'Description'=$_.Description; 'DeviceID'=$_.DeviceID; 'DriveType'=$_.DriveType; 'ErrorCleared'=$_.ErrorCleared; 'ErrorDescription'=$_.ErrorDescription; 'ErrorMethodology'=$_.ErrorMethodology; 'FileSystem'=$_.FileSystem; 'FreeSpace'=$_.FreeSpace; 'InstallDate'=$_.InstallDate; 'LastErrorCode'=$_.LastErrorCode; 'MaximumComponentLength'=$_.MaximumComponentLength; 'MediaType'=$_.MediaType; 'Name'=$_.Name; 'NumberOfBlocks'=$_.NumberOfBlocks; 'PNPDeviceID'=$_.PNPDeviceID; 'PowerManagementSupported'=$_.PowerManagementSupported; 'ProviderName'=$_.ProviderName; 'Purpose'=$_.Purpose; 'QuotasDisabled'=$_.QuotasDisabled; 'QuotasIncomplete'=$_.QuotasIncomplete; 'QuotasRebuilding'=$_.QuotasRebuilding; 'Size'=$_.Size; 'Status'=$_.Status; 'StatusInfo'=$_.StatusInfo; 'SupportsDiskQuotas'=$_.SupportsDiskQuotas; 'SupportsFileBasedCompression'=$_.SupportsFileBasedCompression; 'SystemCreationClassName'=$_.SystemCreationClassName; 'SystemName'=$_.SystemName; 'VolumeDirty'=$_.VolumeDirty; 'VolumeName'=$_.VolumeName; 'VolumeSerialNumber'=$_.VolumeSerialNumber; }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ConnectionType'='WMI (root\cimv2) Disk';'Error'=''; 'ServerName' = $RemoteComputer; 'Access'=0; 'Availability'=0; 'BlockSize'=0; 'Caption'=''; 'Compressed'=$false; 'ConfigManagerErrorCode'=0; 'ConfigManagerUserConfig'=$false; 'CreationClassName'=''; 'Description'=''; 'DeviceID'=''; 'DriveType'=0; 'ErrorCleared'=$false; 'ErrorDescription'=''; 'ErrorMethodology'=''; 'FileSystem'=''; 'FreeSpace'=0; 'InstallDate'=(Get-Date); 'LastErrorCode'=0; 'MaximumComponentLength'=0; 'MediaType'=0; 'Name'=''; 'NumberOfBlocks'=0; 'PNPDeviceID'=''; 'PowerManagementSupported'=$false; 'ProviderName'=''; 'Purpose'=''; 'QuotasDisabled'=$false; 'QuotasIncomplete'=$false; 'QuotasRebuilding'=$false; 'Size'=0; 'Status'=''; 'StatusInfo'=0; 'SupportsDiskQuotas'=$false; 'SupportsFileBasedCompression'=$false; 'SystemCreationClassName'=''; 'SystemName'=''; 'VolumeDirty'=$false; 'VolumeName'=''; 'VolumeSerialNumber'=''; }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'ConnectionType'='WMI (root\cimv2) Disk';'Error'=$_; 'ServerName' = $RemoteComputer; 'Access'=0; 'Availability'=0; 'BlockSize'=0; 'Caption'=''; 'Compressed'=$false; 'ConfigManagerErrorCode'=0; 'ConfigManagerUserConfig'=$false; 'CreationClassName'=''; 'Description'=''; 'DeviceID'=''; 'DriveType'=0; 'ErrorCleared'=$false; 'ErrorDescription'=''; 'ErrorMethodology'=''; 'FileSystem'=''; 'FreeSpace'=0; 'InstallDate'=(Get-Date); 'LastErrorCode'=0; 'MaximumComponentLength'=0; 'MediaType'=0; 'Name'=''; 'NumberOfBlocks'=0; 'PNPDeviceID'=''; 'PowerManagementSupported'=$false; 'ProviderName'=''; 'Purpose'=''; 'QuotasDisabled'=$false; 'QuotasIncomplete'=$false; 'QuotasRebuilding'=$false; 'Size'=0; 'Status'=''; 'StatusInfo'=0; 'SupportsDiskQuotas'=$false; 'SupportsFileBasedCompression'=$false; 'SystemCreationClassName'=''; 'SystemName'=''; 'VolumeDirty'=$false; 'VolumeName'=''; 'VolumeSerialNumber'=''; }
+                        }
+                        $returnInfo
+                    }
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
                 }
-                Export-CEXMLFile -VariableName 'LogicalDiskInfoList'
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                
+                $returninfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+                $LogicalDiskInfoList = $returninfo | where-object {$_.ReturnType -eq 1}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                } 
+                Export-CEXMLFile -VariableName 'LogicalDiskInfoList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(346,347,348,349)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3541,24 +4217,55 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $SiteRoleList | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
                     $item = $_
                     $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
-
-                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Computer', $RemoteComputer))
-                    try {
-                        $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_ComputerSystem" -ErrorAction SilentlyContinue)
-                        if ($itemReturn -ne $null) {
-                            $ComputerInformationList += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'BootupState' = $itemReturn.BootupState; 'Status' = $itemReturn.Status; 'DaylightInEffect' = $itemReturn.DaylightInEffect; 'DomainRole' = $itemReturn.DomainRole; 'Compressed' = $itemReturn.Compressed; 'HypervisorPresent' = $itemReturn.HypervisorPresent; 'Manufacturer' = $itemReturn.Manufacturer; 'Model' = $itemReturn.Model; 'NumberOfLogicalProcessors' = $itemReturn.NumberOfLogicalProcessors; 'NumberOfProcessors' = $itemReturn.NumberOfProcessors; 'PartOfDomain' = $itemReturn.PartOfDomain; 'SystemFamily' = $itemReturn.SystemFamily; 'SystemType' = $itemReturn.SystemType; 'TotalPhysicalMemory' = $itemReturn.TotalPhysicalMemory; }
-                        } else {
-                            $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Computer' }
-                        }
-                    } catch {
-                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
-                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) Computer' }
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
                     }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Computer', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        $returnInfo = @()
+                        try {
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_ComputerSystem" -ErrorAction SilentlyContinue)
+                            if ($itemReturn -ne $null) {
+                                $itemReturn | ForEach-Object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer;  'AdminPasswordStatus' = $_.AdminPasswordStatus; 'AutomaticManagedPagefile' = $_.AutomaticManagedPagefile; 'AutomaticResetBootOption' = $_.AutomaticResetBootOption; 'AutomaticResetCapability' = $_.AutomaticResetCapability; 'BootOptionOnLimit' = $_.BootOptionOnLimit; 'BootOptionOnWatchDog' = $_.BootOptionOnWatchDog; 'BootROMSupported' = $_.BootROMSupported; 'BootupState' = $_.BootupState; 'Caption' = $_.Caption; 'ChassisBootupState' = $_.ChassisBootupState; 'ChassisSKUNumber' = $_.ChassisSKUNumber; 'CreationClassName' = $_.CreationClassName; 'CurrentTimeZone' = $_.CurrentTimeZone; 'DaylightInEffect' = $_.DaylightInEffect; 'Description' = $_.Description; 'DNSHostName' = $_.DNSHostName; 'Domain' = $_.Domain; 'DomainRole' = $_.DomainRole; 'EnableDaylightSavingsTime' = $_.EnableDaylightSavingsTime; 'FrontPanelResetStatus' = $_.FrontPanelResetStatus; 'HypervisorPresent' = $_.HypervisorPresent; 'InfraredSupported' = $_.InfraredSupported; 'InstallDate' = $_.InstallDate; 'KeyboardPasswordStatus' = $_.KeyboardPasswordStatus; 'LastLoadInfo' = $_.LastLoadInfo; 'Manufacturer' = $_.Manufacturer; 'Model' = $_.Model; 'Name' = $_.Name; 'NameFormat' = $_.NameFormat; 'NetworkServerModeEnabled' = $_.NetworkServerModeEnabled; 'NumberOfLogicalProcessors' = $_.NumberOfLogicalProcessors; 'NumberOfProcessors' = $_.NumberOfProcessors; 'PartOfDomain' = $_.PartOfDomain; 'PauseAfterReset' = $_.PauseAfterReset; 'PCSystemType' = $_.PCSystemType; 'PCSystemTypeEx' = $_.PCSystemTypeEx; 'PowerManagementSupported' = $_.PowerManagementSupported; 'PowerOnPasswordStatus' = $_.PowerOnPasswordStatus; 'PowerState' = $_.PowerState; 'PowerSupplyState' = $_.PowerSupplyState; 'PrimaryOwnerContact' = $_.PrimaryOwnerContact; 'PrimaryOwnerName' = $_.PrimaryOwnerName; 'ResetCapability' = $_.ResetCapability; 'ResetCount' = $_.ResetCount; 'ResetLimit' = $_.ResetLimit; 'Status' = $_.Status; 'SystemFamily' = $_.SystemFamily; 'SystemSKUNumber' = $_.SystemSKUNumber; 'SystemStartupDelay' = $_.SystemStartupDelay; 'SystemStartupSetting' = $_.SystemStartupSetting; 'SystemType' = $_.SystemType; 'ThermalState' = $_.ThermalState; 'TotalPhysicalMemory' = $_.TotalPhysicalMemory; 'UserName' = $_.UserName; 'WakeUpType' = $_.WakeUpType; 'Workgroup' = $_.Workgroup; }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ConnectionType'='WMI (root\cimv2) Computer';'Error'=''; 'ServerName' = $RemoteComputer; 'AdminPasswordStatus' = 0; 'AutomaticManagedPagefile' = $false; 'AutomaticResetBootOption' = $false; 'AutomaticResetCapability' = $false; 'BootOptionOnLimit' = 0; 'BootOptionOnWatchDog' = 0; 'BootROMSupported' = $false; 'BootupState' = ''; 'Caption' = ''; 'ChassisBootupState' = 0; 'ChassisSKUNumber' = ''; 'CreationClassName' = ''; 'CurrentTimeZone' = 0; 'DaylightInEffect' = $false; 'Description' = ''; 'DNSHostName' = ''; 'Domain' = ''; 'DomainRole' = 0; 'EnableDaylightSavingsTime' = $false; 'FrontPanelResetStatus' = 0; 'HypervisorPresent' = $false; 'InfraredSupported' = $false; 'InstallDate' = (Get-Date); 'KeyboardPasswordStatus' = 0; 'LastLoadInfo' = ''; 'Manufacturer' = ''; 'Model' = ''; 'Name' = ''; 'NameFormat' = ''; 'NetworkServerModeEnabled' = $false; 'NumberOfLogicalProcessors' = 0; 'NumberOfProcessors' = 0; 'PartOfDomain' = $false; 'PauseAfterReset' = 0; 'PCSystemType' = 0; 'PCSystemTypeEx' = 0; 'PowerManagementSupported' = $false; 'PowerOnPasswordStatus' = 0; 'PowerState' = 0; 'PowerSupplyState' = 0; 'PrimaryOwnerContact' = ''; 'PrimaryOwnerName' = ''; 'ResetCapability' = 0; 'ResetCount' = 0; 'ResetLimit' = 0; 'Status' = ''; 'SystemFamily' = ''; 'SystemSKUNumber' = ''; 'SystemStartupDelay' = 0; 'SystemStartupSetting' = 0; 'SystemType' = ''; 'ThermalState' = 0; 'TotalPhysicalMemory' = 0; 'UserName' = ''; 'WakeUpType' = 0; 'Workgroup' = ''; }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'ConnectionType'='WMI (root\cimv2) Computer';'Error'=$_; 'ServerName' = $RemoteComputer; 'AdminPasswordStatus' = 0; 'AutomaticManagedPagefile' = $false; 'AutomaticResetBootOption' = $false; 'AutomaticResetCapability' = $false; 'BootOptionOnLimit' = 0; 'BootOptionOnWatchDog' = 0; 'BootROMSupported' = $false; 'BootupState' = ''; 'Caption' = ''; 'ChassisBootupState' = 0; 'ChassisSKUNumber' = ''; 'CreationClassName' = ''; 'CurrentTimeZone' = 0; 'DaylightInEffect' = $false; 'Description' = ''; 'DNSHostName' = ''; 'Domain' = ''; 'DomainRole' = 0; 'EnableDaylightSavingsTime' = $false; 'FrontPanelResetStatus' = 0; 'HypervisorPresent' = $false; 'InfraredSupported' = $false; 'InstallDate' = (Get-Date); 'KeyboardPasswordStatus' = 0; 'LastLoadInfo' = ''; 'Manufacturer' = ''; 'Model' = ''; 'Name' = ''; 'NameFormat' = ''; 'NetworkServerModeEnabled' = $false; 'NumberOfLogicalProcessors' = 0; 'NumberOfProcessors' = 0; 'PartOfDomain' = $false; 'PauseAfterReset' = 0; 'PCSystemType' = 0; 'PCSystemTypeEx' = 0; 'PowerManagementSupported' = $false; 'PowerOnPasswordStatus' = 0; 'PowerState' = 0; 'PowerSupplyState' = 0; 'PrimaryOwnerContact' = ''; 'PrimaryOwnerName' = ''; 'ResetCapability' = 0; 'ResetCount' = 0; 'ResetLimit' = 0; 'Status' = ''; 'SystemFamily' = ''; 'SystemSKUNumber' = ''; 'SystemStartupDelay' = 0; 'SystemStartupSetting' = 0; 'SystemType' = ''; 'ThermalState' = 0; 'TotalPhysicalMemory' = 0; 'UserName' = ''; 'WakeUpType' = 0; 'Workgroup' = ''; }
+                        }
+                        $returnInfo
+                    }
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
                 }
-                Export-CEXMLFile -VariableName 'ComputerInformationList'
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                
+                $returnInfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+                $ComputerInformationList += $returnInfo | where-object {$_.ReturnType -eq 1}
+
+                $returnInfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+
+                $returnInfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'ComputerInformationList' -ClearVariable
             }
         }
+        #endregion
         
+        #region sub-Rules
         $arrRuleID = @(350)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3571,10 +4278,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "FolderInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $FolderInformationList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_ObjectContainerNode")
-                Export-CEXMLFile -VariableName 'FolderInformationList'
+                Export-CEXMLFile -VariableName 'FolderInformationList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(353)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3586,10 +4295,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "AdvertisementList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $AdvertisementList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Advertisement")
-                Export-CEXMLFile -VariableName 'AdvertisementList'
+                Export-CEXMLFile -VariableName 'AdvertisementList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(354,355,356,357,358,359,360,361)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3601,10 +4312,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "BaselineList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $BaselineList = Get-CMBaseline
-                Export-CEXMLFile -VariableName 'BaselineList'
+                Export-CEXMLFile -VariableName 'BaselineList' -ClearVariable
             }
         }
+        #endregion
 
+        #region sub-Rules
         $arrRuleID = @(361)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
@@ -3615,53 +4328,444 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BaselineDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $BaselineDeploymentList = Get-CMBaselineDeployment
-                Export-CEXMLFile -VariableName 'BaselineDeploymentList'
+                $BaselineDeploymentList = Get-CMBaselineDeployment 
+                Export-CEXMLFile -VariableName 'BaselineDeploymentList' -ClearVariable
             }
         }
         #endregion
 
+        #region sub-Rules
+        $arrRuleID = @(364,365,366,367,368,369,370,371,372,373,374,375,376,377,378)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IISList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IISList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $IISList += $SiteRoleListWOCDP | Where-Object {$_.RoleName -in $Script:IISRoles}
+                Export-CEXMLFile -VariableName 'IISList'
+            }
+        }
+        #endregion         
 
-        Export-CEXMLFile -VariableName 'ServerDown'
-        Export-CEXMLFile -VariableName 'ServerHTTPAccessInformation'        
+        #region sub-Rules
+        $arrRuleID = @(364,365)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IISClientWebService.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IISClientWebService" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $IISList | Select-Object NetworkOSPath | Get-Unique -AsString | ForEach-Object {
+                    $item = $_ 
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('IIS Client Web Service', $RemoteComputer))
+
+                    $code = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        try {
+                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\C$\Program Files\Update Services\WebServices\ClientWebService\web.config" -ErrorAction SilentlyContinue) {
+                                [xml]$webConfigFile = Get-Content "filesystem::\\$($RemoteComputer)\C$\Program Files\Update Services\WebServices\ClientWebService\web.config"
+                                New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer; 'ClientWebServiceExist' = $true; 'ExecutionTimeout' = [int]$webConfigFile.configuration.'system.web'.httpRuntime.executionTimeout; 'maxRequestLength' = [int]$webConfigFile.configuration.'system.web'.httpRuntime.maxRequestLength }
+                            } else {
+                                New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ConnectionType'='Folder Access (WSUS) (SMB)';'Error'=''; 'ServerName' = $RemoteComputer; 'ClientWebServiceExist' = $false; 'ExecutionTimeout' = -1; 'maxRequestLength' = -1 }
+                            }
+                         } catch {
+                            New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'ConnectionType'='Folder Access (WSUS) (SMB)';'Error'=$_; 'ServerName' = $RemoteComputer; 'ClientWebServiceExist' = $false; 'ExecutionTimeout' = -1; 'maxRequestLength' = -1 }
+                        }
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($RemoteComputer)
+                    $IISClientWebService += $returninfo | where-object {$_.ReturnType -in (1,2)}
+                    $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'IISClientWebService' -ClearVariable
+            }
+        }
+        #endregion
+        
+        #region sub-Rules
+        $arrRuleID = @(366,367,368,369,370,371,372,373,374,375,376,377,378)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IISWebServerSetting.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IISWebServerSetting" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $IISList | Select-Object NetworkOSPath | Get-Unique -AsString | ForEach-Object {
+                    $item = $_ 
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('IIS Web Server Settings', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        try {
+                            $returnInfo = @()
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\MicrosoftIISv2" -class "IIsWebServerSetting" -ErrorAction SilentlyContinue)
+                            if ($itemReturn -ne $null) {
+                                $itemreturn | foreach-object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'AccessExecute' = $_.AccessExecute; 'AccessFlags' = $_.AccessFlags; 'AccessNoRemoteExecute' = $_.AccessNoRemoteExecute; 'AccessNoRemoteRead' = $_.AccessNoRemoteRead; 'AccessNoRemoteScript' = $_.AccessNoRemoteScript; 'AccessNoRemoteWrite' = $_.AccessNoRemoteWrite; 'AccessRead' = $_.AccessRead; 'AccessScript' = $_.AccessScript; 'AccessSource' = $_.AccessSource; 'AccessSSL' = $_.AccessSSL; 'AccessSSL128' = $_.AccessSSL128; 'AccessSSLFlags' = $_.AccessSSLFlags; 'AccessSSLMapCert' = $_.AccessSSLMapCert; 'AccessSSLNegotiateCert' = $_.AccessSSLNegotiateCert; 'AccessSSLRequireCert' = $_.AccessSSLRequireCert; 'AccessWrite' = $_.AccessWrite; 'AllowKeepAlive' = $_.AllowKeepAlive; 'AllowPathInfoForScriptMappings' = $_.AllowPathInfoForScriptMappings; 'AnonymousPasswordSync' = $_.AnonymousPasswordSync; 'AnonymousUserName' = $_.AnonymousUserName; 'AnonymousUserPass' = $_.AnonymousUserPass; 'AppAllowClientDebug' = $_.AppAllowClientDebug; 'AppAllowDebugging' = $_.AppAllowDebugging; 'AppFriendlyName' = $_.AppFriendlyName; 'AppOopRecoverLimit' = $_.AppOopRecoverLimit; 'AppPoolId' = $_.AppPoolId; 'AppWamClsid' = $_.AppWamClsid; 'AspAllowOutOfProcComponents' = $_.AspAllowOutOfProcComponents; 'AspAllowSessionState' = $_.AspAllowSessionState; 'AspAppServiceFlags' = $_.AspAppServiceFlags; 'AspBufferingLimit' = $_.AspBufferingLimit; 'AspBufferingOn' = $_.AspBufferingOn; 'AspCalcLineNumber' = $_.AspCalcLineNumber; 'AspCodepage' = $_.AspCodepage; 'AspDiskTemplateCacheDirectory' = $_.AspDiskTemplateCacheDirectory; 'AspEnableApplicationRestart' = $_.AspEnableApplicationRestart; 'AspEnableAspHtmlFallback' = $_.AspEnableAspHtmlFallback; 'AspEnableChunkedEncoding' = $_.AspEnableChunkedEncoding; 'AspEnableParentPaths' = $_.AspEnableParentPaths; 'AspEnableSxs' = $_.AspEnableSxs; 'AspEnableTracker' = $_.AspEnableTracker; 'AspEnableTypelibCache' = $_.AspEnableTypelibCache; 'AspErrorsToNTLog' = $_.AspErrorsToNTLog; 'AspExceptionCatchEnable' = $_.AspExceptionCatchEnable; 'AspExecuteInMTA' = $_.AspExecuteInMTA; 'AspKeepSessionIDSecure' = $_.AspKeepSessionIDSecure; 'AspLCID' = $_.AspLCID; 'AspLogErrorRequests' = $_.AspLogErrorRequests; 'AspMaxDiskTemplateCacheFiles' = $_.AspMaxDiskTemplateCacheFiles; 'AspMaxRequestEntityAllowed' = $_.AspMaxRequestEntityAllowed; 'AspPartitionID' = $_.AspPartitionID; 'AspProcessorThreadMax' = $_.AspProcessorThreadMax; 'AspQueueConnectionTestTime' = $_.AspQueueConnectionTestTime; 'AspQueueTimeout' = $_.AspQueueTimeout; 'AspRequestQueueMax' = $_.AspRequestQueueMax; 'AspRunOnEndAnonymously' = $_.AspRunOnEndAnonymously; 'AspScriptEngineCacheMax' = $_.AspScriptEngineCacheMax; 'AspScriptErrorMessage' = $_.AspScriptErrorMessage; 'AspScriptErrorSentToBrowser' = $_.AspScriptErrorSentToBrowser; 'AspScriptFileCacheSize' = $_.AspScriptFileCacheSize; 'AspScriptLanguage' = $_.AspScriptLanguage; 'AspScriptTimeout' = $_.AspScriptTimeout; 'AspSessionMax' = $_.AspSessionMax; 'AspSessionTimeout' = $_.AspSessionTimeout; 'AspSxsName' = $_.AspSxsName; 'AspTrackThreadingModel' = $_.AspTrackThreadingModel; 'AspUsePartition' = $_.AspUsePartition; 'AuthAdvNotifyDisable' = $_.AuthAdvNotifyDisable; 'AuthAnonymous' = $_.AuthAnonymous; 'AuthBasic' = $_.AuthBasic; 'AuthChangeDisable' = $_.AuthChangeDisable; 'AuthChangeUnsecure' = $_.AuthChangeUnsecure; 'AuthFlags' = $_.AuthFlags; 'AuthMD5' = $_.AuthMD5; 'AuthNTLM' = $_.AuthNTLM; 'AuthPassport' = $_.AuthPassport; 'AuthPersistence' = $_.AuthPersistence; 'AuthPersistSingleRequest' = $_.AuthPersistSingleRequest; 'AzEnable' = $_.AzEnable; 'AzImpersonationLevel' = $_.AzImpersonationLevel; 'AzScopeName' = $_.AzScopeName; 'AzStoreName' = $_.AzStoreName; 'CacheControlCustom' = $_.CacheControlCustom; 'CacheControlMaxAge' = $_.CacheControlMaxAge; 'CacheControlNoCache' = $_.CacheControlNoCache; 'CacheISAPI' = $_.CacheISAPI; 'CertCheckMode' = $_.CertCheckMode; 'CGITimeout' = $_.CGITimeout; 'ClusterEnabled' = $_.ClusterEnabled; 'ConnectionTimeout' = $_.ConnectionTimeout; 'ContentIndexed' = $_.ContentIndexed; 'CPUResetInterval' = $_.CPUResetInterval; 'CreateCGIWithNewConsole' = $_.CreateCGIWithNewConsole; 'CreateProcessAsUser' = $_.CreateProcessAsUser; 'DefaultDoc' = $_.DefaultDoc; 'DefaultDocFooter' = $_.DefaultDocFooter; 'DefaultLogonDomain' = $_.DefaultLogonDomain; 'DirBrowseFlags' = $_.DirBrowseFlags; 'DirBrowseShowDate' = $_.DirBrowseShowDate; 'DirBrowseShowExtension' = $_.DirBrowseShowExtension; 'DirBrowseShowLongDate' = $_.DirBrowseShowLongDate; 'DirBrowseShowSize' = $_.DirBrowseShowSize; 'DirBrowseShowTime' = $_.DirBrowseShowTime; 'DisableSocketPooling' = $_.DisableSocketPooling; 'DoDynamicCompression' = $_.DoDynamicCompression; 'DontLog' = $_.DontLog; 'DoStaticCompression' = $_.DoStaticCompression; 'EnableDefaultDoc' = $_.EnableDefaultDoc; 'EnableDirBrowsing' = $_.EnableDirBrowsing; 'EnableDocFooter' = $_.EnableDocFooter; 'EnableReverseDns' = $_.EnableReverseDns; 'FrontPageWeb' = $_.FrontPageWeb; 'HttpExpires' = $_.HttpExpires; 'LogExtFileBytesRecv' = $_.LogExtFileBytesRecv; 'LogExtFileBytesSent' = $_.LogExtFileBytesSent; 'LogExtFileClientIp' = $_.LogExtFileClientIp; 'LogExtFileComputerName' = $_.LogExtFileComputerName; 'LogExtFileCookie' = $_.LogExtFileCookie; 'LogExtFileDate' = $_.LogExtFileDate; 'LogExtFileFlags' = $_.LogExtFileFlags; 'LogExtFileHost' = $_.LogExtFileHost; 'LogExtFileHttpStatus' = $_.LogExtFileHttpStatus; 'LogExtFileMethod' = $_.LogExtFileMethod; 'LogExtFileProtocolVersion' = $_.LogExtFileProtocolVersion; 'LogExtFileReferer' = $_.LogExtFileReferer; 'LogExtFileServerIp' = $_.LogExtFileServerIp; 'LogExtFileServerPort' = $_.LogExtFileServerPort; 'LogExtFileSiteName' = $_.LogExtFileSiteName; 'LogExtFileTime' = $_.LogExtFileTime; 'LogExtFileTimeTaken' = $_.LogExtFileTimeTaken; 'LogExtFileUriQuery' = $_.LogExtFileUriQuery; 'LogExtFileUriStem' = $_.LogExtFileUriStem; 'LogExtFileUserAgent' = $_.LogExtFileUserAgent; 'LogExtFileUserName' = $_.LogExtFileUserName; 'LogExtFileWin32Status' = $_.LogExtFileWin32Status; 'LogFileDirectory' = $_.LogFileDirectory; 'LogFileLocaltimeRollover' = $_.LogFileLocaltimeRollover; 'LogFilePeriod' = $_.LogFilePeriod; 'LogFileTruncateSize' = $_.LogFileTruncateSize; 'LogOdbcDataSource' = $_.LogOdbcDataSource; 'LogOdbcPassword' = $_.LogOdbcPassword; 'LogOdbcTableName' = $_.LogOdbcTableName; 'LogOdbcUserName' = $_.LogOdbcUserName; 'LogonMethod' = $_.LogonMethod; 'LogPluginClsid' = $_.LogPluginClsid; 'LogType' = $_.LogType; 'MaxBandwidth' = $_.MaxBandwidth; 'MaxBandwidthBlocked' = $_.MaxBandwidthBlocked; 'MaxConnections' = $_.MaxConnections; 'MaxEndpointConnections' = $_.MaxEndpointConnections; 'MaxRequestEntityAllowed' = $_.MaxRequestEntityAllowed; 'Name' = $_.Name; 'NotDeletable' = $_.NotDeletable; 'NTAuthenticationProviders' = $_.NTAuthenticationProviders; 'PasswordCacheTTL' = $_.PasswordCacheTTL; 'PasswordChangeFlags' = $_.PasswordChangeFlags; 'PasswordExpirePrenotifyDays' = $_.PasswordExpirePrenotifyDays; 'PoolIdcTimeout' = $_.PoolIdcTimeout; 'ProcessNTCRIfLoggedOn' = $_.ProcessNTCRIfLoggedOn; 'Realm' = $_.Realm; 'RedirectHeaders' = $_.RedirectHeaders; 'RevocationFreshnessTime' = $_.RevocationFreshnessTime; 'RevocationURLRetrievalTimeout' = $_.RevocationURLRetrievalTimeout; 'ServerAutoStart' = $_.ServerAutoStart; 'ServerCommand' = $_.ServerCommand; 'ServerComment' = $_.ServerComment; 'ServerListenBacklog' = $_.ServerListenBacklog; 'ServerListenTimeout' = $_.ServerListenTimeout; 'ServerSize' = $_.ServerSize; 'ShutdownTimeLimit' = $_.ShutdownTimeLimit; 'SSIExecDisable' = $_.SSIExecDisable; 'SSLStoreName' = $_.SSLStoreName; 'UploadReadAheadSize' = $_.UploadReadAheadSize; 'UseDigestSSP' = $_.UseDigestSSP; 'Win32Error' = $_.Win32Error;  }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IISWebServerSetting'; 'Error' = ''; 'AccessExecute' = $false; 'AccessFlags' = 0; 'AccessNoRemoteExecute' = $false; 'AccessNoRemoteRead' = $false; 'AccessNoRemoteScript' = $false; 'AccessNoRemoteWrite' = $false; 'AccessRead' = $false; 'AccessScript' = $false; 'AccessSource' = $false; 'AccessSSL' = $false; 'AccessSSL128' = $false; 'AccessSSLFlags' = 0; 'AccessSSLMapCert' = $false; 'AccessSSLNegotiateCert' = $false; 'AccessSSLRequireCert' = $false; 'AccessWrite' = $false; 'AllowKeepAlive' = $false; 'AllowPathInfoForScriptMappings' = $false; 'AnonymousPasswordSync' = $false; 'AnonymousUserName' = ''; 'AnonymousUserPass' = ''; 'AppAllowClientDebug' = $false; 'AppAllowDebugging' = $false; 'AppFriendlyName' = ''; 'AppOopRecoverLimit' = 0; 'AppPoolId' = ''; 'AppWamClsid' = ''; 'AspAllowOutOfProcComponents' = $false; 'AspAllowSessionState' = $false; 'AspAppServiceFlags' = 0; 'AspBufferingLimit' = 0; 'AspBufferingOn' = $false; 'AspCalcLineNumber' = $false; 'AspCodepage' = 0; 'AspDiskTemplateCacheDirectory' = ''; 'AspEnableApplicationRestart' = $false; 'AspEnableAspHtmlFallback' = $false; 'AspEnableChunkedEncoding' = $false; 'AspEnableParentPaths' = $false; 'AspEnableSxs' = $false; 'AspEnableTracker' = $false; 'AspEnableTypelibCache' = $false; 'AspErrorsToNTLog' = $false; 'AspExceptionCatchEnable' = $false; 'AspExecuteInMTA' = 0; 'AspKeepSessionIDSecure' = 0; 'AspLCID' = 0; 'AspLogErrorRequests' = $false; 'AspMaxDiskTemplateCacheFiles' = 0; 'AspMaxRequestEntityAllowed' = 0; 'AspPartitionID' = ''; 'AspProcessorThreadMax' = 0; 'AspQueueConnectionTestTime' = 0; 'AspQueueTimeout' = 0; 'AspRequestQueueMax' = 0; 'AspRunOnEndAnonymously' = $false; 'AspScriptEngineCacheMax' = 0; 'AspScriptErrorMessage' = ''; 'AspScriptErrorSentToBrowser' = $false; 'AspScriptFileCacheSize' = 0; 'AspScriptLanguage' = ''; 'AspScriptTimeout' = 0; 'AspSessionMax' = 0; 'AspSessionTimeout' = 0; 'AspSxsName' = ''; 'AspTrackThreadingModel' = $false; 'AspUsePartition' = $false; 'AuthAdvNotifyDisable' = $false; 'AuthAnonymous' = $false; 'AuthBasic' = $false; 'AuthChangeDisable' = $false; 'AuthChangeUnsecure' = $false; 'AuthFlags' = 0; 'AuthMD5' = $false; 'AuthNTLM' = $false; 'AuthPassport' = $false; 'AuthPersistence' = 0; 'AuthPersistSingleRequest' = $false; 'AzEnable' = $false; 'AzImpersonationLevel' = 0; 'AzScopeName' = ''; 'AzStoreName' = ''; 'CacheControlCustom' = ''; 'CacheControlMaxAge' = 0; 'CacheControlNoCache' = $false; 'CacheISAPI' = $false; 'CertCheckMode' = 0; 'CGITimeout' = 0; 'ClusterEnabled' = $false; 'ConnectionTimeout' = 0; 'ContentIndexed' = $false; 'CPUResetInterval' = 0; 'CreateCGIWithNewConsole' = $false; 'CreateProcessAsUser' = $false; 'DefaultDoc' = ''; 'DefaultDocFooter' = ''; 'DefaultLogonDomain' = ''; 'DirBrowseFlags' = 0; 'DirBrowseShowDate' = $false; 'DirBrowseShowExtension' = $false; 'DirBrowseShowLongDate' = $false; 'DirBrowseShowSize' = $false; 'DirBrowseShowTime' = $false; 'DisableSocketPooling' = $false; 'DoDynamicCompression' = $false; 'DontLog' = $false; 'DoStaticCompression' = $false; 'EnableDefaultDoc' = $false; 'EnableDirBrowsing' = $false; 'EnableDocFooter' = $false; 'EnableReverseDns' = $false; 'FrontPageWeb' = $false; 'HttpExpires' = ''; 'LogExtFileBytesRecv' = $false; 'LogExtFileBytesSent' = $false; 'LogExtFileClientIp' = $false; 'LogExtFileComputerName' = $false; 'LogExtFileCookie' = $false; 'LogExtFileDate' = $false; 'LogExtFileFlags' = 0; 'LogExtFileHost' = $false; 'LogExtFileHttpStatus' = $false; 'LogExtFileMethod' = $false; 'LogExtFileProtocolVersion' = $false; 'LogExtFileReferer' = $false; 'LogExtFileServerIp' = $false; 'LogExtFileServerPort' = $false; 'LogExtFileSiteName' = $false; 'LogExtFileTime' = $false; 'LogExtFileTimeTaken' = $false; 'LogExtFileUriQuery' = $false; 'LogExtFileUriStem' = $false; 'LogExtFileUserAgent' = $false; 'LogExtFileUserName' = $false; 'LogExtFileWin32Status' = $false; 'LogFileDirectory' = ''; 'LogFileLocaltimeRollover' = $false; 'LogFilePeriod' = 0; 'LogFileTruncateSize' = 0; 'LogOdbcDataSource' = ''; 'LogOdbcPassword' = ''; 'LogOdbcTableName' = ''; 'LogOdbcUserName' = ''; 'LogonMethod' = 0; 'LogPluginClsid' = ''; 'LogType' = 0; 'MaxBandwidth' = 0; 'MaxBandwidthBlocked' = 0; 'MaxConnections' = 0; 'MaxEndpointConnections' = 0; 'MaxRequestEntityAllowed' = 0; 'Name' = ''; 'NotDeletable' = $false; 'NTAuthenticationProviders' = ''; 'PasswordCacheTTL' = 0; 'PasswordChangeFlags' = 0; 'PasswordExpirePrenotifyDays' = 0; 'PoolIdcTimeout' = 0; 'ProcessNTCRIfLoggedOn' = $false; 'Realm' = ''; 'RedirectHeaders' = ''; 'RevocationFreshnessTime' = 0; 'RevocationURLRetrievalTimeout' = 0; 'ServerAutoStart' = $false; 'ServerCommand' = 0; 'ServerComment' = ''; 'ServerListenBacklog' = 0; 'ServerListenTimeout' = 0; 'ServerSize' = 0; 'ShutdownTimeLimit' = 0; 'SSIExecDisable' = $false; 'SSLStoreName' = ''; 'UploadReadAheadSize' = 0; 'UseDigestSSP' = $false; 'Win32Error' = 0;  }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IISWebServerSetting'; 'Error' = $_; 'AccessExecute' = $false; 'AccessFlags' = 0; 'AccessNoRemoteExecute' = $false; 'AccessNoRemoteRead' = $false; 'AccessNoRemoteScript' = $false; 'AccessNoRemoteWrite' = $false; 'AccessRead' = $false; 'AccessScript' = $false; 'AccessSource' = $false; 'AccessSSL' = $false; 'AccessSSL128' = $false; 'AccessSSLFlags' = 0; 'AccessSSLMapCert' = $false; 'AccessSSLNegotiateCert' = $false; 'AccessSSLRequireCert' = $false; 'AccessWrite' = $false; 'AllowKeepAlive' = $false; 'AllowPathInfoForScriptMappings' = $false; 'AnonymousPasswordSync' = $false; 'AnonymousUserName' = ''; 'AnonymousUserPass' = ''; 'AppAllowClientDebug' = $false; 'AppAllowDebugging' = $false; 'AppFriendlyName' = ''; 'AppOopRecoverLimit' = 0; 'AppPoolId' = ''; 'AppWamClsid' = ''; 'AspAllowOutOfProcComponents' = $false; 'AspAllowSessionState' = $false; 'AspAppServiceFlags' = 0; 'AspBufferingLimit' = 0; 'AspBufferingOn' = $false; 'AspCalcLineNumber' = $false; 'AspCodepage' = 0; 'AspDiskTemplateCacheDirectory' = ''; 'AspEnableApplicationRestart' = $false; 'AspEnableAspHtmlFallback' = $false; 'AspEnableChunkedEncoding' = $false; 'AspEnableParentPaths' = $false; 'AspEnableSxs' = $false; 'AspEnableTracker' = $false; 'AspEnableTypelibCache' = $false; 'AspErrorsToNTLog' = $false; 'AspExceptionCatchEnable' = $false; 'AspExecuteInMTA' = 0; 'AspKeepSessionIDSecure' = 0; 'AspLCID' = 0; 'AspLogErrorRequests' = $false; 'AspMaxDiskTemplateCacheFiles' = 0; 'AspMaxRequestEntityAllowed' = 0; 'AspPartitionID' = ''; 'AspProcessorThreadMax' = 0; 'AspQueueConnectionTestTime' = 0; 'AspQueueTimeout' = 0; 'AspRequestQueueMax' = 0; 'AspRunOnEndAnonymously' = $false; 'AspScriptEngineCacheMax' = 0; 'AspScriptErrorMessage' = ''; 'AspScriptErrorSentToBrowser' = $false; 'AspScriptFileCacheSize' = 0; 'AspScriptLanguage' = ''; 'AspScriptTimeout' = 0; 'AspSessionMax' = 0; 'AspSessionTimeout' = 0; 'AspSxsName' = ''; 'AspTrackThreadingModel' = $false; 'AspUsePartition' = $false; 'AuthAdvNotifyDisable' = $false; 'AuthAnonymous' = $false; 'AuthBasic' = $false; 'AuthChangeDisable' = $false; 'AuthChangeUnsecure' = $false; 'AuthFlags' = 0; 'AuthMD5' = $false; 'AuthNTLM' = $false; 'AuthPassport' = $false; 'AuthPersistence' = 0; 'AuthPersistSingleRequest' = $false; 'AzEnable' = $false; 'AzImpersonationLevel' = 0; 'AzScopeName' = ''; 'AzStoreName' = ''; 'CacheControlCustom' = ''; 'CacheControlMaxAge' = 0; 'CacheControlNoCache' = $false; 'CacheISAPI' = $false; 'CertCheckMode' = 0; 'CGITimeout' = 0; 'ClusterEnabled' = $false; 'ConnectionTimeout' = 0; 'ContentIndexed' = $false; 'CPUResetInterval' = 0; 'CreateCGIWithNewConsole' = $false; 'CreateProcessAsUser' = $false; 'DefaultDoc' = ''; 'DefaultDocFooter' = ''; 'DefaultLogonDomain' = ''; 'DirBrowseFlags' = 0; 'DirBrowseShowDate' = $false; 'DirBrowseShowExtension' = $false; 'DirBrowseShowLongDate' = $false; 'DirBrowseShowSize' = $false; 'DirBrowseShowTime' = $false; 'DisableSocketPooling' = $false; 'DoDynamicCompression' = $false; 'DontLog' = $false; 'DoStaticCompression' = $false; 'EnableDefaultDoc' = $false; 'EnableDirBrowsing' = $false; 'EnableDocFooter' = $false; 'EnableReverseDns' = $false; 'FrontPageWeb' = $false; 'HttpExpires' = ''; 'LogExtFileBytesRecv' = $false; 'LogExtFileBytesSent' = $false; 'LogExtFileClientIp' = $false; 'LogExtFileComputerName' = $false; 'LogExtFileCookie' = $false; 'LogExtFileDate' = $false; 'LogExtFileFlags' = 0; 'LogExtFileHost' = $false; 'LogExtFileHttpStatus' = $false; 'LogExtFileMethod' = $false; 'LogExtFileProtocolVersion' = $false; 'LogExtFileReferer' = $false; 'LogExtFileServerIp' = $false; 'LogExtFileServerPort' = $false; 'LogExtFileSiteName' = $false; 'LogExtFileTime' = $false; 'LogExtFileTimeTaken' = $false; 'LogExtFileUriQuery' = $false; 'LogExtFileUriStem' = $false; 'LogExtFileUserAgent' = $false; 'LogExtFileUserName' = $false; 'LogExtFileWin32Status' = $false; 'LogFileDirectory' = ''; 'LogFileLocaltimeRollover' = $false; 'LogFilePeriod' = 0; 'LogFileTruncateSize' = 0; 'LogOdbcDataSource' = ''; 'LogOdbcPassword' = ''; 'LogOdbcTableName' = ''; 'LogOdbcUserName' = ''; 'LogonMethod' = 0; 'LogPluginClsid' = ''; 'LogType' = 0; 'MaxBandwidth' = 0; 'MaxBandwidthBlocked' = 0; 'MaxConnections' = 0; 'MaxEndpointConnections' = 0; 'MaxRequestEntityAllowed' = 0; 'Name' = ''; 'NotDeletable' = $false; 'NTAuthenticationProviders' = ''; 'PasswordCacheTTL' = 0; 'PasswordChangeFlags' = 0; 'PasswordExpirePrenotifyDays' = 0; 'PoolIdcTimeout' = 0; 'ProcessNTCRIfLoggedOn' = $false; 'Realm' = ''; 'RedirectHeaders' = ''; 'RevocationFreshnessTime' = 0; 'RevocationURLRetrievalTimeout' = 0; 'ServerAutoStart' = $false; 'ServerCommand' = 0; 'ServerComment' = ''; 'ServerListenBacklog' = 0; 'ServerListenTimeout' = 0; 'ServerSize' = 0; 'ShutdownTimeLimit' = 0; 'SSIExecDisable' = $false; 'SSLStoreName' = ''; 'UploadReadAheadSize' = 0; 'UseDigestSSP' = $false; 'Win32Error' = 0;  }
+                        }
+                        $returnInfo
+                    }                        
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
+                }
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                
+                $returnInfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+
+                $IISWebServerSetting = $returninfo | where-object {$_.ReturnType -in (1)}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 @($_.ServerName, $_.Error))
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'IISWebServerSetting'
+            }
+        }
         #endregion
 
-        #region Saving XML Files
-        #Write-CELog -logtype "INFO" -logmessage "Saving Information to Disk"
-        #$xmlList = @('SiteList', 'SiteRoleList', 'SQLServerPrimarySiteList', 'SQLServerInformationList', 'ServerRegistryInformation', 'ProcessAverageTimeList', 'SiteComponentList',
-        #    'MPList', 'SQLList', 'SQLConfigurationList', 'ServerDown', 'DPList', 'SMPList', 'MPComponentList', 'SiteComponentManagerList', 'SMSPolProvComponentList', 'AppCatalogWebServiceList',
-        #    'AppCatalogWebSiteList', 'EndpointProtectionList', 'SUPList', 'SRSList', 'ServiceAccountList', 'AdminAccountList', 'GroupMembershipList', 'ClientStatusSettings',
-        #    'DiscoveryMethodList', 'DPGroupList', 'CollectionMembershipEvaluation', 'DeviceCollectionList', 'UserCollectionList', 'DeploymentList', 'AlertList', 'AlertSubscriptionList',
-        #    'ADForestist', 'ADForestDiscoveryStatusList', 'DatabaseReplicationStatusList', 'DatabaseReplicationScheduleList', 'DeviceList', 'ClientSettingsList', 'ClientSettingsSettingsList',
-        #    'MaintenanceTaskList', 'BoundaryGroupList', 'BoundaryGroupRelationshipList', 'MalwareDetectedList', 'MalwarePolicyList', 'MalwarePolicySettingsList', 'FirewallPolicyList',
-        #    'SwMeteringSettingsList', 'SwMeteringRuleList', 'BootList', 'SoftwareUpdateGroupList', 'SoftwareUpdateGroupDeploymentList', 'SoftwareUpdateDeploymentList',
-        #    'SoftwareUpdateList', 'SoftwareUpdateSummarizationList', 'SoftwareUpdateADRList', 'SoftwareUpdateADRDeploymetList', 'AutoUpgradeConfigs', 'AutoUpgradeConfigsError',
-        #    'EmailNotificationList', 'SiteSummarizationList', 'DistributionPointList', 'DistributionPointInformationList', 'BoundarySiteSystemsList', 'DistributionPointDriveInfo',
-        #    'DistributionStatusList', 'ApplicationList', 'DeploymentTypeList', 'DPContentList', 'DPGroupContentList', 'PackageList', 'OperatingSystemImageList', 'OperatingSystemInstallerList',
-        #    'TaskSequenceList', 'TaskSequenceRebootOptions', 'TaskSequenceReferenceList', 'inboxList', 'DriverPackageList', 'ComponentSummarizerList', 'ComponentStatusMessageList',
-        #    'ComponentStatusMessageCompletedList', 'ServerHTTPAccessInformation', 'PathDTInformationList', 'PathPkgInformationList', 'PathOSImgInformationList',
-        #    'CollectionDeviceFilterCount', 'CollectionUserFilterCount', 'SUPWIDList', 'ServerNOSMSONDriveInformation', 'SUPSQL', 'ApprovalRequestList',
-        #    'SUPComponentSyncManager', 'SUPComponent', 'SiteDefinition', 'SoftwareVersionList', 'ServiceList', 'IntuneSubscription'
-        #)
-        #$xmlList | ForEach-Object {
-        #    Export-CEXMLFile -VariableName $_
-        #}
+        #region sub-Rules
+        $arrRuleID = @(366,367,368)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IISLogs.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IISLogs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {                
+                $IISWebServerSetting | Where-Object {($_.LogType -eq 1) -and ($_.LogFileDirectory -ne $null)} | ForEach-Object {
+                    $item = $_ 
+                    $RemoteComputer = $item.ServerName
+
+                    if ($item.LogFileDirectory.ToString()[0] -eq '\') {
+                        $LogFolder = "{0}\{1}" -f $item.LogFileDirectory, $item.Name.Replace('/','')
+                        $LogRemoteFolder = $LogFolder
+                    } else {
+                        $LogFolder = "{0}\{1}" -f $item.LogFileDirectory, $item.Name.Replace('/','')
+                        $LogRemoteFolder = "\\$($RemoteComputer)\$($LogFolder.Replace(':\', '$\'))" 
+                    }
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1028 @('Getting', "WSUS Log Files $($item.Name)", $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $LogRemoteFolder,
+                            $RemoteComputer,
+                            $SiteID,
+                            $SiteName,
+                            $LogFolder
+                        )
+                        try {
+                            $returnInfo = @()
+                            if (Test-Path -Path "filesystem::$($LogRemoteFolder)") {
+                                Get-ChildItem "filesystem::$($LogRemoteFolder)" | Where-Object {!$_.PSIsContainer} | ForEach-Object {
+                                    $subitem = $_
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'LogFolder' = $subitem.FullName.ToString().Replace($LogRemoteFolder, $LogFolder).Replace("\\$($RemoteComputer)\", '').Replace("\$($subitem.Name)", ''); 'IIS Site ID' = $SiteID; 'IIS Site Name' = $SiteName; 'LogFile' = $subitem.Name; 'LogFileCompletePath' = $subitem.FullName; 'LogSize' = $subitem.Length; 'LogCreationTime' = $subitem.CreationTime }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'Folder Access (IIS logs) (SMB)'; 'Error' = ''; 'LogFolder' = $LogRemoteFolder; 'IIS Site ID' = ''; 'IIS Site Name' = ''; 'LogFile' = ''; 'LogFileCompletePath' = ''; 'LogSize' = ''; 'LogCreationTime' = ''; }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 3; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'Folder Access (IIS logs) (SMB)'; 'Error' = $_; 'LogFolder' = $LogRemoteFolder; 'IIS Site ID' = ''; 'IIS Site Name' = ''; 'LogFile' = ''; 'LogFileCompletePath' = ''; 'LogSize' = ''; 'LogCreationTime' = ''; }
+                        }
+                        $returnInfo
+                    }                        
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($LogRemoteFolder, $RemoteComputer, $item.Name, $item.ServerComment, $LogFolder) | out-null
+                }
+
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                
+                $returnInfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+
+                $IISLogs = $returninfo | where-object {$_.ReturnType -in (1)}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    Write-CELog -logtype "ERROR" -logmessage (Get-CEHealthCheckMessage 1041 @($_.LogFolder))
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = ($_.ServerName); 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 @($_.ServerName, $_.Error))
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'IISLogs' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(372,373,374,375,376,377,378)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IisWebVirtualDirSetting.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IisWebVirtualDirSetting" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $IISList | Select-Object NetworkOSPath | Get-Unique -AsString | ForEach-Object {
+                    $item = $_ 
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('IIS Virtual Directory', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        try {
+                            $returnInfo = @()
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\MicrosoftIISv2" -class "IisWebVirtualDirSetting" -ErrorAction SilentlyContinue)
+                            if ($itemReturn -ne $null) {
+                                $itemreturn | foreach-object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'AccessExecute' = $_.AccessExecute; 'AccessFlags' = $_.AccessFlags; 'AccessNoRemoteExecute' = $_.AccessNoRemoteExecute; 'AccessNoRemoteRead' = $_.AccessNoRemoteRead; 'AccessNoRemoteScript' = $_.AccessNoRemoteScript; 'AccessNoRemoteWrite' = $_.AccessNoRemoteWrite; 'AccessRead' = $_.AccessRead; 'AccessScript' = $_.AccessScript; 'AccessSource' = $_.AccessSource; 'AccessSSL' = $_.AccessSSL; 'AccessSSL128' = $_.AccessSSL128; 'AccessSSLFlags' = $_.AccessSSLFlags; 'AccessSSLMapCert' = $_.AccessSSLMapCert; 'AccessSSLNegotiateCert' = $_.AccessSSLNegotiateCert; 'AccessSSLRequireCert' = $_.AccessSSLRequireCert; 'AccessWrite' = $_.AccessWrite; 'AnonymousPasswordSync' = $_.AnonymousPasswordSync; 'AnonymousUserName' = $_.AnonymousUserName; 'AnonymousUserPass' = $_.AnonymousUserPass; 'AppAllowClientDebug' = $_.AppAllowClientDebug; 'AppAllowDebugging' = $_.AppAllowDebugging; 'AppFriendlyName' = $_.AppFriendlyName; 'AppOopRecoverLimit' = $_.AppOopRecoverLimit; 'AppPoolId' = $_.AppPoolId; 'AppWamClsid' = $_.AppWamClsid; 'AspAllowOutOfProcComponents' = $_.AspAllowOutOfProcComponents; 'AspAllowSessionState' = $_.AspAllowSessionState; 'AspAppServiceFlags' = $_.AspAppServiceFlags; 'AspBufferingLimit' = $_.AspBufferingLimit; 'AspBufferingOn' = $_.AspBufferingOn; 'AspCalcLineNumber' = $_.AspCalcLineNumber; 'AspCodepage' = $_.AspCodepage; 'AspDiskTemplateCacheDirectory' = $_.AspDiskTemplateCacheDirectory; 'AspEnableApplicationRestart' = $_.AspEnableApplicationRestart; 'AspEnableAspHtmlFallback' = $_.AspEnableAspHtmlFallback; 'AspEnableChunkedEncoding' = $_.AspEnableChunkedEncoding; 'AspEnableParentPaths' = $_.AspEnableParentPaths; 'AspEnableSxs' = $_.AspEnableSxs; 'AspEnableTracker' = $_.AspEnableTracker; 'AspEnableTypelibCache' = $_.AspEnableTypelibCache; 'AspErrorsToNTLog' = $_.AspErrorsToNTLog; 'AspExceptionCatchEnable' = $_.AspExceptionCatchEnable; 'AspExecuteInMTA' = $_.AspExecuteInMTA; 'AspKeepSessionIDSecure' = $_.AspKeepSessionIDSecure; 'AspLCID' = $_.AspLCID; 'AspLogErrorRequests' = $_.AspLogErrorRequests; 'AspMaxDiskTemplateCacheFiles' = $_.AspMaxDiskTemplateCacheFiles; 'AspMaxRequestEntityAllowed' = $_.AspMaxRequestEntityAllowed; 'AspPartitionID' = $_.AspPartitionID; 'AspProcessorThreadMax' = $_.AspProcessorThreadMax; 'AspQueueConnectionTestTime' = $_.AspQueueConnectionTestTime; 'AspQueueTimeout' = $_.AspQueueTimeout; 'AspRequestQueueMax' = $_.AspRequestQueueMax; 'AspRunOnEndAnonymously' = $_.AspRunOnEndAnonymously; 'AspScriptEngineCacheMax' = $_.AspScriptEngineCacheMax; 'AspScriptErrorMessage' = $_.AspScriptErrorMessage; 'AspScriptErrorSentToBrowser' = $_.AspScriptErrorSentToBrowser; 'AspScriptFileCacheSize' = $_.AspScriptFileCacheSize; 'AspScriptLanguage' = $_.AspScriptLanguage; 'AspScriptTimeout' = $_.AspScriptTimeout; 'AspSessionMax' = $_.AspSessionMax; 'AspSessionTimeout' = $_.AspSessionTimeout; 'AspSxsName' = $_.AspSxsName; 'AspTrackThreadingModel' = $_.AspTrackThreadingModel; 'AspUsePartition' = $_.AspUsePartition; 'AuthAnonymous' = $_.AuthAnonymous; 'AuthBasic' = $_.AuthBasic; 'AuthFlags' = $_.AuthFlags; 'AuthMD5' = $_.AuthMD5; 'AuthNTLM' = $_.AuthNTLM; 'AuthPassport' = $_.AuthPassport; 'AuthPersistence' = $_.AuthPersistence; 'AuthPersistSingleRequest' = $_.AuthPersistSingleRequest; 'AzEnable' = $_.AzEnable; 'AzImpersonationLevel' = $_.AzImpersonationLevel; 'AzScopeName' = $_.AzScopeName; 'AzStoreName' = $_.AzStoreName; 'CacheControlCustom' = $_.CacheControlCustom; 'CacheControlMaxAge' = $_.CacheControlMaxAge; 'CacheControlNoCache' = $_.CacheControlNoCache; 'CacheISAPI' = $_.CacheISAPI; 'CGITimeout' = $_.CGITimeout; 'ContentIndexed' = $_.ContentIndexed; 'CreateCGIWithNewConsole' = $_.CreateCGIWithNewConsole; 'CreateProcessAsUser' = $_.CreateProcessAsUser; 'DefaultDoc' = $_.DefaultDoc; 'DefaultDocFooter' = $_.DefaultDocFooter; 'DefaultLogonDomain' = $_.DefaultLogonDomain; 'DirBrowseFlags' = $_.DirBrowseFlags; 'DirBrowseShowDate' = $_.DirBrowseShowDate; 'DirBrowseShowExtension' = $_.DirBrowseShowExtension; 'DirBrowseShowLongDate' = $_.DirBrowseShowLongDate; 'DirBrowseShowSize' = $_.DirBrowseShowSize; 'DirBrowseShowTime' = $_.DirBrowseShowTime; 'DoDynamicCompression' = $_.DoDynamicCompression; 'DontLog' = $_.DontLog; 'DoStaticCompression' = $_.DoStaticCompression; 'EnableDefaultDoc' = $_.EnableDefaultDoc; 'EnableDirBrowsing' = $_.EnableDirBrowsing; 'EnableDocFooter' = $_.EnableDocFooter; 'EnableReverseDns' = $_.EnableReverseDns; 'FrontPageWeb' = $_.FrontPageWeb; 'HttpExpires' = $_.HttpExpires; 'HttpRedirect' = $_.HttpRedirect; 'LogonMethod' = $_.LogonMethod; 'MaxRequestEntityAllowed' = $_.MaxRequestEntityAllowed; 'Name' = $_.Name; 'PoolIdcTimeout' = $_.PoolIdcTimeout; 'Realm' = $_.Realm; 'RedirectHeaders' = $_.RedirectHeaders; 'ShutdownTimeLimit' = $_.ShutdownTimeLimit; 'SSIExecDisable' = $_.SSIExecDisable; 'UploadReadAheadSize' = $_.UploadReadAheadSize; 'UseDigestSSP' = $_.UseDigestSSP; }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IisWebVirtualDirSetting'; 'Error' = ''; 'AccessExecute' = $false; 'AccessFlags' = 0; 'AccessNoRemoteExecute' = $false; 'AccessNoRemoteRead' = $false; 'AccessNoRemoteScript' = $false; 'AccessNoRemoteWrite' = $false; 'AccessRead' = $false; 'AccessScript' = $false; 'AccessSource' = $false; 'AccessSSL' = $false; 'AccessSSL128' = $false; 'AccessSSLFlags' = 0; 'AccessSSLMapCert' = $false; 'AccessSSLNegotiateCert' = $false; 'AccessSSLRequireCert' = $false; 'AccessWrite' = $false; 'AnonymousPasswordSync' = $false; 'AnonymousUserName' = ''; 'AnonymousUserPass' = ''; 'AppAllowClientDebug' = $false; 'AppAllowDebugging' = $false; 'AppFriendlyName' = ''; 'AppOopRecoverLimit' = 0; 'AppPoolId' = ''; 'AppWamClsid' = ''; 'AspAllowOutOfProcComponents' = $false; 'AspAllowSessionState' = $false; 'AspAppServiceFlags' = 0; 'AspBufferingLimit' = 0; 'AspBufferingOn' = $false; 'AspCalcLineNumber' = $false; 'AspCodepage' = 0; 'AspDiskTemplateCacheDirectory' = ''; 'AspEnableApplicationRestart' = $false; 'AspEnableAspHtmlFallback' = $false; 'AspEnableChunkedEncoding' = $false; 'AspEnableParentPaths' = $false; 'AspEnableSxs' = $false; 'AspEnableTracker' = $false; 'AspEnableTypelibCache' = $false; 'AspErrorsToNTLog' = $false; 'AspExceptionCatchEnable' = $false; 'AspExecuteInMTA' = 0; 'AspKeepSessionIDSecure' = 0; 'AspLCID' = 0; 'AspLogErrorRequests' = $false; 'AspMaxDiskTemplateCacheFiles' = 0; 'AspMaxRequestEntityAllowed' = 0; 'AspPartitionID' = ''; 'AspProcessorThreadMax' = 0; 'AspQueueConnectionTestTime' = 0; 'AspQueueTimeout' = 0; 'AspRequestQueueMax' = 0; 'AspRunOnEndAnonymously' = $false; 'AspScriptEngineCacheMax' = 0; 'AspScriptErrorMessage' = ''; 'AspScriptErrorSentToBrowser' = $false; 'AspScriptFileCacheSize' = 0; 'AspScriptLanguage' = ''; 'AspScriptTimeout' = 0; 'AspSessionMax' = 0; 'AspSessionTimeout' = 0; 'AspSxsName' = ''; 'AspTrackThreadingModel' = $false; 'AspUsePartition' = $false; 'AuthAnonymous' = $false; 'AuthBasic' = $false; 'AuthFlags' = 0; 'AuthMD5' = $false; 'AuthNTLM' = $false; 'AuthPassport' = $false; 'AuthPersistence' = 0; 'AuthPersistSingleRequest' = $false; 'AzEnable' = $false; 'AzImpersonationLevel' = 0; 'AzScopeName' = ''; 'AzStoreName' = ''; 'CacheControlCustom' = ''; 'CacheControlMaxAge' = 0; 'CacheControlNoCache' = $false; 'CacheISAPI' = $false; 'CGITimeout' = 0; 'ContentIndexed' = $false; 'CreateCGIWithNewConsole' = $false; 'CreateProcessAsUser' = $false; 'DefaultDoc' = ''; 'DefaultDocFooter' = ''; 'DefaultLogonDomain' = ''; 'DirBrowseFlags' = 0; 'DirBrowseShowDate' = $false; 'DirBrowseShowExtension' = $false; 'DirBrowseShowLongDate' = $false; 'DirBrowseShowSize' = $false; 'DirBrowseShowTime' = $false; 'DoDynamicCompression' = $false; 'DontLog' = $false; 'DoStaticCompression' = $false; 'EnableDefaultDoc' = $false; 'EnableDirBrowsing' = $false; 'EnableDocFooter' = $false; 'EnableReverseDns' = $false; 'FrontPageWeb' = $false; 'HttpExpires' = ''; 'HttpRedirect' = ''; 'LogonMethod' = 0; 'MaxRequestEntityAllowed' = 0; 'Name' = ''; 'PoolIdcTimeout' = 0; 'Realm' = ''; 'RedirectHeaders' = ''; 'ShutdownTimeLimit' = 0; 'SSIExecDisable' = $false; 'UploadReadAheadSize' = 0; 'UseDigestSSP' = $false; }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IisWebVirtualDirSetting'; 'Error' = $_; 'AccessExecute' = $false; 'AccessFlags' = 0; 'AccessNoRemoteExecute' = $false; 'AccessNoRemoteRead' = $false; 'AccessNoRemoteScript' = $false; 'AccessNoRemoteWrite' = $false; 'AccessRead' = $false; 'AccessScript' = $false; 'AccessSource' = $false; 'AccessSSL' = $false; 'AccessSSL128' = $false; 'AccessSSLFlags' = 0; 'AccessSSLMapCert' = $false; 'AccessSSLNegotiateCert' = $false; 'AccessSSLRequireCert' = $false; 'AccessWrite' = $false; 'AnonymousPasswordSync' = $false; 'AnonymousUserName' = ''; 'AnonymousUserPass' = ''; 'AppAllowClientDebug' = $false; 'AppAllowDebugging' = $false; 'AppFriendlyName' = ''; 'AppOopRecoverLimit' = 0; 'AppPoolId' = ''; 'AppWamClsid' = ''; 'AspAllowOutOfProcComponents' = $false; 'AspAllowSessionState' = $false; 'AspAppServiceFlags' = 0; 'AspBufferingLimit' = 0; 'AspBufferingOn' = $false; 'AspCalcLineNumber' = $false; 'AspCodepage' = 0; 'AspDiskTemplateCacheDirectory' = ''; 'AspEnableApplicationRestart' = $false; 'AspEnableAspHtmlFallback' = $false; 'AspEnableChunkedEncoding' = $false; 'AspEnableParentPaths' = $false; 'AspEnableSxs' = $false; 'AspEnableTracker' = $false; 'AspEnableTypelibCache' = $false; 'AspErrorsToNTLog' = $false; 'AspExceptionCatchEnable' = $false; 'AspExecuteInMTA' = 0; 'AspKeepSessionIDSecure' = 0; 'AspLCID' = 0; 'AspLogErrorRequests' = $false; 'AspMaxDiskTemplateCacheFiles' = 0; 'AspMaxRequestEntityAllowed' = 0; 'AspPartitionID' = ''; 'AspProcessorThreadMax' = 0; 'AspQueueConnectionTestTime' = 0; 'AspQueueTimeout' = 0; 'AspRequestQueueMax' = 0; 'AspRunOnEndAnonymously' = $false; 'AspScriptEngineCacheMax' = 0; 'AspScriptErrorMessage' = ''; 'AspScriptErrorSentToBrowser' = $false; 'AspScriptFileCacheSize' = 0; 'AspScriptLanguage' = ''; 'AspScriptTimeout' = 0; 'AspSessionMax' = 0; 'AspSessionTimeout' = 0; 'AspSxsName' = ''; 'AspTrackThreadingModel' = $false; 'AspUsePartition' = $false; 'AuthAnonymous' = $false; 'AuthBasic' = $false; 'AuthFlags' = 0; 'AuthMD5' = $false; 'AuthNTLM' = $false; 'AuthPassport' = $false; 'AuthPersistence' = 0; 'AuthPersistSingleRequest' = $false; 'AzEnable' = $false; 'AzImpersonationLevel' = 0; 'AzScopeName' = ''; 'AzStoreName' = ''; 'CacheControlCustom' = ''; 'CacheControlMaxAge' = 0; 'CacheControlNoCache' = $false; 'CacheISAPI' = $false; 'CGITimeout' = 0; 'ContentIndexed' = $false; 'CreateCGIWithNewConsole' = $false; 'CreateProcessAsUser' = $false; 'DefaultDoc' = ''; 'DefaultDocFooter' = ''; 'DefaultLogonDomain' = ''; 'DirBrowseFlags' = 0; 'DirBrowseShowDate' = $false; 'DirBrowseShowExtension' = $false; 'DirBrowseShowLongDate' = $false; 'DirBrowseShowSize' = $false; 'DirBrowseShowTime' = $false; 'DoDynamicCompression' = $false; 'DontLog' = $false; 'DoStaticCompression' = $false; 'EnableDefaultDoc' = $false; 'EnableDirBrowsing' = $false; 'EnableDocFooter' = $false; 'EnableReverseDns' = $false; 'FrontPageWeb' = $false; 'HttpExpires' = ''; 'HttpRedirect' = ''; 'LogonMethod' = 0; 'MaxRequestEntityAllowed' = 0; 'Name' = ''; 'PoolIdcTimeout' = 0; 'Realm' = ''; 'RedirectHeaders' = ''; 'ShutdownTimeLimit' = 0; 'SSIExecDisable' = $false; 'UploadReadAheadSize' = 0; 'UseDigestSSP' = $false; }
+                        }
+
+                    }                        
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
+                }
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                $returninfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+                $IisWebVirtualDirSetting = $returninfo | where-object {$_.ReturnType -in (1)}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 @($_.ServerName, $_.Error))
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'IisWebVirtualDirSetting' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(372,373,374,375,376,377,378)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\IIsApplicationPoolSetting.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "IIsApplicationPoolSetting" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $IISList | Select-Object NetworkOSPath | Get-Unique -AsString | ForEach-Object {
+                    $item = $_ 
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1042 @('IIS Application Pool', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        try {
+                            $returnInfo = @()
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\MicrosoftIISv2" -class "IIsApplicationPoolSetting" -ErrorAction SilentlyContinue)
+                            if ($itemReturn -ne $null) {
+                                $itemreturn | foreach-object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'AppPoolAutoStart' = $_.AppPoolAutoStart; 'AppPoolCommand' = $_.AppPoolCommand; 'AppPoolIdentityType' = $_.AppPoolIdentityType; 'AppPoolQueueLength' = $_.AppPoolQueueLength; 'AppPoolRecycleConfigChange' = $_.AppPoolRecycleConfigChange; 'AppPoolRecycleIsapiUnhealthy' = $_.AppPoolRecycleIsapiUnhealthy; 'AppPoolRecycleMemory' = $_.AppPoolRecycleMemory; 'AppPoolRecycleOnDemand' = $_.AppPoolRecycleOnDemand; 'AppPoolRecyclePrivateMemory' = $_.AppPoolRecyclePrivateMemory; 'AppPoolRecycleRequests' = $_.AppPoolRecycleRequests; 'AppPoolRecycleSchedule' = $_.AppPoolRecycleSchedule; 'AppPoolRecycleTime' = $_.AppPoolRecycleTime; 'AppPoolState' = $_.AppPoolState; 'AutoShutdownAppPoolExe' = $_.AutoShutdownAppPoolExe; 'AutoShutdownAppPoolParams' = $_.AutoShutdownAppPoolParams; 'CPUAction' = $_.CPUAction; 'CPULimit' = $_.CPULimit; 'CPUResetInterval' = $_.CPUResetInterval; 'DisallowOverlappingRotation' = $_.DisallowOverlappingRotation; 'DisallowRotationOnConfigChange' = $_.DisallowRotationOnConfigChange; 'IdleTimeout' = $_.IdleTimeout; 'LoadBalancerCapabilities' = $_.LoadBalancerCapabilities; 'LogEventOnRecycle' = $_.LogEventOnRecycle; 'LogonMethod' = $_.LogonMethod; 'MaxProcesses' = $_.MaxProcesses; 'Name' = $_.Name; 'OrphanActionExe' = $_.OrphanActionExe; 'OrphanActionParams' = $_.OrphanActionParams; 'OrphanWorkerProcess' = $_.OrphanWorkerProcess; 'PeriodicRestartMemory' = $_.PeriodicRestartMemory; 'PeriodicRestartPrivateMemory' = $_.PeriodicRestartPrivateMemory; 'PeriodicRestartRequests' = $_.PeriodicRestartRequests; 'PeriodicRestartTime' = $_.PeriodicRestartTime; 'PingingEnabled' = $_.PingingEnabled; 'PingInterval' = $_.PingInterval; 'PingResponseTime' = $_.PingResponseTime; 'RapidFailProtection' = $_.RapidFailProtection; 'RapidFailProtectionInterval' = $_.RapidFailProtectionInterval; 'RapidFailProtectionMaxCrashes' = $_.RapidFailProtectionMaxCrashes; 'ShutdownTimeLimit' = $_.ShutdownTimeLimit; 'SMPAffinitized' = $_.SMPAffinitized; 'SMPProcessorAffinityMask' = $_.SMPProcessorAffinityMask; 'StartupTimeLimit' = $_.StartupTimeLimit; 'WAMUserName' = $_.WAMUserName; 'WAMUserPass' = $_.WAMUserPass; 'Win32Error' = $_.Win32Error; }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IIsApplicationPoolSetting'; 'Error' = ''; 'AppPoolAutoStart' = $false; 'AppPoolCommand' = 0; 'AppPoolIdentityType' = 0; 'AppPoolQueueLength' = 0; 'AppPoolRecycleConfigChange' = $false; 'AppPoolRecycleIsapiUnhealthy' = $false; 'AppPoolRecycleMemory' = $false; 'AppPoolRecycleOnDemand' = $false; 'AppPoolRecyclePrivateMemory' = $false; 'AppPoolRecycleRequests' = $false; 'AppPoolRecycleSchedule' = $false; 'AppPoolRecycleTime' = $false; 'AppPoolState' = 0; 'AutoShutdownAppPoolExe' = ''; 'AutoShutdownAppPoolParams' = ''; 'CPUAction' = 0; 'CPULimit' = 0; 'CPUResetInterval' = 0; 'DisallowOverlappingRotation' = $false; 'DisallowRotationOnConfigChange' = $false; 'IdleTimeout' = 0; 'LoadBalancerCapabilities' = 0; 'LogEventOnRecycle' = 0; 'LogonMethod' = 0; 'MaxProcesses' = 0; 'Name' = ''; 'OrphanActionExe' = ''; 'OrphanActionParams' = ''; 'OrphanWorkerProcess' = $false; 'PeriodicRestartMemory' = 0; 'PeriodicRestartPrivateMemory' = 0; 'PeriodicRestartRequests' = 0; 'PeriodicRestartTime' = 0; 'PingingEnabled' = $false; 'PingInterval' = 0; 'PingResponseTime' = 0; 'RapidFailProtection' = $false; 'RapidFailProtectionInterval' = 0; 'RapidFailProtectionMaxCrashes' = 0; 'ShutdownTimeLimit' = 0; 'SMPAffinitized' = $false; 'SMPProcessorAffinityMask' = 0; 'StartupTimeLimit' = 0; 'WAMUserName' = ''; 'WAMUserPass' = ''; 'Win32Error' = 0; }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IIsApplicationPoolSetting'; 'Error' = $_; 'AppPoolAutoStart' = $false; 'AppPoolCommand' = 0; 'AppPoolIdentityType' = 0; 'AppPoolQueueLength' = 0; 'AppPoolRecycleConfigChange' = $false; 'AppPoolRecycleIsapiUnhealthy' = $false; 'AppPoolRecycleMemory' = $false; 'AppPoolRecycleOnDemand' = $false; 'AppPoolRecyclePrivateMemory' = $false; 'AppPoolRecycleRequests' = $false; 'AppPoolRecycleSchedule' = $false; 'AppPoolRecycleTime' = $false; 'AppPoolState' = 0; 'AutoShutdownAppPoolExe' = ''; 'AutoShutdownAppPoolParams' = ''; 'CPUAction' = 0; 'CPULimit' = 0; 'CPUResetInterval' = 0; 'DisallowOverlappingRotation' = $false; 'DisallowRotationOnConfigChange' = $false; 'IdleTimeout' = 0; 'LoadBalancerCapabilities' = 0; 'LogEventOnRecycle' = 0; 'LogonMethod' = 0; 'MaxProcesses' = 0; 'Name' = ''; 'OrphanActionExe' = ''; 'OrphanActionParams' = ''; 'OrphanWorkerProcess' = $false; 'PeriodicRestartMemory' = 0; 'PeriodicRestartPrivateMemory' = 0; 'PeriodicRestartRequests' = 0; 'PeriodicRestartTime' = 0; 'PingingEnabled' = $false; 'PingInterval' = 0; 'PingResponseTime' = 0; 'RapidFailProtection' = $false; 'RapidFailProtectionInterval' = 0; 'RapidFailProtectionMaxCrashes' = 0; 'ShutdownTimeLimit' = 0; 'SMPAffinitized' = $false; 'SMPProcessorAffinityMask' = 0; 'StartupTimeLimit' = 0; 'WAMUserName' = ''; 'WAMUserPass' = ''; 'Win32Error' = 0; }
+                        }
+
+                    }                        
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
+                }
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+                $returninfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+
+                $IIsApplicationPoolSetting = $returninfo | where-object {$_.ReturnType -in (1)}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 @($_.ServerName, $_.Error))
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'IIsApplicationPoolSetting' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(383)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\CMUpdates.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "CMUpdates" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $CMSiteUpdates = Get-CMSiteUpdate
+                Export-CEXMLFile -VariableName 'CMSiteUpdates' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(386,387)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\OptionalFeaturesList.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "OptionalFeaturesList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SiteRoleListWOCDP | select-Object SiteCode, @{Name='NetworkOSPath';Expression={$_.NetworkOSPath.Tolower().Trim()}} -Unique | ForEach-Object {
+                    $item = $_
+                    $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
+                    While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge $Script:MaxThreads) {  
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Windows Features', $RemoteComputer))
+                    $Scriptblock = {
+                        Param (
+                            $RemoteComputer
+                        )
+                        try {
+                            $returnInfo = @()
+                            $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_OptionalFeature" -ErrorAction SilentlyContinue)
+                            if ($itemReturn -ne $null) {
+                                $itemreturn | foreach-object {
+                                    $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'Description' = $_.Description; 'InstallDate' = $_.InstallDate; 'Status' = $_.Status; 'Caption' = $_.Caption; 'Name' = $_.Name; 'InstallState' = $_.InstallState;  }
+                                }
+                            } else {
+                                $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) OptionalFeature'; 'Error' = ''; 'Description' = ''; 'InstallDate' = (Get-Date); 'Status' = ''; 'Caption' = ''; 'Name' = ''; 'InstallState' = 0;  }
+                            }
+                        } catch {
+                            $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\cimv2) OptionalFeature'; 'Error' = $_; 'Description' = ''; 'InstallDate' = (Get-Date); 'Status' = ''; 'Caption' = ''; 'Name' = ''; 'InstallState' = 0;  }
+                        }
+                        $returnInfo
+                    }                        
+                    Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
+                }
+                While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
+                    Start-Sleep -Seconds 3
+                }
+
+                $returninfo = ForEach ($Job in (Get-Job)) {
+                    Receive-Job $Job
+                    Remove-Job $Job
+                }
+                
+                $OptionalFeaturesList = $returninfo | where-object {$_.ReturnType -in (1)}
+                $returninfo | where-object {$_.ReturnType -eq 2} | ForEach-Object {
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                $returninfo | where-object {$_.ReturnType -eq 3} | ForEach-Object {
+                    Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1050 @($_.ServerName, $_.Error))
+                    $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                }
+                Export-CEXMLFile -VariableName 'OptionalFeaturesList' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(388,389)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SoftwareUpdateDeploymentPackage.xml"
+            if (Test-Path $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SoftwareUpdateDeploymentPackage" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SoftwareUpdateDeploymentPackage = Get-CMSoftwareUpdateDeploymentPackage
+                Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentPackage' -ClearVariable
+            }
+        }
+        #endregion
+
+        Export-CEXMLFile -VariableName 'ServerDown' -ClearVariable
+        Export-CEXMLFile -VariableName 'ServerHTTPAccessInformation' -ClearVariable
         #endregion
 
         #region export error information
         $Error | Export-Clixml -Path "$($SaveToFolder)\ErrorCapture.xml"
+        $Script:EndCollectingDateTime = get-date
         #endregion
 
         #region Create Zip File on Desktop
-        $ZipFileName = "$([System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop))\SCCMHealthCheck-$((Get-Date).ToString('yyyy-MM-dd HH-mm-ss')).zip"
-        Write-ZipFiles -zipfilename $ZipFileName -sourcedir $SaveToFolder
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1046 $ZipFileName)
+        if ($CreateZipFiles) {
+            $ZipFileName = "$([System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop))\SCCMHealthCheck-$((Get-Date).ToString('yyyy-MM-dd HH-mm-ss')).zip"
+            Write-ZipFiles -zipfilename $ZipFileName -sourcedir $SaveToFolder
+            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1046 $ZipFileName)
+        }
         #endregion
 
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1040)
+        #endregion
     } finally {
         Set-Location -Path "$($CurrentDriveLetter):"
-        Write-CELog -logtype "Info" -logmessage "Removing Folder $($SaveToFolder)"
+        #Write-CELog -logtype "Info" -logmessage "Removing Folder $($SaveToFolder)"
         #Remove-Item -Path $SaveToFolder -Force -Recurse
     }
     #endregion
@@ -3671,6 +4775,12 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         Write-CELog -logtype "EXCEPTION" -logmessage "$($_.InvocationInfo.ScriptName)($($_.InvocationInfo.ScriptLineNumber)): $($_.InvocationInfo.Line)"
     }
 } finally {
-
+    $Script:EndDateTime = get-date
+    $FullScriptTimeSpan = New-TimeSpan -Start $Script:StartDateTime -End $Script:EndDateTime
+    if (($Script:StartCollectingDateTime -ne $null) -and ($Script:EndCollectingDateTime -ne $null)) {
+        $CollectingScriptTimeSpan = New-TimeSpan -Start $Script:StartCollectingDateTime -End $Script:EndCollectingDateTime
+        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1052 @('Collection Data Stats', ('{0:dd} days, {0:hh} hours, {0:mm} minutes, {0:ss} seconds' -f $CollectingScriptTimeSpan)))
+    }
+    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1052 @('Full Script Stats', ('{0:dd} days, {0:hh} hours, {0:mm} minutes, {0:ss} seconds' -f $FullScriptTimeSpan)))
 }
-#endregion
+#endregionn

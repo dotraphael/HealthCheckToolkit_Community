@@ -1,366 +1,392 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Rules>
-    <Rule ID="1" Name="Server Down" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="2" Name="Minimum SCCM Build Version" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="3" Name="Latest SCCM Build Version" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="4" Name="Enforce Enhanced Hash Algorithm" Category="2" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="5" Name="Enforce Message Signing" Category="2" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="6" Name="Use Encryption" Category="2" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="7" Name="Site Alert" Category="2" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="8" Name="Database Free Space Warning (Higher)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="9" Name="Database Free Space Warning (Lower)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="10" Name="Database Free Space Error (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="11" Name="Database Free Space Error (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="12" Name="List Roles Installed" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="13" Name="List Roles Not Installed" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="14" Name="Test MP (MPList) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="15" Name="Test MP (MPCert) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="16" Name="Test MP (SiteSign Cert) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="17" Name="MP Count" Category="6" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="18" Name="Application Catalog Web Service URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="19" Name="Application Catalog Web Site URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="20" Name="SUP (SimpleAuth) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="21" Name="SUP (Registration) URL" Category="6" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="22" Name="Application Catalog Integration" Category="7" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="23" Name="SQL Server Reporting Services (Reports) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="24" Name="SQL Server Reporting Services (ReportServer) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="25" Name="Minimum SQL Server" Category="3" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="26" Name="Minimum SQL Memory" Category="3" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="27" Name="Maximum SQL Memory" Category="3" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="28" Name="SQL Compatibility Level" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="29" Name="SQL Server Installation Folder" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="30" Name="SQL Server Data Folder" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="31" Name="SQL Server Log Folder" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="32" Name="SQL Server Data Folder (Install)" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="33" Name="SQL Server Log Folder (Install)" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="34" Name="SQL Server Data Folder (Log)" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="35" Name="Account Usage" Category="8" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="36" Name="Account Usage (Software Distribution)" Category="8" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="37" Name="Account Usage (Admin)" Category="8" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="38" Name="Client Status (Clean Up) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="39" Name="Client Status (Clean Up) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="40" Name="Client Status (Heartbeat) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="41" Name="Client Status (Heartbeat) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="42" Name="Client Status (Hardware) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="43" Name="Client Status (Hardware) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="44" Name="Client Status (Client Policy) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="45" Name="Client Status (Client Policy) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="46" Name="Client Status (Status Message) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="47" Name="Client Status (Status Message) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="48" Name="Client Status (Software) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="49" Name="Client Status (Software) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="50" Name="Enabled Heartbeat Discovery" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="51" Name="Heartbeat Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="52" Name="Forest Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="53" Name="Forest Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="54" Name="Forest Discovery AD Boundary" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="55" Name="Forest Discovery Subnet Boundary" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="56" Name="Network Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="57" Name="Security Group Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="58" Name="Security Group Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="59" Name="Security Group Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="60" Name="Security Group Discovery Expired Logon" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="61" Name="Security Group Discovery Expired Logon Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="62" Name="Security Group Discovery Expired Logon Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="63" Name="Security Group Discovery Expired Password" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="64" Name="Security Group Discovery Expired Password Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="65" Name="Security Group Discovery Expired Password Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="66" Name="Security Group Discovery LDAP Count" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="67" Name="Security Group Discovery LDAP Root" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="68" Name="System Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="69" Name="System Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="70" Name="System Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="71" Name="System Discovery Expired Logon" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="72" Name="System Discovery Expired Logon Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="73" Name="System Discovery Expired Logon Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="74" Name="System Discovery Expired Password" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="75" Name="System Discovery Expired Password Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="76" Name="System Discovery Expired Password Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="77" Name="System Discovery LDAP Count" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="78" Name="System Discovery LDAP Root" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="79" Name="User Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="80" Name="User Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="81" Name="User Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="82" Name="User Discovery LDAP Count" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="83" Name="User Discovery LDAP Root" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="84" Name="DP Group Has Members" Category="12" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="85" Name="DP Group Content In Sync" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="86" Name="Collection Membership Evaluation Schedule (Higher)" Category="11" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="87" Name="Collection Membership Evaluation Schedule (Lower)" Category="11" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="88" Name="Device Collection Membership Rules Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="89" Name="Device Collection Membership Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="90" Name="Device Collection Limited by" Category="11" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="91" Name="Device Collection Incremental Warning" Category="11" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="92" Name="Device Collection Incremental Error" Category="11" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="93" Name="Device Collection Direct Membership Rule Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="94" Name="User Collection Membership Rules Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="95" Name="User Collection Membership Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="96" Name="User Collection Limited By" Category="11" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="97" Name="User Collection Incremental Warning" Category="11" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="98" Name="User Collection Incremental Error" Category="11" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="99" Name="User Collection Direct Membership Rule Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="100" Name="Deployment Empty Collection" Category="21" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="101" Name="Deployment to Root Collection" Category="21" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="102" Name="Active Alerts" Category="18" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="103" Name="Alert Subscription Count" Category="18" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="104" Name="Alert Subscription" Category="18" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="105" Name="Device List - Non Client" Category="24" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="106" Name="Device List - Active Status" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="107" Name="Device List - Blocked" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="108" Name="Device List - Approved" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="109" Name="Device List - Obsolete" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="110" Name="Device List - Windows XP" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="111" Name="Device List - WIndows XP x64" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="112" Name="Device List - WIndows Vista" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="113" Name="Device List - Windows 7" Category="24" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="114" Name="Device List - Windows 2003" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="115" Name="Device List - Windows 2008" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="116" Name="Device List - Windows 2008 R2" Category="24" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="117" Name="Device List - Windows Server 2012" Category="24" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="118" Name="Client Version Lower Site Server" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="119" Name="Endpoint Protection - Unmanaged" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="120" Name="Endpoint Protection - To Be Installed" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="121" Name="Endpoint Protection - Install with Error" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="122" Name="Endpoint Protection - Pending Reboot" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="123" Name="Endpoint Protection - Infection Status Error" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="124" Name="Endpoint Protection - Infection Status Pending" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="125" Name="Endpoint Protection - Infection Status Unknown" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="126" Name="Endpoint Protection - Policy Status Error" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="127" Name="Endpoint Protection - Product Status Service Not Started" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="128" Name="Endpoint Protection - Product Status Pending Full Scan" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="129" Name="Endpoint Protection - Product Status Pending reboot" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="130" Name="Endpoint Protection - Product Status Pending manual steps" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="131" Name="Endpoint Protection - Product Status AV Signature Out to Date" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="132" Name="Endpoint Protection - Product Status AS Signature Out to Date" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="133" Name="Endpoint Protection - Product Status Missing quick scan" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="134" Name="Endpoint Protection - Product Status Missing full scan" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="135" Name="Endpoint Protection - Product Status Cleaning in progress" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="136" Name="Endpoint Protection - Product Status non-genuine windows" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="137" Name="Endpoint Protection - Product Status expired" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="138" Name="Endpoint Protection - Product Status offline scan required" Category="24" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="139" Name="Client Settings - Deployments" Category="9" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="140" Name="Client Settings - Use New Software Center" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="141" Name="Client Settings - Client Cache Size" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="142" Name="Client Settings - Policy Request Schedule (Higher)" Category="9" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="143" Name="Client Settings - Policy Request Schedule (Lower)" Category="9" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="144" Name="Client Settings - User Policy" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="145" Name="Client Settings - Reboot Logoff Notification Countdown Duration (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="146" Name="Client Settings - Reboot Logoff Notification Countdown Duration (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="147" Name="Client Settings - Reboot Logoff Notification Final Countdown (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="148" Name="Client Settings - Reboot Logoff Notification Final Countdown (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="149" Name="Client Settings - Hardware Inventory" Category="9" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="150" Name="Client Settings - Hardware Inventory Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="151" Name="Client Settings - Hardware Inventory Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="152" Name="Client Settings - Software Inventory" Category="9" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="153" Name="Client Settings - Software Inventory Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="154" Name="Client Settings - Software Inventory Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="155" Name="Client Settings - Software Reevaluation (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="156" Name="Client Settings - Software Reevaluation (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="157" Name="Client Settings - Software Updates" Category="9" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="158" Name="Client Settings - Software Update Scan Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="159" Name="Client Settings - Software Update Scan Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="160" Name="Client Settings - Software Update Reevaluation Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="161" Name="Client Settings - Software Update Reevaluation Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="162" Name="Client Settings - Software Update Reevaluation and Scan Schedule" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="163" Name="Client Settings - Endpoint Protection" Category="9" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="164" Name="Maintenance Task - Backup SMS Site Server" Category="4" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="165" Name="Maintenance Task - Rebuild Indexes" Category="4" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="166" Name="Boundary Group - Site System Count" Category="13" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="167" Name="Boundary Group - Boundary Count" Category="13" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="168" Name="Boundary Group - Fallback DP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="169" Name="Boundary Group - Fallback DP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="170" Name="Boundary Group - Fallback MP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="171" Name="Boundary Group - Fallback MP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="172" Name="Boundary Group - Fallback SMP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="173" Name="Boundary Group - Fallback SMP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="174" Name="Boundary Group - Fallback SUP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="175" Name="Boundary Group - Fallback SUP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="176" Name="Endpoint Protection - Malware Detected" Category="14" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="177" Name="Endpoint Protection - Antimalware Policy Deployment Count" Category="14" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="178" Name="Endpoint Protection - Antimalware Policy Limit CPU" Category="14" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="179" Name="Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Higher)" Category="14" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="180" Name="Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Lower)" Category="14" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="181" Name="Endpoint Protection - Firewall Policy Deployment Count" Category="14" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="182" Name="Endpoint Protection - Firewall Policy Settings" Category="14" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="183" Name="Software Metering - Auto Create Rules" Category="15" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="184" Name="Software Metering - Disabled Rules" Category="15" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="185" Name="Boot Images - F8" Category="16" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="186" Name="Boot Images - Default Boot Image Usage" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="187" Name="Boot Images - Boot Image Usage" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="188" Name="Boot Images - PXE Architecture Count" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="189" Name="Boot Images - Default Boot Image Binary Delta Replication" Category="16" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="190" Name="Boot Images - Default Boot Image Drivers" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="191" Name="Boot Images - Binary Delta Replication" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="192" Name="Boot Images - ADK Version" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="193" Name="Software Update - Summarization (Higher)" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="194" Name="Software Update - Summarization (Lower)" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="195" Name="Software Update - Superseded" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="196" Name="Software Update - Expired" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="197" Name="Software Update - Missing Content" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="198" Name="Software Update - Content not Deployed" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="199" Name="Software Update Group - Deployments" Category="17" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="200" Name="Software Update Group - Warning Count" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="201" Name="Software Update Group - Error Count" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="202" Name="Software Update Group - Member Count" Category="17" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="203" Name="Software Update Group - Expired Updates" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="204" Name="Software Update Group - Superseded Updates" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="205" Name="Software Update Group - Missing Content" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="206" Name="Software Update Group - Content not Deployed" Category="17" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="207" Name="Software Update Deployment" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="208" Name="Software Update Deployment - Root Collection" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="209" Name="Software Update Deployment - State Message" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="210" Name="Software Update - ADR Deployment" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="211" Name="Software Update - ADR Last Run Error" Category="17" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="212" Name="Software Update - ADR Last Run Date and Time" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="213" Name="Software Update - ADR Deployment Count" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="214" Name="Software Update - ADR Root Collection" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="215" Name="Software Update - ADR Schedule (Higher)" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="216" Name="Software Update - ADR Schedule (Lower)" Category="17" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="217" Name="Software Update - ADR No Schedule" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="218" Name="Software Update - ADR State Message" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="219" Name="Software Update - ADR Alert" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="220" Name="Software Update - ADR Alert Schedule (Higher)" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="221" Name="Software Update - ADR Alert Schedule (Lower)" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="222" Name="Hierarchy Settings - Auto Upgrade Client" Category="2" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="223" Name="Hierarchy Settings - Auto Upgrade Client Schedule (Higher)" Category="2" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="224" Name="Hierarchy Settings - Auto Upgrade Client Schedule (Lower)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="225" Name="Hierarchy Settings - Email Notification" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="226" Name="Hierarchy Settings - Email Notification Account" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="227" Name="Hierarchy Settings - Email Notification Security" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="228" Name="Active Directory Forests - Publishing Enabled" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="229" Name="Active Directory Forests - Last Discovery Error (Discovery - Access Denied)" Category="10" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="230" Name="Active Directory Forests - Last Discovery Error (Discovery - Failed)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="231" Name="Active Directory Forests - Last Discovery Error (Publishing - Failed)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="232" Name="Active Directory Forests - Last Discovery Error (Publishing - Unknown)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="233" Name="Active Directory Forests - Last Discovery Schedule" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="234" Name="Database Replication Status (Failed)" Category="19" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="235" Name="Database Replication Status (Degraded)" Category="19" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="236" Name="Database Replication Status (Unknown)" Category="19" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="237" Name="Database Replication Status - Site1 To Site2 Global Sync" Category="19" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="238" Name="Database Replication Status - Site2 To Site1 Global Sync" Category="19" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="239" Name="Database Replication Status - Enforce Enhanced Hash Algorithm" Category="19" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="240" Name="Database Replication Status - Link Schedule (Higher)" Category="19" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="241" Name="Database Replication Status - Link Schedule (Lower)" Category="19" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="242" Name="Status Summarization - Application Deployment 1st Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="243" Name="Status Summarization - Application Deployment 1st Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="244" Name="Status Summarization - Application Deployment 2nd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="245" Name="Status Summarization - Application Deployment 2nd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="246" Name="Status Summarization - Application Deployment 3rd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="247" Name="Status Summarization - Application Deployment 3rd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="248" Name="Status Summarization - Application Statistics 1st Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="249" Name="Status Summarization - Application Statistics 1st Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="250" Name="Status Summarization - Application Statistics 2nd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="251" Name="Status Summarization - Application Statistics 2nd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="252" Name="Status Summarization - Application Statistics 3rd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="253" Name="Status Summarization - Application Statistics 3rd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="254" Name="Account - Admin (RBAC)" Category="8" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="255" Name="Account - Service Account" Category="8" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="256" Name="Account - Full Admin Warning" Category="8" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="257" Name="Account - Full Admin Error" Category="8" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="258" Name="Account - Group Membership" Category="8" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="259" Name="CPU Usage - Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="260" Name="CPU Usage - Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="261" Name="Short file name creation" Category="1" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="262" Name="SCCM Installation on Root Drive" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="263" Name="Distribution Point - Drive Free Space Error" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="264" Name="Distribution Point - Drive Free Space Warning" Category="12" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="265" Name="Distribution Point - Group Membership Count" Category="12" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="266" Name="Distribution Point - Boundary Group Count" Category="12" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="267" Name="Distribution Point - Multicast" Category="12" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="268" Name="Distribution Point - PXE Password" Category="12" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="269" Name="Distribution Point - Responding to PXE" Category="12" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="270" Name="Distribution Point - PXE Unknown Machines" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="271" Name="Distribution Point - Content Evaluation" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="272" Name="Distribution Point - Content Evaluation Schedule (Higher)" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="273" Name="Distribution Point - Content Evaluation Schedule (Lower)" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="274" Name="Distribution Point - Content Evaluation Priority" Category="12" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="275" Name="Distribution Status - Default Boot Image" Category="20" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="276" Name="Distribution Status - Targeted Count" Category="20" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="277" Name="Distribution Status - Errors" Category="20" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="278" Name="Application - Hidden" Category="22" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="279" Name="Application - Devices with Failure (Error)" Category="22" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="280" Name="Application - Devices with Failure (Warning)" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="281" Name="Application - Users with Failure (Error)" Category="22" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="282" Name="Application - Users with Failure (Warning)" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="283" Name="Application - not used" Category="22" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="284" Name="Application - used by not deployed TS" Category="22" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="285" Name="NO_SMS_ON_DRIVE.SMS on SQL Drive" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="286" Name="Application - DT Folder does not exist" Category="22" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="287" Name="Application - DT allow User Interaction" Category="22" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="288" Name="Distribution Point Content - Not on DP Group" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="289" Name="Distribution Point Content - Not on All DPs" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="290" Name="Packages - Source Path does not exist" Category="23" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="291" Name="Packages - Source Path Local" Category="23" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="292" Name="Packages - Deployment Count not used by TS" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="293" Name="Packages - Deployment Count used by not deployed TS" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="294" Name="Operating System - Source File Exist" Category="16" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="295" Name="Operating System - Used by TS" Category="16" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="296" Name="Operating System Installer - Source Exist" Category="16" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="297" Name="Operating System Installer - Used by TS" Category="16" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="298" Name="Task Sequence - Enabled" Category="16" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="299" Name="Task Sequence - Deployment Count" Category="16" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="300" Name="Task Sequence - Reboot to WinPE" Category="16" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="301" Name="Task Sequence - Boot Image" Category="16" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="302" Name="Task Sequence - Content Distributed" Category="16" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="303" Name="Task Sequence - Content Distributed with Error" Category="16" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="304" Name="Inbox - Count (Error)" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="305" Name="Inbox - Count (Warning)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="306" Name="Driver Package" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="307" Name="Component Status - Summarization" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="308" Name="Component Message" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="309" Name="Heartbeat Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="310" Name="Forest Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="311" Name="SQL Server 2016 SP1" Category="3" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="312" Name="WSUS Windows Internal Database" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="313" Name="NO_SMS_ON_DRIVE.SMS on SystemDrive" Category="2" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="314" Name="Multiple Software Update Point (WSUS) using same SQL Server" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="315" Name="Pending Approval Request" Category="2" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="316" Name="Hierarchy Settings - Auto Upgrade Client Excluded specified clients from update" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="317" Name="Hierarchy Settings - Auto Upgrade Client Exclude Servers" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="318" Name="Hierarchy Settings - Auto Upgrade Client Automatically distribute client installation package" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="319" Name="Software Update - Windows 10 Express Updates" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="320" Name="Software Update - WSUS Cleanup" Category="2" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="321" Name="Software Update - Synchronisation Alert" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="322" Name="Site Hierarchy - Conflicting Client Record" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="323" Name="Site Hierarchy - Client Approval Method - Manual" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="324" Name="Site Hierarchy - Client Approval Method - Automatically all" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="325" Name="Site Hierarchy - Script authors require approver" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="326" Name="Site Hierarchy - Clients prefer to use management point specified in boundary group" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="327" Name="ADK Version" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="328" Name="MDT Version" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="329" Name="SCCM Services on SCCM Servers" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="330" Name="Collection (Total) Incremental Warning" Category="11" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="331" Name="Collection (Total) Incremental Error" Category="11" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="332" Name="Distribution Status - InProgress Warning" Category="20" Classification="WARNING" Criticality="High" Enabled="True"  />
-    <Rule ID="333" Name="Distribution Status - InProgress Error" Category="20" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="334" Name="Ping Response Time Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="335" Name="Ping Response Time Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="336" Name="Ping Drop Percentace Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="337" Name="Ping Drop Percentace Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="338" Name="Application - Number of DT" Category="22" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="339" Name="Intune Subscription" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="340" Name="IP Subnet Boundary" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True"  />
-    <Rule ID="341" Name="Device Collection Schedule Too Often" Category="11" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="342" Name="User Collection Schedule Too Often" Category="11" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="343" Name="Boundary without GroupCount" Category="13" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="344" Name="Free Disk Space - Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="345" Name="Free Disk Space - Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="346" Name="Total Site Server RAM Memory" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="347" Name="Total Site Server CPU" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="348" Name="Total Remote Server RAM Memory" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="349" Name="Total Remote Server CPU" Category="1" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="350" Name="Empty Folder" Category="2" Classification="WARNING" Criticality="Low" Enabled="True"  />
-    <Rule ID="351" Name="Deployment Errors - Warning" Category="21" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="352" Name="Deployment Errors - Error" Category="21" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="353" Name="Task Sequence advertise to Unknown Computers for only SCCM Clients" Category="21" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="354" Name="Baseline - not deployed" Category="21" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="355" Name="Baseline - disabled" Category="25" Classification="ERROR" Criticality="Low" Enabled="True"  />
-    <Rule ID="356" Name="Baseline - hidden" Category="25" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="357" Name="Baseline - failures warning" Category="25" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="358" Name="Baseline - failures error" Category="25" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="359" Name="Baseline - non-compliance warning" Category="25" Classification="WARNING" Criticality="Medium" Enabled="True"  />
-    <Rule ID="360" Name="Baseline - non-compliance error" Category="25" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="361" Name="Baseline - evaluation Schedule Too Often" Category="21" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="362" Name="Account - Group Membership - Unable to collect" Category="8" Classification="ERROR" Criticality="High" Enabled="True"  />
-    <Rule ID="363" Name="Component Message - Errors" Category="2" Classification="ERROR" Criticality="High" Enabled="True"  />
+    <Rule ID="1" Name="Server Down" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="2" Name="Minimum SCCM Build Version" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="3" Name="Latest SCCM Build Version" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="4" Name="Enforce Enhanced Hash Algorithm" Category="2" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="5" Name="Enforce Message Signing" Category="2" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="6" Name="Use Encryption" Category="2" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="7" Name="Site Alert" Category="2" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="8" Name="Database Free Space Warning (Higher)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="9" Name="Database Free Space Warning (Lower)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="10" Name="Database Free Space Error (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="11" Name="Database Free Space Error (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="12" Name="List Roles Installed" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="13" Name="List Roles Not Installed" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="14" Name="Test MP (MPList) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="15" Name="Test MP (MPCert) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="16" Name="Test MP (SiteSign Cert) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="17" Name="MP Count" Category="6" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="18" Name="Application Catalog Web Service URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="19" Name="Application Catalog Web Site URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="20" Name="SUP (SimpleAuth) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="21" Name="SUP (Registration) URL" Category="6" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="22" Name="Application Catalog Integration" Category="7" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="23" Name="SQL Server Reporting Services (Reports) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="24" Name="SQL Server Reporting Services (ReportServer) URL" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="25" Name="Minimum SQL Server" Category="3" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="26" Name="Minimum SQL Memory" Category="3" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="27" Name="Maximum SQL Memory" Category="3" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="28" Name="SQL Compatibility Level" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="29" Name="SQL Server Installation Folder" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="30" Name="SQL Server Data Folder" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="31" Name="SQL Server Log Folder" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="32" Name="SQL Server Data Folder (Install)" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="33" Name="SQL Server Log Folder (Install)" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="34" Name="SQL Server Data Folder (Log)" Category="3" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="35" Name="Account Usage" Category="8" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="36" Name="Account Usage (Software Distribution)" Category="8" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="37" Name="Account Usage (Admin)" Category="8" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="38" Name="Client Status (Clean Up) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="39" Name="Client Status (Clean Up) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="40" Name="Client Status (Heartbeat) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="41" Name="Client Status (Heartbeat) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="42" Name="Client Status (Hardware) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="43" Name="Client Status (Hardware) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="44" Name="Client Status (Client Policy) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="45" Name="Client Status (Client Policy) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="46" Name="Client Status (Status Message) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="47" Name="Client Status (Status Message) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="48" Name="Client Status (Software) (Higher)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="49" Name="Client Status (Software) (Lower)" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="50" Name="Enabled Heartbeat Discovery" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="51" Name="Heartbeat Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="52" Name="Forest Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="53" Name="Forest Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="54" Name="Forest Discovery AD Boundary" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="55" Name="Forest Discovery Subnet Boundary" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="56" Name="Network Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="57" Name="Security Group Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="58" Name="Security Group Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="59" Name="Security Group Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="60" Name="Security Group Discovery Expired Logon" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="61" Name="Security Group Discovery Expired Logon Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="62" Name="Security Group Discovery Expired Logon Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="63" Name="Security Group Discovery Expired Password" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="64" Name="Security Group Discovery Expired Password Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="65" Name="Security Group Discovery Expired Password Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="66" Name="Security Group Discovery LDAP Count" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="67" Name="Security Group Discovery LDAP Root" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="68" Name="System Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="69" Name="System Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="70" Name="System Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="71" Name="System Discovery Expired Logon" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="72" Name="System Discovery Expired Logon Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="73" Name="System Discovery Expired Logon Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="74" Name="System Discovery Expired Password" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="75" Name="System Discovery Expired Password Days (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="76" Name="System Discovery Expired Password Days (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="77" Name="System Discovery LDAP Count" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="78" Name="System Discovery LDAP Root" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="79" Name="User Discovery" Category="10" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="80" Name="User Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="81" Name="User Discovery Schedule (Lower)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="82" Name="User Discovery LDAP Count" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="83" Name="User Discovery LDAP Root" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="84" Name="DP Group Has Members" Category="12" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="85" Name="DP Group Content In Sync" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="86" Name="Collection Membership Evaluation Schedule (Higher)" Category="11" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="87" Name="Collection Membership Evaluation Schedule (Lower)" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="88" Name="Device Collection Membership Rules Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="89" Name="Device Collection Membership Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="90" Name="Device Collection Limited by" Category="11" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="91" Name="Device Collection Incremental Warning" Category="11" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="92" Name="Device Collection Incremental Error" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="93" Name="Device Collection Direct Membership Rule Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="94" Name="User Collection Membership Rules Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="95" Name="User Collection Membership Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="96" Name="User Collection Limited By" Category="11" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="97" Name="User Collection Incremental Warning" Category="11" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="98" Name="User Collection Incremental Error" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="99" Name="User Collection Direct Membership Rule Count" Category="11" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="100" Name="Deployment Empty Collection" Category="21" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="101" Name="Deployment to Root Collection" Category="21" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="102" Name="Active Alerts" Category="18" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="103" Name="Alert Subscription Count" Category="18" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="104" Name="Alert Subscription" Category="18" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="105" Name="Device List - Non Client" Category="24" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="106" Name="Device List - Active Status" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="107" Name="Device List - Blocked" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="108" Name="Device List - Approved" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="109" Name="Device List - Obsolete" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="110" Name="Device List - Windows XP" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="111" Name="Device List - WIndows XP x64" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="112" Name="Device List - WIndows Vista" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="113" Name="Device List - Windows 7" Category="24" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="114" Name="Device List - Windows 2003" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="115" Name="Device List - Windows 2008" Category="24" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="116" Name="Device List - Windows 2008 R2" Category="24" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="117" Name="Device List - Windows Server 2012" Category="24" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="118" Name="Client Version Lower Site Server" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="119" Name="Endpoint Protection - Unmanaged" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="120" Name="Endpoint Protection - To Be Installed" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="121" Name="Endpoint Protection - Install with Error" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="122" Name="Endpoint Protection - Pending Reboot" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="123" Name="Endpoint Protection - Infection Status Error" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="124" Name="Endpoint Protection - Infection Status Pending" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="125" Name="Endpoint Protection - Infection Status Unknown" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="126" Name="Endpoint Protection - Policy Status Error" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="127" Name="Endpoint Protection - Product Status Service Not Started" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="128" Name="Endpoint Protection - Product Status Pending Full Scan" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="129" Name="Endpoint Protection - Product Status Pending reboot" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="130" Name="Endpoint Protection - Product Status Pending manual steps" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="131" Name="Endpoint Protection - Product Status AV Signature Out to Date" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="132" Name="Endpoint Protection - Product Status AS Signature Out to Date" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="133" Name="Endpoint Protection - Product Status Missing quick scan" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="134" Name="Endpoint Protection - Product Status Missing full scan" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="135" Name="Endpoint Protection - Product Status Cleaning in progress" Category="24" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="136" Name="Endpoint Protection - Product Status non-genuine windows" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="137" Name="Endpoint Protection - Product Status expired" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="138" Name="Endpoint Protection - Product Status offline scan required" Category="24" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="139" Name="Client Settings - Deployments" Category="9" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="140" Name="Client Settings - Use New Software Center" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="141" Name="Client Settings - Client Cache Size" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="142" Name="Client Settings - Policy Request Schedule (Higher)" Category="9" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="143" Name="Client Settings - Policy Request Schedule (Lower)" Category="9" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="144" Name="Client Settings - User Policy" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="145" Name="Client Settings - Reboot Logoff Notification Countdown Duration (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="146" Name="Client Settings - Reboot Logoff Notification Countdown Duration (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="147" Name="Client Settings - Reboot Logoff Notification Final Countdown (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="148" Name="Client Settings - Reboot Logoff Notification Final Countdown (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="149" Name="Client Settings - Hardware Inventory" Category="9" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="150" Name="Client Settings - Hardware Inventory Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="151" Name="Client Settings - Hardware Inventory Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="152" Name="Client Settings - Software Inventory" Category="9" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="153" Name="Client Settings - Software Inventory Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="154" Name="Client Settings - Software Inventory Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="155" Name="Client Settings - Software Reevaluation (Higher)" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="156" Name="Client Settings - Software Reevaluation (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="157" Name="Client Settings - Software Updates" Category="9" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="158" Name="Client Settings - Software Update Scan Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="159" Name="Client Settings - Software Update Scan Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="160" Name="Client Settings - Software Update Reevaluation Schedule (Higher)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="161" Name="Client Settings - Software Update Reevaluation Schedule (Lower)" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="162" Name="Client Settings - Software Update Reevaluation and Scan Schedule" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="163" Name="Client Settings - Endpoint Protection" Category="9" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="164" Name="Maintenance Task - Backup SMS Site Server" Category="4" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="165" Name="Maintenance Task - Rebuild Indexes" Category="4" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="166" Name="Boundary Group - Site System Count" Category="13" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="167" Name="Boundary Group - Boundary Count" Category="13" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="168" Name="Boundary Group - Fallback DP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="169" Name="Boundary Group - Fallback DP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="170" Name="Boundary Group - Fallback MP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="171" Name="Boundary Group - Fallback MP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="172" Name="Boundary Group - Fallback SMP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="173" Name="Boundary Group - Fallback SMP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="174" Name="Boundary Group - Fallback SUP Relationship (Higher)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="175" Name="Boundary Group - Fallback SUP Relationship (Lower)" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="176" Name="Endpoint Protection - Malware Detected" Category="14" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="177" Name="Endpoint Protection - Antimalware Policy Deployment Count" Category="14" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="178" Name="Endpoint Protection - Antimalware Policy Limit CPU" Category="14" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="179" Name="Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Higher)" Category="14" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="180" Name="Endpoint Protection - Antimalware Policy Delete Quarantined Files Schedule (Lower)" Category="14" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="181" Name="Endpoint Protection - Firewall Policy Deployment Count" Category="14" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="182" Name="Endpoint Protection - Firewall Policy Settings" Category="14" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="183" Name="Software Metering - Auto Create Rules" Category="15" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="184" Name="Software Metering - Disabled Rules" Category="15" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="185" Name="Boot Images - F8" Category="16" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="186" Name="Boot Images - Default Boot Image Usage" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="187" Name="Boot Images - Boot Image Usage" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="188" Name="Boot Images - PXE Architecture Count" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="189" Name="Boot Images - Default Boot Image Binary Delta Replication" Category="16" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="190" Name="Boot Images - Default Boot Image Drivers" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="191" Name="Boot Images - Binary Delta Replication" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="192" Name="Boot Images - ADK Version" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="193" Name="Software Update - Summarization (Higher)" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="194" Name="Software Update - Summarization (Lower)" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="195" Name="Software Update - Superseded" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="196" Name="Software Update - Expired" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="197" Name="Software Update - Missing Content" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="198" Name="Software Update - Content not Deployed" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="199" Name="Software Update Group - Deployments" Category="17" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="200" Name="Software Update Group - Warning Count" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="201" Name="Software Update Group - Error Count" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="202" Name="Software Update Group - Member Count" Category="17" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="203" Name="Software Update Group - Expired Updates" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="204" Name="Software Update Group - Superseded Updates" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="205" Name="Software Update Group - Missing Content" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="206" Name="Software Update Group - Content not Deployed" Category="17" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="207" Name="Software Update Deployment" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="208" Name="Software Update Deployment - Root Collection" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="209" Name="Software Update Deployment - State Message" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="210" Name="Software Update - ADR Deployment" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="211" Name="Software Update - ADR Last Run Error" Category="17" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="212" Name="Software Update - ADR Last Run Date and Time" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="213" Name="Software Update - ADR Deployment Count" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="214" Name="Software Update - ADR Root Collection" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="215" Name="Software Update - ADR Schedule (Higher)" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="216" Name="Software Update - ADR Schedule (Lower)" Category="17" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="217" Name="Software Update - ADR No Schedule" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="218" Name="Software Update - ADR State Message" Category="17" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="219" Name="Software Update - ADR Alert" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="220" Name="Software Update - ADR Alert Schedule (Higher)" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="221" Name="Software Update - ADR Alert Schedule (Lower)" Category="17" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="222" Name="Hierarchy Settings - Auto Upgrade Client" Category="2" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="223" Name="Hierarchy Settings - Auto Upgrade Client Schedule (Higher)" Category="2" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="224" Name="Hierarchy Settings - Auto Upgrade Client Schedule (Lower)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="225" Name="Hierarchy Settings - Email Notification" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="226" Name="Hierarchy Settings - Email Notification Account" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="227" Name="Hierarchy Settings - Email Notification Security" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="228" Name="Active Directory Forests - Publishing Enabled" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="229" Name="Active Directory Forests - Last Discovery Error (Discovery - Access Denied)" Category="10" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="230" Name="Active Directory Forests - Last Discovery Error (Discovery - Failed)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="231" Name="Active Directory Forests - Last Discovery Error (Publishing - Failed)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="232" Name="Active Directory Forests - Last Discovery Error (Publishing - Unknown)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="233" Name="Active Directory Forests - Last Discovery Schedule" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="234" Name="Database Replication Status (Failed)" Category="19" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="235" Name="Database Replication Status (Degraded)" Category="19" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="236" Name="Database Replication Status (Unknown)" Category="19" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="237" Name="Database Replication Status - Site1 To Site2 Global Sync" Category="19" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="238" Name="Database Replication Status - Site2 To Site1 Global Sync" Category="19" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="239" Name="Database Replication Status - Enforce Enhanced Hash Algorithm" Category="19" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="240" Name="Database Replication Status - Link Schedule (Higher)" Category="19" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="241" Name="Database Replication Status - Link Schedule (Lower)" Category="19" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="242" Name="Status Summarization - Application Deployment 1st Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="243" Name="Status Summarization - Application Deployment 1st Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="244" Name="Status Summarization - Application Deployment 2nd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="245" Name="Status Summarization - Application Deployment 2nd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="246" Name="Status Summarization - Application Deployment 3rd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="247" Name="Status Summarization - Application Deployment 3rd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="248" Name="Status Summarization - Application Statistics 1st Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="249" Name="Status Summarization - Application Statistics 1st Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="250" Name="Status Summarization - Application Statistics 2nd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="251" Name="Status Summarization - Application Statistics 2nd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="252" Name="Status Summarization - Application Statistics 3rd Interval (Higher)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="253" Name="Status Summarization - Application Statistics 3rd Interval (Lower)" Category="5" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="254" Name="Account - Admin (RBAC)" Category="8" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="255" Name="Account - Service Account" Category="8" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="256" Name="Account - Full Admin Warning" Category="8" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="257" Name="Account - Full Admin Error" Category="8" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="258" Name="Account - Group Membership" Category="8" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="259" Name="CPU Usage - Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="260" Name="CPU Usage - Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="261" Name="Short file name creation" Category="1" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="262" Name="SCCM Installation on Root Drive" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="263" Name="Distribution Point - Drive Free Space Error" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="264" Name="Distribution Point - Drive Free Space Warning" Category="12" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="265" Name="Distribution Point - Group Membership Count" Category="12" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="266" Name="Distribution Point - Boundary Group Count" Category="12" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="267" Name="Distribution Point - Multicast" Category="12" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="268" Name="Distribution Point - PXE Password" Category="12" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="269" Name="Distribution Point - Responding to PXE" Category="12" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="270" Name="Distribution Point - PXE Unknown Machines" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="271" Name="Distribution Point - Content Evaluation" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="272" Name="Distribution Point - Content Evaluation Schedule (Higher)" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="273" Name="Distribution Point - Content Evaluation Schedule (Lower)" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="274" Name="Distribution Point - Content Evaluation Priority" Category="12" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="275" Name="Distribution Status - Default Boot Image" Category="20" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="276" Name="Distribution Status - Targeted Count" Category="20" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="277" Name="Distribution Status - Errors" Category="20" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="278" Name="Application - Hidden" Category="22" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="279" Name="Application - Devices with Failure (Error)" Category="22" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="280" Name="Application - Devices with Failure (Warning)" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="281" Name="Application - Users with Failure (Error)" Category="22" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="282" Name="Application - Users with Failure (Warning)" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="283" Name="Application - not used" Category="22" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="284" Name="Application - used by not deployed TS" Category="22" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="285" Name="NO_SMS_ON_DRIVE.SMS on SQL Drive" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="286" Name="Application - DT Folder does not exist" Category="22" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="287" Name="Application - DT allow User Interaction" Category="22" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="288" Name="Distribution Point Content - Not on DP Group" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="289" Name="Distribution Point Content - Not on All DPs" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="290" Name="Packages - Source Path does not exist" Category="23" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="291" Name="Packages - Source Path Local" Category="23" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="292" Name="Packages - Deployment Count not used by TS" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="293" Name="Packages - Deployment Count used by not deployed TS" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="294" Name="Operating System - Source File Exist" Category="16" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="295" Name="Operating System - Used by TS" Category="16" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="296" Name="Operating System Installer - Source Exist" Category="16" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="297" Name="Operating System Installer - Used by TS" Category="16" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="298" Name="Task Sequence - Enabled" Category="16" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="299" Name="Task Sequence - Deployment Count" Category="16" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="300" Name="Task Sequence - Reboot to WinPE" Category="16" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="301" Name="Task Sequence - Boot Image" Category="16" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="302" Name="Task Sequence - Content Distributed" Category="16" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="303" Name="Task Sequence - Content Distributed with Error" Category="16" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="304" Name="Inbox - Count (Error)" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="305" Name="Inbox - Count (Warning)" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="306" Name="Driver Package" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="307" Name="Component Status - Summarization" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="308" Name="Component Message" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="309" Name="Heartbeat Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="310" Name="Forest Discovery Schedule (Higher)" Category="10" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="311" Name="SQL Server 2016 SP1" Category="3" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="312" Name="WSUS Windows Internal Database" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="313" Name="NO_SMS_ON_DRIVE.SMS on SystemDrive" Category="2" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="314" Name="Multiple Software Update Point (WSUS) using same SQL Server" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="315" Name="Pending Approval Request" Category="2" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="316" Name="Hierarchy Settings - Auto Upgrade Client Excluded specified clients from update" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="317" Name="Hierarchy Settings - Auto Upgrade Client Exclude Servers" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="318" Name="Hierarchy Settings - Auto Upgrade Client Automatically distribute client installation package" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="319" Name="Software Update - Windows 10 Express Updates" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="320" Name="Software Update - WSUS Cleanup" Category="2" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="321" Name="Software Update - Synchronisation Alert" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="322" Name="Site Hierarchy - Conflicting Client Record" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="323" Name="Site Hierarchy - Client Approval Method - Manual" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="324" Name="Site Hierarchy - Client Approval Method - Automatically all" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="325" Name="Site Hierarchy - Script authors require approver" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="326" Name="Site Hierarchy - Clients prefer to use management point specified in boundary group" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="327" Name="ADK Version" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="328" Name="MDT Version" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="329" Name="SCCM Services on SCCM Servers" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="330" Name="Collection (Total) Incremental Warning" Category="11" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="331" Name="Collection (Total) Incremental Error" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="332" Name="Distribution Status - InProgress Warning" Category="20" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="333" Name="Distribution Status - InProgress Error" Category="20" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="334" Name="Ping Response Time Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="335" Name="Ping Response Time Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="336" Name="Ping Drop Percentace Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="337" Name="Ping Drop Percentace Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="338" Name="Application - Number of DT" Category="22" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="339" Name="Intune Subscription" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="340" Name="IP Subnet Boundary" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
+    <Rule ID="341" Name="Device Collection Schedule Too Often" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="342" Name="User Collection Schedule Too Often" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="343" Name="Boundary without GroupCount" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="344" Name="Free Disk Space - Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="345" Name="Free Disk Space - Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="346" Name="Total Site Server RAM Memory" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="347" Name="Total Site Server CPU" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="348" Name="Total Remote Server RAM Memory" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="349" Name="Total Remote Server CPU" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="350" Name="Empty Folder" Category="2" Classification="WARNING" Criticality="Low" Enabled="True" />
+    <Rule ID="351" Name="Deployment Errors - Warning" Category="21" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="352" Name="Deployment Errors - Error" Category="21" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="353" Name="Task Sequence advertise to Unknown Computers for only SCCM Clients" Category="21" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="354" Name="Baseline - not deployed" Category="21" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="355" Name="Baseline - disabled" Category="25" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="356" Name="Baseline - hidden" Category="25" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="357" Name="Baseline - failures warning" Category="25" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="358" Name="Baseline - failures error" Category="25" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="359" Name="Baseline - non-compliance warning" Category="25" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="360" Name="Baseline - non-compliance error" Category="25" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="361" Name="Baseline - evaluation Schedule Too Often" Category="21" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="362" Name="Account - Group Membership - Unable to collect" Category="8" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="363" Name="Component Message - Errors" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="364" Name="IIS - httpRuntime executionTimeout" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="365" Name="IIS - httpRuntime maxRequestLength" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="366" Name="IIS - Log Folder - Location" Category="2" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="367" Name="IIS - Log Folder - Old Items Warning" Category="2" Classification="WARNING" Criticality="High" Enabled="True" />
+    <Rule ID="368" Name="IIS - Log Folder - Old Items Error" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="369" Name="IIS - WSUS Administration - MaxBandwidth" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="370" Name="IIS - WSUS Administration - ConnectionTimeout" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="371" Name="IIS - WSUS Administration - MaxConnections" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="372" Name="IIS - WSUS Administration - AppPool - CPU Reset Interval" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="373" Name="IIS - WSUS Administration - AppPool - Pinging Enabled" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="374" Name="IIS - WSUS Administration - AppPool - Recycle Private Memory" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="375" Name="IIS - WSUS Administration - AppPool - Pool Queue Length" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="376" Name="IIS - WSUS Administration - AppPool - Rapid Fail Protection" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="377" Name="IIS - WSUS Administration - AppPool - Periodic Restart Time" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="378" Name="IIS - WSUS Administration - AppPool - Periodic Restart Requests" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="379" Name="Packages - Binary Delta Replication" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="380" Name="Packages - Copy to a Package Share" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="381" Name="Ping - Unable to ping computer" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="382" Name="Boot Images - Copy to a Package Share" Category="16" Classification="WARNING" Criticality="Medium" Enabled="True" />
+    <Rule ID="383" Name="Hirarchy Updates" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="384" Name="Device Collection - invalid Schedule" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="385" Name="User Collection - invalid Schedule" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="386" Name="Windows Features - DP" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="387" Name="Windows Features - MP" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="388" Name="Software Update - Packages - Binary Delta Replication" Category="17" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="389" Name="Software Update - Packages - Copy to a Package Share" Category="17" Classification="Warning" Criticality="Medium" Enabled="True" />
 </Rules>

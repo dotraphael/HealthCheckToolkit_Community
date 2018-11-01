@@ -49,6 +49,8 @@
     <Message id="1046" module="SCCM" name="Successfully created ZIP file {0}" />
     <Message id="1047" module="SCCM" name="Getting File information ('{0}') for '{1}'" />
     <Message id="1048" module="SCCM" name="Getting '{0}' information for '{1}'" />
-    <Message id="1049" module="SCCM" name="Getting Ping information for '{0}' sample '{1}' of '{2}'" />
+    <Message id="1049" module="SCCM" name="xxGetting Ping information for '{0}' sample '{1}' of '{2}'" />
     <Message id="1050" module="SCCM" name="An Error has occurred while trying to get the group membership. Try adjusting 'ADPageSize' default value to a higher value. Error Message: '{0}'" />
+    <Message id="1051" module="SCCM" name="Server '{0}' generated Error. Error Message: '{1}'" />
+    <Message id="1052" module="SCCM" name="'{0}' '{1}'" />
 </Messages>
