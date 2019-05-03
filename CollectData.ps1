@@ -52,7 +52,19 @@
         Update: 10/09/2018 (v1.2)
         Update: 28/09/2018 (v1.3)
         Update: 01/11/2018 (v1.4)
-        LastUpdate: 01/11/2018 (v1.4)
+        Update: 03/05/2019 (v1.5)
+             - updated Test-CEUrl when list of servers are empty
+             - updated support for 1810 as latest SCCM version (LatestSCCMBuildVersion and LatestWhatsNew)
+             - fixed rule 182 when no firewall rules were defines
+             - fixed rule 300 when non-default classes were added to a Task Sequence
+             - fixed rules 35,36,37,256,257,258 when collecting data
+             - fixed rules 222,223,224,316,317,318 when collecing data
+             - fixed rules 308, 363 when collecting data
+             - fixed rules 372,373,374,375,376,377,378 when collecting data
+             - updated Export-CEXMLFile to export empty files and fixed issue when not exporting some files
+             - updated minimum sql server version to 2012 SP3
+             - updated null validation (ie. $null -eq xx instead xx -eq $null)
+        LastUpdate: 03/05/2019 (v1.5)
 
         Test:
             CM1702 Primary site installed on a WS2012R2
@@ -60,6 +72,7 @@
             CM1710 Primary site installed on a WS2016
             CM1802 Primary site installed on a WS2016
             CM1806 Primary site installed on a WS2016
+            CM1810 Primary site installed on a WS2016
 
         Requirements: 
             SCCM Console must be installed and connected to the SCCM infrastructure to be able to run the tool
@@ -132,10 +145,13 @@ function Remove-CEVariable {
 function Export-CEXMLFile {
     param (
         [Parameter(Position=1, Mandatory=$true)][string]$VariableName,
-        [switch]$ClearVariable = $false
+        [switch]$ClearVariable = $false,
+		[switch]$ForceExport = $false
     )
     $VarInfo = Get-Variable $VariableName -ErrorAction SilentlyContinue
-    if ($VarInfo -eq $null) {
+    if ($null -eq $VarInfo) {
+        Write-CELog -logtype "WARNING" -logmessage "Exporting $($VariableName) ignored as it is empty"
+    } elseif (($null -eq $VarInfo.Value) -and ($ForceExport -eq $false)) {
         Write-CELog -logtype "WARNING" -logmessage "Exporting $($VariableName) ignored as it is empty"
     } else {
         Write-CELog -logtype "INFO" -logmessage "Exporting $($VarInfo.Name)"
@@ -180,105 +196,106 @@ function Test-CEUrl {
         [int]$CommentIDError,
         [int]$MessageIDError,
         [int]$CommentIDException,
-        [switch]$UserCredentials
+        [bool]$UserCredentials
     )
     $RuleIDInfo = (Get-Variable "RuleID$($RuleID)" -ErrorAction SilentlyContinue).Value
-
-    $ListOfServers | ForEach-Object {
-        $item = $_
-        $servername = $_.NetworkOSPath -replace '\\', ''
-        if ($ServerType.ToLower() -eq 'mplist') {
-            $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
-            $MPProtocol = 'HTTP'
-            if ($_.sslState -in (1,3)) {
-                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
-                $MPProtocol = 'HTTPS'
-            }
-            $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mplist"
-        } elseif ($servertype.tolower() -eq 'mpcert') {
-            $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
-            $MPProtocol = 'HTTP'
-            if ($_.sslState -in (1,3)) {
-                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
-                $MPProtocol = 'HTTPS'
-            }
-            $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mpcert"
-        } elseif ($servertype.tolower() -eq 'sitesigncert') {
-            $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
-            $MPProtocol = 'HTTP'
-            if ($_.sslState -in (1,3)) {
-                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
-                $MPProtocol = 'HTTPS'
-            }
-            $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?SITESIGNCERT"
-        } elseif ($servertype.tolower() -eq 'appcatalogwebservice') {
-            $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'ServicePort' }).Value
-            $ServiceName = ($_.Props | Where-Object {$_.PropertyName -eq 'ServiceName' }).Value1
-            $HTTPProtocol = 'HTTP'
-            if ($_.sslState -in (1,3)) {
-                $HTTPProtocol = 'HTTPS'
-            }
-            $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)/ApplicationOfferService.svc"
-        } elseif ($servertype.tolower() -eq 'appcatalogwebsite') {
-            $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalPort' }).Value
-            $ServiceName = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalPath' }).Value1
-            if ([string]::IsNullOrEmpty($ServiceName)) {
-                $ServiceName = 'CMApplicationCatalog'
-            }
-
-            $HTTPProtocol = 'HTTP'
-            if ($_.sslState -in (1,3)) {
-                $HTTPProtocol = 'HTTPS'
-                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'PortalSslPort' }).Value
-            }
-            $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)"
-        } elseif ($servertype.tolower() -eq 'wsussimpleauth') {
-            $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISPort' }).Value
-            $HTTPProtocol = 'HTTP'
-            if ($_.sslState -in (1,3)) {
-                $HTTPProtocol = 'HTTPS'
-                $HTTPPort = ($_.Props | Where-Object {$_.PropertyName -eq 'WSUSIISSSLPort' }).Value
-            }
-            $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
-        } elseif ($servertype.tolower() -eq 'ssrsreporturi') {
-            $RootFolder = ($_.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
-            $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
-            $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
-            $url = "$($ReportsURI)/$($RootFolder)"
-        } elseif ($servertype.tolower() -eq 'ssrsreportserveruri') {
-            $RootFolder = ($_.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
-            $ReportsURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
-            $ReportServerURI = ($_.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
-            $url = "$($ReportServerURI)/$($RootFolder)"
-        } else {
-            throw 'Invalid Server Type information'
-        }
-        Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @($servertype, $servername))
-        $Code = {
-            Param (
-                [string]$url,
-                [string]$servername,
-                [switch]$UserCredentials
-            )
-            try {
-                if ($UserCredentials) {
-                    $WebRequest = Invoke-WebRequest -Uri $url -UseDefaultCredentials -UseBasicParsing
-                } else {
-                    $WebRequest = Invoke-WebRequest -Uri $url -UseBasicParsing
+    if ($null -ne $ListOfServers) {
+        $ListOfServers | ForEach-Object {
+            $item = $_
+            $servername = $item.NetworkOSPath -replace '\\', ''
+            if ($ServerType.ToLower() -eq 'mplist') {
+                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
+                $MPProtocol = 'HTTP'
+                if ($item.sslState -in (1,3)) {
+                    $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
+                    $MPProtocol = 'HTTPS'
                 }
-                New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url;'Error'='' }
-            } catch {
-                New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url;'Error'=$_ }
-            }
-        }
-        $returnInfo = Execute-CERunSpace -code $Code -ParameterList @($url, $servername, $UserCredentials)
+                $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mplist"
+            } elseif ($servertype.tolower() -eq 'mpcert') {
+                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
+                $MPProtocol = 'HTTP'
+                if ($item.sslState -in (1,3)) {
+                    $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
+                    $MPProtocol = 'HTTPS'
+                }
+                $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?mpcert"
+            } elseif ($servertype.tolower() -eq 'sitesigncert') {
+                $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISPortsList'}).Value1
+                $MPProtocol = 'HTTP'
+                if ($item.sslState -in (1,3)) {
+                    $MPPort = (($MPComponentList | Where-Object {$_.SiteCode -eq $item.SiteCode}).Props | Where-Object {$_.PropertyName -eq 'IISSSLPortsList'}).Value1
+                    $MPProtocol = 'HTTPS'
+                }
+                $url = "$($MPProtocol)://$($servername):$($MPPort)/sms_mp/.sms_aut?SITESIGNCERT"
+            } elseif ($servertype.tolower() -eq 'appcatalogwebservice') {
+                $HTTPPort = ($item.Props | Where-Object {$_.PropertyName -eq 'ServicePort' }).Value
+                $ServiceName = ($item.Props | Where-Object {$_.PropertyName -eq 'ServiceName' }).Value1
+                $HTTPProtocol = 'HTTP'
+                if ($item.sslState -in (1,3)) {
+                    $HTTPProtocol = 'HTTPS'
+                }
+                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)/ApplicationOfferService.svc"
+            } elseif ($servertype.tolower() -eq 'appcatalogwebsite') {
+                $HTTPPort = ($item.Props | Where-Object {$_.PropertyName -eq 'PortalPort' }).Value
+                $ServiceName = ($item.Props | Where-Object {$_.PropertyName -eq 'PortalPath' }).Value1
+                if ([string]::IsNullOrEmpty($ServiceName)) {
+                    $ServiceName = 'CMApplicationCatalog'
+                }
 
-        $returninfo | where-object {$_.Success -eq $true} | foreach-object {
-            $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDError; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleID; 'ServerName' = $_.ServerName; 'StatusCode' = $_.StatusCode; 'URL' = $_.URL }
-        }
-        $returninfo | where-object {$_.Success -eq $false} | foreach-object {
-            Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
-            $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDException; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleID; 'ServerName' = $_.ServerName; 'StatusCode' = 'Unable to connect'; 'URL' = $_.URL }
+                $HTTPProtocol = 'HTTP'
+                if ($item.sslState -in (1,3)) {
+                    $HTTPProtocol = 'HTTPS'
+                    $HTTPPort = ($item.Props | Where-Object {$_.PropertyName -eq 'PortalSslPort' }).Value
+                }
+                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/$($ServiceName)"
+            } elseif ($servertype.tolower() -eq 'wsussimpleauth') {
+                $HTTPPort = ($item.Props | Where-Object {$_.PropertyName -eq 'WSUSIISPort' }).Value
+                $HTTPProtocol = 'HTTP'
+                if ($item.sslState -in (1,3)) {
+                    $HTTPProtocol = 'HTTPS'
+                    $HTTPPort = ($item.Props | Where-Object {$_.PropertyName -eq 'WSUSIISSSLPort' }).Value
+                }
+                $url = "$($HTTPProtocol)://$($servername):$($HTTPPort)/SimpleAuthWebService/SimpleAuth.asmx"
+            } elseif ($servertype.tolower() -eq 'ssrsreporturi') {
+                $RootFolder = ($item.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
+                $ReportsURI = ($item.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
+                $ReportServerURI = ($item.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
+                $url = "$($ReportsURI)/$($RootFolder)"
+            } elseif ($servertype.tolower() -eq 'ssrsreportserveruri') {
+                $RootFolder = ($item.Props | Where-Object {$_.PropertyName -eq 'RootFolder' }).Value2
+                $ReportsURI = ($item.Props | Where-Object {$_.PropertyName -eq 'ReportManagerUri' }).Value2
+                $ReportServerURI = ($item.Props | Where-Object {$_.PropertyName -eq 'ReportServerUri' }).Value2
+                $url = "$($ReportServerURI)/$($RootFolder)"
+            } else {
+                throw 'Invalid Server Type information'
+            }
+            Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @($servertype, $servername))
+            $Code = {
+                Param (
+                    [string]$url,
+                    [string]$servername,
+                    [bool]$UserCredentials
+                )
+                try {
+                    if ($UserCredentials) {
+                        $WebRequest = Invoke-WebRequest -Uri $url -UseDefaultCredentials -UseBasicParsing
+                    } else {
+                        $WebRequest = Invoke-WebRequest -Uri $url -UseBasicParsing
+                    }
+                    New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url;'Error'='' }
+                } catch {
+                    New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'StatusCode' = "$($WebRequest.StatusCode)"; 'URL' = $url;'Error'=$_ }
+                }
+            }
+            $returnInfo = Execute-CERunSpace -code $Code -ParameterList @($url, $servername, $UserCredentials)
+
+            $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDError; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleID; 'ServerName' = $_.ServerName; 'StatusCode' = $_.StatusCode; 'URL' = $_.URL }
+            }
+            $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                $Script:ServerHTTPAccessInformation += New-Object -TypeName PSObject -Property @{'CommentIDError' = $CommentIDException; 'MessageIDError' = $MessageIDError; 'RuleInfo' = $RuleID; 'ServerName' = $_.ServerName; 'StatusCode' = 'Unable to connect'; 'URL' = $_.URL }
+            }
         }
     }
 }
@@ -291,7 +308,7 @@ function Get-CEHealthCheckCategory {
     )
 
     $return = ($Script:HealthCheckCategoryData.Categories.Category | Where-Object {($_.id -eq $MessageID) -and ($_.module -eq 'SCCM')}).Name
-    if ($return -eq $null) {
+    if ($null -eq $return) {
         $Return = "Unknown Category with message ID $($MessageID)"
     }
     return $return
@@ -306,7 +323,7 @@ function Get-CEHealthCheckIssue {
     )
 
     $return = ($Script:HealthCheckIssuesData.Issues.issue | Where-Object {($_.id -eq $MessageID) -and ($_.module -eq 'SCCM')}).Name
-    if ($return -eq $null) {
+    if ($null -eq $return) {
         $Return = "Unknown Issue with message ID $($MessageID)"
     } else {
         if (($MessageParameters.Count -gt 0) -and ($return.IndexOf('{0}') -ge 0)) {
@@ -331,7 +348,7 @@ function Get-CEHealthCheckRecommendation {
     )
 
     $return = ($Script:HealthCheckRecommendationData.Recommendations.Recommendation | Where-Object {($_.id -eq $MessageID) -and ($_.module -eq 'SCCM')}).Name
-    if ($return -eq $null) {
+    if ($null -eq $return) {
         $Return = "Unknown Recommendation with message ID $($MessageID)"
     } else {
         if (($MessageParameters.Count -gt 0) -and ($return.IndexOf('{0}') -ge 0)) {
@@ -355,7 +372,7 @@ function Get-CEHealthCheckMessage {
     )
 
     $return = ($Script:HealthCheckMessageData.Messages.Message | Where-Object {($_.id -eq $MessageID) -and ($_.module -eq 'SCCM')}).Name
-    if ($return -eq $null) {
+    if ($null -eq $return) {
         $Return = "Unknown message with message ID $($MessageID)"
     } else {
         if (($MessageParameters.Count -gt 0) -and ($return.IndexOf('{0}') -ge 0)) {
@@ -393,7 +410,7 @@ function Set-CEHealthCheckDefaultValue {
         [Parameter(Position=2, Mandatory=$true)]$ValueNonExist
     )
     $ValueDetails = $Script:HealthCheckDefaultValueData.DefaultValues.DefaultValue | Where-Object {$_.Name -eq $ValueName}
-    if ($ValueDetails -eq $null) {
+    if ($null -eq $ValueDetails) {
         New-Variable -Name $ValueName -Value $ValueNonExist -Force -Option AllScope -Scope Script
         #Write-CELog -LogType 'INFO' -LogMessage "$ValueName is now set to default value of $((Get-Variable $ValueName).Value)"
     } else {
@@ -425,7 +442,7 @@ function Set-CEHealthCheckRulesOverride {
     $objRule = new-object HealthCheckClasses.HealthCheck.CEClassRules($RuleID, $RuleName, $DefaultCategory, $DefaultClassification, $Criticality, $true)
     $ShowMsg = $false
 
-    if ($ValueDetails -ne $null) {
+    if ($null -ne $ValueDetails) {
         if ($ValueDetails -is [array]) {
             $ValueDetails = $ValueDetails[0]
         }
@@ -538,13 +555,14 @@ function Get-CEAccountMembership {
 
     $AccountList | ForEach-Object {
         $itemAccount = $_
+        #todo: need to get information about @ user
         if ($itemAccount.$PropertyName.Indexof('@') -lt 0) {
             Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('group membership for', "$($itemAccount.$PropertyName)"))
             $ReturnInfo = @()
             try {
                 $arrAccountInfo = $itemAccount.$PropertyName.Split('\')
                 $domainNC = ($domains | Where-Object {$_.Properties.cn -eq $arrAccountInfo[0]}).Properties.ncname
-                if ($domainNC -eq $null) {
+                if ($null -eq $domainNC) {
                     $domainNC = ($domains | Where-Object {$_.Properties.dnsroot -eq $arrAccountInfo[0]}).Properties.ncname
                 }
                 $objSearcher = New-Object System.DirectoryServices.DirectorySearcher("LDAP://$($domainNC)")
@@ -553,19 +571,20 @@ function Get-CEAccountMembership {
                 $objSearcher.SearchScope = "Subtree"
                 $objSearcher.Filter = "(sAMAccountName=$($arrAccountInfo[1]))"
                 $objSearchReturn = $objSearcher.FindOne()
-                if ($objSearchReturn -eq $null) {
+                if ($null -eq $objSearchReturn) {
                     $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 0; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
                 } else {
+                    $objDN = $null
                     $objDN = $objSearchReturn.Properties.distinguishedname
-                    if ($objDN -eq $null) {
+                    if ($null -eq $objDN) {
                         $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 0; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
                     } else {
                         $groupName = $null
                         ([adsisearcher]"(distinguishedname=$($objDN[0]))").FindOne().Properties.memberof | foreach-object {
                             $groupName = $_
                         }
-                        if ($groupName -eq $null) {
-                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 0; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
+                        if ($null -eq $groupName) {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'DomainNetbios' = $arrAccountInfo[0]; 'DomainDN' = $domainNC; 'AccountName' = $itemAccount.$PropertyName; 'isServiceAccount' = $false; 'AccountDN' = $itemAccount.$PropertyName; 'GroupDN' = ''; 'GroupName' = ''; 'ConnectionType' = ''; 'Error'='' }
                         } else {
                             $group = [adsi]"LDAP://$($groupName)"
                             $Group.Member | ForEach-Object {
@@ -651,9 +670,9 @@ try {
     Set-CEHealthCheckDefaultValue -ValueName 'ProcessListSamplesWaitSeconds' -ValueNonExist 10
     Set-CEHealthCheckDefaultValue -ValueName 'MaxCollectionMembershipDirectRule' -ValueNonExist 500
     Set-CEHealthCheckDefaultValue -ValueName 'MinimumSCCMBuildVersion' -ValueNonExist 8498 #1702
-    Set-CEHealthCheckDefaultValue -ValueName 'LatestSCCMBuildVersion' -ValueNonExist 8692 #1806 list can be found https://buildnumbers.wordpress.com/sccm/
-    Set-CEHealthCheckDefaultValue -ValueName 'LatestWhatsNew' -ValueNonExist 'https://docs.microsoft.com/en-us/sccm/core/plan-design/changes/whats-new-in-version-1806'
-    Set-CEHealthCheckDefaultValue -ValueName 'MinimumSQLVersion' -ValueNonExist '11.0.0.0'
+    Set-CEHealthCheckDefaultValue -ValueName 'LatestSCCMBuildVersion' -ValueNonExist 8790 #1902 list can be found https://buildnumbers.wordpress.com/sccm/
+    Set-CEHealthCheckDefaultValue -ValueName 'LatestWhatsNew' -ValueNonExist 'https://docs.microsoft.com/en-us/sccm/core/plan-design/changes/whats-new-in-version-1902'
+    Set-CEHealthCheckDefaultValue -ValueName 'MinimumSQLVersion' -ValueNonExist '11.0.6020.0'
     Set-CEHealthCheckDefaultValue -ValueName 'MinimumSQLMemory' -ValueNonExist '8192'
     Set-CEHealthCheckDefaultValue -ValueName 'MinSCCMModuleVersion' -ValueNonExist 5.1702
     Set-CEHealthCheckDefaultValue -ValueName 'MinSCCMVersion' -ValueNonExist '1702'
@@ -1204,8 +1223,8 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 385 -RuleName 'User Collection - invalid Schedule' -DefaultCategory 11 -Criticality 'High' -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 386 -RuleName 'Windows Features - DP' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 387 -RuleName 'Windows Features - MP' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
-    Set-CEHealthCheckRulesOverride -RuleID 388 -RuleName 'Software Update - Packages - Binary Delta Replication' -DefaultCategory 17 -Criticality 'Warning' -DefaultClassification 'Medium'
-    Set-CEHealthCheckRulesOverride -RuleID 389 -RuleName 'Software Update - Packages - Copy to a Package Share' -DefaultCategory 17 -Criticality 'Warning' -DefaultClassification 'Medium'
+    Set-CEHealthCheckRulesOverride -RuleID 388 -RuleName 'Software Update - Packages - Binary Delta Replication' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 389 -RuleName 'Software Update - Packages - Copy to a Package Share' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
     #endregion
 
     #region Script default variables
@@ -1304,10 +1323,10 @@ try {
         #region Import PowerShell Modules
         $CurrentDriveLetter = (get-location).Drive.Name
         $ModulePath = $env:SMS_ADMIN_UI_PATH
-        if ($ModulePath -eq $null) {
+        if ($null -eq $ModulePath) {
 	        $ModulePath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment").SMS_ADMIN_UI_PATH
         }
-        if ($ModulePath -eq $null) {
+        if ($null -eq $ModulePath) {
             Write-CELog -logtype "Error" -logmessage (Get-CEHealthCheckMessage 1011)
             return
         }
@@ -1483,7 +1502,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 $RemoteComputer = ($item.NetworkOSPath.Replace('\\',''))
                 $CloudDP = $false
                 $CloudDPInfo = $item | Where-Object {($_.NetworkOSPath -eq $item.NetworkOSPath) -and ($_.RoleName -eq 'SMS Distribution Point')}
-                if ($CloudDPInfo -ne $null) {
+                if ($null -ne $CloudDPInfo) {
                     if ($CloudDPInfo.Props | Where-Object {($_.PropertyName -eq 'IsCloud') -and ($_.Value -eq 1)}) {
                         $CloudDP = $true
                     }
@@ -1682,7 +1701,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            Test-CEUrl -ListOfServers $AppCatalogWebSiteList -ServerType 'appcatalogwebsite' -RuleID 19 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
+            Test-CEUrl -ListOfServers $AppCatalogWebSiteList -UserCredentials $true -ServerType 'appcatalogwebsite' -RuleID 19 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
         #endregion
 
@@ -1770,7 +1789,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            Test-CEUrl -ListOfServers $SRSList -ServerType 'ssrsreporturi' -RuleID 23 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
+            Test-CEUrl -ListOfServers $SRSList -UserCredentials $true -ServerType 'ssrsreporturi' -RuleID 23 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
         #endregion
 
@@ -1780,7 +1799,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
-            Test-CEUrl -ListOfServers $SRSList -ServerType 'ssrsreportserveruri' -RuleID 24 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
+            Test-CEUrl -ListOfServers $SRSList -UserCredentials $true -ServerType 'ssrsreportserveruri' -RuleID 24 -CommentIDError 5004 -MessageIDError 3128 -CommentIDException 5004
         }
         #endregion
 
@@ -2068,8 +2087,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 }
 
                 Export-CEXMLFile -VariableName 'GroupMembershipList' -ClearVariable
-                Export-CEXMLFile -VariableName 'GroupMembershipErrorList' -ClearVariable
-                Export-CEXMLFile -VariableName 'AccountDoesNotExist' -ClearVariable
+                Export-CEXMLFile -VariableName 'GroupMembershipErrorList' -ClearVariable -ForceExport
+                Export-CEXMLFile -VariableName 'AccountDoesNotExist' -ClearVariable -ForceExport
             }
         }
         #endregion
@@ -2173,6 +2192,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 if ($ModuleSCCMVersionBuild -lt 1702) { #using if for the sccm version because lower than 1702 does not have the cmdlet
                     $CollectionDeviceFilterCount = ($DeviceCollectionList | ForEach-Object {
                         $item = $_
+                        #cade
                         $MembershipRules = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "SELECT * FROM SMS_Collection WHERE Name = '$($item.Name)'")
                         $MembershipRules.Get()
 
@@ -2469,7 +2489,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwareDetectedList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                if ($EndpointProtectionList -ne $null) {
+                if ($null -ne $EndpointProtectionList) {
                     $MalwareDetectedList = Get-CMDetectedMalware -CollectionId 'SMS00001'
                     Export-CEXMLFile -VariableName 'MalwareDetectedList' -ClearVariable
                 }
@@ -2488,7 +2508,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwarePolicyList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                if ($EndpointProtectionList -ne $null) {
+                if ($null -ne $EndpointProtectionList) {
                     $MalwarePolicyList = Get-CMAntimalwarePolicy
                     Export-CEXMLFile -VariableName 'MalwarePolicyList'
                 }
@@ -2507,7 +2527,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwarePolicySettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                if ($EndpointProtectionList -ne $null) {
+                if ($null -ne $EndpointProtectionList) {
                     $MalwarePolicyList | ForEach-Object {
                         $item = $_
                         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1031 @('Getting', 'Malware Policy', $item.Name))
@@ -2803,7 +2823,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     }
                 }
                 Export-CEXMLFile -VariableName 'AutoUpgradeConfigs' -ClearVariable
-                Export-CEXMLFile -VariableName 'AutoUpgradeConfigsError' -ClearVariable
+                Export-CEXMLFile -VariableName 'AutoUpgradeConfigsError' -ClearVariable -ForceExport
             }
         }
         #endregion
@@ -2907,6 +2927,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 New-Variable -Name "DatabaseReplicationScheduleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 if (($SiteList | Measure-Object).Count -gt 1) {
+                    #cade
                     $DatabaseReplicationScheduleList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -class SMS_RcmSqlControl)
                     Export-CEXMLFile -VariableName 'DatabaseReplicationScheduleList' -ClearVariable
                 }
@@ -2977,7 +2998,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         For ($i=1; $i -le $NumberOfSamples; $i++) {
                             try {
                                 $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_PerfFormattedData_PerfProc_Process" -ErrorAction SilentlyContinue) | Where-Object { ($_.name -inotmatch '_total|idle') }
-                                if ($itemReturn -ne $null) {
+                                if ($null -ne $itemReturn) {
                                     $itemReturn | foreach-object {
                                         $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $RemoteComputer; 'ConnectionType' = '' ; 'Error'= ''; 'Caption' = $_.Caption; 'CreatingProcessID' = $_.CreatingProcessID; 'Description' = $_.Description; 'ElapsedTime' = $_.ElapsedTime; 'Frequency_Object' = $_.Frequency_Object; 'Frequency_PerfTime' = $_.Frequency_PerfTime; 'Frequency_Sys100NS' = $_.Frequency_Sys100NS; 'HandleCount' = $_.HandleCount; 'IDProcess' = $_.IDProcess; 'IODataOperationsPerSec' = $_.IODataOperationsPerSec; 'IOOtherOperationsPerSec' = $_.IOOtherOperationsPerSec; 'IOReadBytesPerSec' = $_.IOReadBytesPerSec; 'IOReadOperationsPerSec' = $_.IOReadOperationsPerSec; 'IOWriteBytesPerSec' = $_.IOWriteBytesPerSec; 'IOWriteOperationsPerSec' = $_.IOWriteOperationsPerSec; 'IODataBytesPerSec' = $_.IODataBytesPerSec; 'IOOtherBytesPerSec' = $_.IOOtherBytesPerSec; 'Name' = $_.Name; 'PageFaultsPerSec' = $_.PageFaultsPerSec; 'PageFileBytes' = $_.PageFileBytes; 'PageFileBytesPeak' = $_.PageFileBytesPeak; 'PercentPrivilegedTime' = $_.PercentPrivilegedTime; 'PercentProcessorTime' = $_.PercentProcessorTime; 'PercentUserTime' = $_.PercentUserTime; 'PoolNonpagedBytes' = $_.PoolNonpagedBytes; 'PoolPagedBytes' = $_.PoolPagedBytes; 'PriorityBase' = $_.PriorityBase; 'PrivateBytes' = $_.PrivateBytes; 'ThreadCount' = $_.ThreadCount; 'Timestamp_Object' = $_.Timestamp_Object; 'Timestamp_PerfTime' = $_.Timestamp_PerfTime; 'Timestamp_Sys100NS' = $_.Timestamp_Sys100NS; 'VirtualBytes' = $_.VirtualBytes; 'VirtualBytesPeak' = $_.VirtualBytesPeak; 'WorkingSet' = $_.WorkingSet; 'WorkingSetPeak' = $_.WorkingSetPeak; }
                                     }
@@ -3065,7 +3086,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         try {
                             $Reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $RemoteComputer)
                             $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\FileSystem")
-                            if ($RegKey -eq $Null) {
+                            if ($null -eq $RegKey) {
                                 $RegKey= $Reg.OpenSubKey("SYSTEM\CurrentControlSet\Control\File System") #2008 format
                             }
 
@@ -3146,6 +3167,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BoundarySiteSystemsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
+                #cade
                 $BoundarySiteSystemsList = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_BoundaryGroupSiteSystems where Flags = 0")
                 Export-CEXMLFile -VariableName 'BoundarySiteSystemsList' -ClearVariable
             }
@@ -3163,6 +3185,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionPointDriveInfo" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
+                #cade
                 $DistributionPointDriveInfo = (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query "select * from SMS_DistributionPointDriveInfo")
                 Export-CEXMLFile -VariableName 'DistributionPointDriveInfo' -ClearVariable
             }
@@ -3243,6 +3266,9 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
                     $DeploymentTypeList | Where-Object {$_.AppModelName -eq $item.ModelName} | ForEach-Object {
                         $subItem = $_
+                        #todo: needneed to ignore more?
+                        #query for all technology
+                        #SELECT distinct SDMPackageDigest.value('declare namespace p1="http://schemas.microsoft.com/SystemCenterConfigurationManager/2009/AppMgmtDigest"; (p1:AppMgmtDigest/p1:DeploymentType/p1:Installer/@Technology)[1]','nvarchar(max)')AS DTTechnology FROM[v_ConfigurationItems] WHERE CIType_ID = 21 
                         if (@('AndroidDeepLink', 'iOSDeepLink', 'WinPhone8Deeplink', 'Deeplink', 'WebApp') -contains $subitem.Technology)  {
                             #ignoring
                         } else {
@@ -3320,6 +3346,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPGroupContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
+                #cade
                 $DPGroupContentList += (Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'select * from SMS_DPGroupContentInfo')
                 Export-CEXMLFile -VariableName 'DPGroupContentList' -ClearVariable
             }
@@ -3354,7 +3381,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PathPkgInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
-                $PackageList | ForEach-Object {
+                $PackageList | where-object {$_.PkgSourceFlag -eq 2} | ForEach-Object {
                     $Item = $_
                     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1048 @('Package', $item.Name))
                     $code = {
@@ -3504,12 +3531,16 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 if ($ModuleSCCMVersionBuild -gt 1702) {
                     $TaskSequenceList | ForEach-Object {
                         $item = $_
-
-                        Get-CMTaskSequenceStepReboot -TaskSequenceID $item.PackageID | Where-Object {($_.Enabled -eq $true) -and ($_.Target -eq 'WinPE')} | ForEach-Object {
-                            $subItem = $_
-                            $TaskSequenceRebootOptions += New-Object -TypeName PSObject -Property @{'Name' = $item.Name; 'StepName' = $subItem.Name}
-                        }
-                    }
+						
+						try {
+							Get-CMTaskSequenceStepReboot -TaskSequenceID $item.PackageID | Where-Object {($_.Enabled -eq $true) -and ($_.Target -eq 'WinPE')} | ForEach-Object {
+								$subItem = $_
+								$TaskSequenceRebootOptions += New-Object -TypeName PSObject -Property @{'Name' = $item.Name; 'StepName' = $subItem.Name}
+							}
+						} catch {
+							Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_)
+						}
+					}
                 }
                 Export-CEXMLFile -VariableName 'TaskSequenceRebootOptions' -ClearVariable
             }
@@ -3638,7 +3669,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                     $ComponentStatusMessageListError += New-Object -TypeName PSObject -Property @{'Error' = $true; }
                 }
                 Export-CEXMLFile -VariableName 'ComponentStatusMessageList'
-                Export-CEXMLFile -VariableName 'ComponentStatusMessageListError' -ClearVariable
+                Export-CEXMLFile -VariableName 'ComponentStatusMessageListError' -ClearVariable -ForceExport
             }
         }
         #endregion
@@ -4013,7 +4044,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         try {
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "win32_Service" -ErrorAction SilentlyContinue) 
                     
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemReturn | ForEach-Object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer; 'AcceptPause' = $_.AcceptPause; 'AcceptStop' = $_.AcceptStop; 'Caption' = $_.Caption; 'CheckPoint' = $_.CheckPoint; 'CreationClassName' = $_.CreationClassName; 'DelayedAutoStart' = $_.DelayedAutoStart; 'Description'=$_.Description;'DesktopInteract'=$_.DesktopInteract;'DisplayName'=$_.DisplayName;'ErrorControl'=$_.ErrorControl;'ExitCode'=$_.ExitCode;'InstallDate'=$_.InstallDate;'Name'=$_.Name;'PathName'=$_.PathName;'ProcessId'=$_.ProcessId;'ServiceSpecificExitCode'=$_.ServiceSpecificExitCode;'ServiceType'=$_.ServiceType;'Started'=$_.Started;'StartMode'=$_.StartMode;'StartName'=$_.StartName;'State'=$_.State;'Status'=$_.Status;'SystemCreationClassName'=$_.SystemCreationClassName;'SystemName'=$_.SystemName;'TagId'=$_.TagId;'WaitHint'=$_.WaitHint; }
                                 }
@@ -4083,7 +4114,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $returnInfo = @()
                         for($i=1; $i -le $MaxPingCount; $i++) {
                             $pingreturn = Test-Connection -ComputerName $CN -Count 1 -ErrorAction SilentlyContinue
-                            if ($pingreturn -eq $null) {
+                            if ($null -eq $pingreturn) {
                                 $returnInfo += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.__SERVER; 'Destination' = $CN; 'IPV4' = ''; 'ResponseTime' = 4000; 'Success' = $false  }
                             } else {
                                 $returnInfo += New-Object -TypeName PSObject -Property @{'Source' = $pingreturn.__SERVER; 'Destination' = $pingreturn.Address; 'IPV4' = $pingreturn.IPV4Address.IPAddressToString; 'ResponseTime' = $pingreturn.ResponseTime; 'Success' = $true  }
@@ -4135,6 +4166,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "Boundary" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
+                #xx test
                 $Boundary = Get-CMBoundary
                 Export-CEXMLFile -VariableName 'Boundary' -ClearVariable
             }
@@ -4167,7 +4199,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $returnInfo = @()
                         try {
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_LogicalDisk" -ErrorAction SilentlyContinue)
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemReturn | ForEach-Object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer; 'Access'=$_.Access; 'Availability'=$_.Availability; 'BlockSize'=$_.BlockSize; 'Caption'=$_.Caption; 'Compressed'=$_.Compressed; 'ConfigManagerErrorCode'=$_.ConfigManagerErrorCode; 'ConfigManagerUserConfig'=$_.ConfigManagerUserConfig; 'CreationClassName'=$_.CreationClassName; 'Description'=$_.Description; 'DeviceID'=$_.DeviceID; 'DriveType'=$_.DriveType; 'ErrorCleared'=$_.ErrorCleared; 'ErrorDescription'=$_.ErrorDescription; 'ErrorMethodology'=$_.ErrorMethodology; 'FileSystem'=$_.FileSystem; 'FreeSpace'=$_.FreeSpace; 'InstallDate'=$_.InstallDate; 'LastErrorCode'=$_.LastErrorCode; 'MaximumComponentLength'=$_.MaximumComponentLength; 'MediaType'=$_.MediaType; 'Name'=$_.Name; 'NumberOfBlocks'=$_.NumberOfBlocks; 'PNPDeviceID'=$_.PNPDeviceID; 'PowerManagementSupported'=$_.PowerManagementSupported; 'ProviderName'=$_.ProviderName; 'Purpose'=$_.Purpose; 'QuotasDisabled'=$_.QuotasDisabled; 'QuotasIncomplete'=$_.QuotasIncomplete; 'QuotasRebuilding'=$_.QuotasRebuilding; 'Size'=$_.Size; 'Status'=$_.Status; 'StatusInfo'=$_.StatusInfo; 'SupportsDiskQuotas'=$_.SupportsDiskQuotas; 'SupportsFileBasedCompression'=$_.SupportsFileBasedCompression; 'SystemCreationClassName'=$_.SystemCreationClassName; 'SystemName'=$_.SystemName; 'VolumeDirty'=$_.VolumeDirty; 'VolumeName'=$_.VolumeName; 'VolumeSerialNumber'=$_.VolumeSerialNumber; }
                                 }
@@ -4228,7 +4260,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         $returnInfo = @()
                         try {
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_ComputerSystem" -ErrorAction SilentlyContinue)
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemReturn | ForEach-Object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer;  'AdminPasswordStatus' = $_.AdminPasswordStatus; 'AutomaticManagedPagefile' = $_.AutomaticManagedPagefile; 'AutomaticResetBootOption' = $_.AutomaticResetBootOption; 'AutomaticResetCapability' = $_.AutomaticResetCapability; 'BootOptionOnLimit' = $_.BootOptionOnLimit; 'BootOptionOnWatchDog' = $_.BootOptionOnWatchDog; 'BootROMSupported' = $_.BootROMSupported; 'BootupState' = $_.BootupState; 'Caption' = $_.Caption; 'ChassisBootupState' = $_.ChassisBootupState; 'ChassisSKUNumber' = $_.ChassisSKUNumber; 'CreationClassName' = $_.CreationClassName; 'CurrentTimeZone' = $_.CurrentTimeZone; 'DaylightInEffect' = $_.DaylightInEffect; 'Description' = $_.Description; 'DNSHostName' = $_.DNSHostName; 'Domain' = $_.Domain; 'DomainRole' = $_.DomainRole; 'EnableDaylightSavingsTime' = $_.EnableDaylightSavingsTime; 'FrontPanelResetStatus' = $_.FrontPanelResetStatus; 'HypervisorPresent' = $_.HypervisorPresent; 'InfraredSupported' = $_.InfraredSupported; 'InstallDate' = $_.InstallDate; 'KeyboardPasswordStatus' = $_.KeyboardPasswordStatus; 'LastLoadInfo' = $_.LastLoadInfo; 'Manufacturer' = $_.Manufacturer; 'Model' = $_.Model; 'Name' = $_.Name; 'NameFormat' = $_.NameFormat; 'NetworkServerModeEnabled' = $_.NetworkServerModeEnabled; 'NumberOfLogicalProcessors' = $_.NumberOfLogicalProcessors; 'NumberOfProcessors' = $_.NumberOfProcessors; 'PartOfDomain' = $_.PartOfDomain; 'PauseAfterReset' = $_.PauseAfterReset; 'PCSystemType' = $_.PCSystemType; 'PCSystemTypeEx' = $_.PCSystemTypeEx; 'PowerManagementSupported' = $_.PowerManagementSupported; 'PowerOnPasswordStatus' = $_.PowerOnPasswordStatus; 'PowerState' = $_.PowerState; 'PowerSupplyState' = $_.PowerSupplyState; 'PrimaryOwnerContact' = $_.PrimaryOwnerContact; 'PrimaryOwnerName' = $_.PrimaryOwnerName; 'ResetCapability' = $_.ResetCapability; 'ResetCount' = $_.ResetCount; 'ResetLimit' = $_.ResetLimit; 'Status' = $_.Status; 'SystemFamily' = $_.SystemFamily; 'SystemSKUNumber' = $_.SystemSKUNumber; 'SystemStartupDelay' = $_.SystemStartupDelay; 'SystemStartupSetting' = $_.SystemStartupSetting; 'SystemType' = $_.SystemType; 'ThermalState' = $_.ThermalState; 'TotalPhysicalMemory' = $_.TotalPhysicalMemory; 'UserName' = $_.UserName; 'WakeUpType' = $_.WakeUpType; 'Workgroup' = $_.Workgroup; }
                                 }
@@ -4419,7 +4451,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         try {
                             $returnInfo = @()
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\MicrosoftIISv2" -class "IIsWebServerSetting" -ErrorAction SilentlyContinue)
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemreturn | foreach-object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'AccessExecute' = $_.AccessExecute; 'AccessFlags' = $_.AccessFlags; 'AccessNoRemoteExecute' = $_.AccessNoRemoteExecute; 'AccessNoRemoteRead' = $_.AccessNoRemoteRead; 'AccessNoRemoteScript' = $_.AccessNoRemoteScript; 'AccessNoRemoteWrite' = $_.AccessNoRemoteWrite; 'AccessRead' = $_.AccessRead; 'AccessScript' = $_.AccessScript; 'AccessSource' = $_.AccessSource; 'AccessSSL' = $_.AccessSSL; 'AccessSSL128' = $_.AccessSSL128; 'AccessSSLFlags' = $_.AccessSSLFlags; 'AccessSSLMapCert' = $_.AccessSSLMapCert; 'AccessSSLNegotiateCert' = $_.AccessSSLNegotiateCert; 'AccessSSLRequireCert' = $_.AccessSSLRequireCert; 'AccessWrite' = $_.AccessWrite; 'AllowKeepAlive' = $_.AllowKeepAlive; 'AllowPathInfoForScriptMappings' = $_.AllowPathInfoForScriptMappings; 'AnonymousPasswordSync' = $_.AnonymousPasswordSync; 'AnonymousUserName' = $_.AnonymousUserName; 'AnonymousUserPass' = $_.AnonymousUserPass; 'AppAllowClientDebug' = $_.AppAllowClientDebug; 'AppAllowDebugging' = $_.AppAllowDebugging; 'AppFriendlyName' = $_.AppFriendlyName; 'AppOopRecoverLimit' = $_.AppOopRecoverLimit; 'AppPoolId' = $_.AppPoolId; 'AppWamClsid' = $_.AppWamClsid; 'AspAllowOutOfProcComponents' = $_.AspAllowOutOfProcComponents; 'AspAllowSessionState' = $_.AspAllowSessionState; 'AspAppServiceFlags' = $_.AspAppServiceFlags; 'AspBufferingLimit' = $_.AspBufferingLimit; 'AspBufferingOn' = $_.AspBufferingOn; 'AspCalcLineNumber' = $_.AspCalcLineNumber; 'AspCodepage' = $_.AspCodepage; 'AspDiskTemplateCacheDirectory' = $_.AspDiskTemplateCacheDirectory; 'AspEnableApplicationRestart' = $_.AspEnableApplicationRestart; 'AspEnableAspHtmlFallback' = $_.AspEnableAspHtmlFallback; 'AspEnableChunkedEncoding' = $_.AspEnableChunkedEncoding; 'AspEnableParentPaths' = $_.AspEnableParentPaths; 'AspEnableSxs' = $_.AspEnableSxs; 'AspEnableTracker' = $_.AspEnableTracker; 'AspEnableTypelibCache' = $_.AspEnableTypelibCache; 'AspErrorsToNTLog' = $_.AspErrorsToNTLog; 'AspExceptionCatchEnable' = $_.AspExceptionCatchEnable; 'AspExecuteInMTA' = $_.AspExecuteInMTA; 'AspKeepSessionIDSecure' = $_.AspKeepSessionIDSecure; 'AspLCID' = $_.AspLCID; 'AspLogErrorRequests' = $_.AspLogErrorRequests; 'AspMaxDiskTemplateCacheFiles' = $_.AspMaxDiskTemplateCacheFiles; 'AspMaxRequestEntityAllowed' = $_.AspMaxRequestEntityAllowed; 'AspPartitionID' = $_.AspPartitionID; 'AspProcessorThreadMax' = $_.AspProcessorThreadMax; 'AspQueueConnectionTestTime' = $_.AspQueueConnectionTestTime; 'AspQueueTimeout' = $_.AspQueueTimeout; 'AspRequestQueueMax' = $_.AspRequestQueueMax; 'AspRunOnEndAnonymously' = $_.AspRunOnEndAnonymously; 'AspScriptEngineCacheMax' = $_.AspScriptEngineCacheMax; 'AspScriptErrorMessage' = $_.AspScriptErrorMessage; 'AspScriptErrorSentToBrowser' = $_.AspScriptErrorSentToBrowser; 'AspScriptFileCacheSize' = $_.AspScriptFileCacheSize; 'AspScriptLanguage' = $_.AspScriptLanguage; 'AspScriptTimeout' = $_.AspScriptTimeout; 'AspSessionMax' = $_.AspSessionMax; 'AspSessionTimeout' = $_.AspSessionTimeout; 'AspSxsName' = $_.AspSxsName; 'AspTrackThreadingModel' = $_.AspTrackThreadingModel; 'AspUsePartition' = $_.AspUsePartition; 'AuthAdvNotifyDisable' = $_.AuthAdvNotifyDisable; 'AuthAnonymous' = $_.AuthAnonymous; 'AuthBasic' = $_.AuthBasic; 'AuthChangeDisable' = $_.AuthChangeDisable; 'AuthChangeUnsecure' = $_.AuthChangeUnsecure; 'AuthFlags' = $_.AuthFlags; 'AuthMD5' = $_.AuthMD5; 'AuthNTLM' = $_.AuthNTLM; 'AuthPassport' = $_.AuthPassport; 'AuthPersistence' = $_.AuthPersistence; 'AuthPersistSingleRequest' = $_.AuthPersistSingleRequest; 'AzEnable' = $_.AzEnable; 'AzImpersonationLevel' = $_.AzImpersonationLevel; 'AzScopeName' = $_.AzScopeName; 'AzStoreName' = $_.AzStoreName; 'CacheControlCustom' = $_.CacheControlCustom; 'CacheControlMaxAge' = $_.CacheControlMaxAge; 'CacheControlNoCache' = $_.CacheControlNoCache; 'CacheISAPI' = $_.CacheISAPI; 'CertCheckMode' = $_.CertCheckMode; 'CGITimeout' = $_.CGITimeout; 'ClusterEnabled' = $_.ClusterEnabled; 'ConnectionTimeout' = $_.ConnectionTimeout; 'ContentIndexed' = $_.ContentIndexed; 'CPUResetInterval' = $_.CPUResetInterval; 'CreateCGIWithNewConsole' = $_.CreateCGIWithNewConsole; 'CreateProcessAsUser' = $_.CreateProcessAsUser; 'DefaultDoc' = $_.DefaultDoc; 'DefaultDocFooter' = $_.DefaultDocFooter; 'DefaultLogonDomain' = $_.DefaultLogonDomain; 'DirBrowseFlags' = $_.DirBrowseFlags; 'DirBrowseShowDate' = $_.DirBrowseShowDate; 'DirBrowseShowExtension' = $_.DirBrowseShowExtension; 'DirBrowseShowLongDate' = $_.DirBrowseShowLongDate; 'DirBrowseShowSize' = $_.DirBrowseShowSize; 'DirBrowseShowTime' = $_.DirBrowseShowTime; 'DisableSocketPooling' = $_.DisableSocketPooling; 'DoDynamicCompression' = $_.DoDynamicCompression; 'DontLog' = $_.DontLog; 'DoStaticCompression' = $_.DoStaticCompression; 'EnableDefaultDoc' = $_.EnableDefaultDoc; 'EnableDirBrowsing' = $_.EnableDirBrowsing; 'EnableDocFooter' = $_.EnableDocFooter; 'EnableReverseDns' = $_.EnableReverseDns; 'FrontPageWeb' = $_.FrontPageWeb; 'HttpExpires' = $_.HttpExpires; 'LogExtFileBytesRecv' = $_.LogExtFileBytesRecv; 'LogExtFileBytesSent' = $_.LogExtFileBytesSent; 'LogExtFileClientIp' = $_.LogExtFileClientIp; 'LogExtFileComputerName' = $_.LogExtFileComputerName; 'LogExtFileCookie' = $_.LogExtFileCookie; 'LogExtFileDate' = $_.LogExtFileDate; 'LogExtFileFlags' = $_.LogExtFileFlags; 'LogExtFileHost' = $_.LogExtFileHost; 'LogExtFileHttpStatus' = $_.LogExtFileHttpStatus; 'LogExtFileMethod' = $_.LogExtFileMethod; 'LogExtFileProtocolVersion' = $_.LogExtFileProtocolVersion; 'LogExtFileReferer' = $_.LogExtFileReferer; 'LogExtFileServerIp' = $_.LogExtFileServerIp; 'LogExtFileServerPort' = $_.LogExtFileServerPort; 'LogExtFileSiteName' = $_.LogExtFileSiteName; 'LogExtFileTime' = $_.LogExtFileTime; 'LogExtFileTimeTaken' = $_.LogExtFileTimeTaken; 'LogExtFileUriQuery' = $_.LogExtFileUriQuery; 'LogExtFileUriStem' = $_.LogExtFileUriStem; 'LogExtFileUserAgent' = $_.LogExtFileUserAgent; 'LogExtFileUserName' = $_.LogExtFileUserName; 'LogExtFileWin32Status' = $_.LogExtFileWin32Status; 'LogFileDirectory' = $_.LogFileDirectory; 'LogFileLocaltimeRollover' = $_.LogFileLocaltimeRollover; 'LogFilePeriod' = $_.LogFilePeriod; 'LogFileTruncateSize' = $_.LogFileTruncateSize; 'LogOdbcDataSource' = $_.LogOdbcDataSource; 'LogOdbcPassword' = $_.LogOdbcPassword; 'LogOdbcTableName' = $_.LogOdbcTableName; 'LogOdbcUserName' = $_.LogOdbcUserName; 'LogonMethod' = $_.LogonMethod; 'LogPluginClsid' = $_.LogPluginClsid; 'LogType' = $_.LogType; 'MaxBandwidth' = $_.MaxBandwidth; 'MaxBandwidthBlocked' = $_.MaxBandwidthBlocked; 'MaxConnections' = $_.MaxConnections; 'MaxEndpointConnections' = $_.MaxEndpointConnections; 'MaxRequestEntityAllowed' = $_.MaxRequestEntityAllowed; 'Name' = $_.Name; 'NotDeletable' = $_.NotDeletable; 'NTAuthenticationProviders' = $_.NTAuthenticationProviders; 'PasswordCacheTTL' = $_.PasswordCacheTTL; 'PasswordChangeFlags' = $_.PasswordChangeFlags; 'PasswordExpirePrenotifyDays' = $_.PasswordExpirePrenotifyDays; 'PoolIdcTimeout' = $_.PoolIdcTimeout; 'ProcessNTCRIfLoggedOn' = $_.ProcessNTCRIfLoggedOn; 'Realm' = $_.Realm; 'RedirectHeaders' = $_.RedirectHeaders; 'RevocationFreshnessTime' = $_.RevocationFreshnessTime; 'RevocationURLRetrievalTimeout' = $_.RevocationURLRetrievalTimeout; 'ServerAutoStart' = $_.ServerAutoStart; 'ServerCommand' = $_.ServerCommand; 'ServerComment' = $_.ServerComment; 'ServerListenBacklog' = $_.ServerListenBacklog; 'ServerListenTimeout' = $_.ServerListenTimeout; 'ServerSize' = $_.ServerSize; 'ShutdownTimeLimit' = $_.ShutdownTimeLimit; 'SSIExecDisable' = $_.SSIExecDisable; 'SSLStoreName' = $_.SSLStoreName; 'UploadReadAheadSize' = $_.UploadReadAheadSize; 'UseDigestSSP' = $_.UseDigestSSP; 'Win32Error' = $_.Win32Error;  }
                                 }
@@ -4466,7 +4498,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IISLogs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
-                $IISWebServerSetting | Where-Object {($_.LogType -eq 1) -and ($_.LogFileDirectory -ne $null)} | ForEach-Object {
+                $IISWebServerSetting | Where-Object {($_.LogType -eq 1) -and ($null -ne $_.LogFileDirectory)} | ForEach-Object {
                     $item = $_ 
                     $RemoteComputer = $item.ServerName
 
@@ -4555,7 +4587,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         try {
                             $returnInfo = @()
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\MicrosoftIISv2" -class "IisWebVirtualDirSetting" -ErrorAction SilentlyContinue)
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemreturn | foreach-object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'AccessExecute' = $_.AccessExecute; 'AccessFlags' = $_.AccessFlags; 'AccessNoRemoteExecute' = $_.AccessNoRemoteExecute; 'AccessNoRemoteRead' = $_.AccessNoRemoteRead; 'AccessNoRemoteScript' = $_.AccessNoRemoteScript; 'AccessNoRemoteWrite' = $_.AccessNoRemoteWrite; 'AccessRead' = $_.AccessRead; 'AccessScript' = $_.AccessScript; 'AccessSource' = $_.AccessSource; 'AccessSSL' = $_.AccessSSL; 'AccessSSL128' = $_.AccessSSL128; 'AccessSSLFlags' = $_.AccessSSLFlags; 'AccessSSLMapCert' = $_.AccessSSLMapCert; 'AccessSSLNegotiateCert' = $_.AccessSSLNegotiateCert; 'AccessSSLRequireCert' = $_.AccessSSLRequireCert; 'AccessWrite' = $_.AccessWrite; 'AnonymousPasswordSync' = $_.AnonymousPasswordSync; 'AnonymousUserName' = $_.AnonymousUserName; 'AnonymousUserPass' = $_.AnonymousUserPass; 'AppAllowClientDebug' = $_.AppAllowClientDebug; 'AppAllowDebugging' = $_.AppAllowDebugging; 'AppFriendlyName' = $_.AppFriendlyName; 'AppOopRecoverLimit' = $_.AppOopRecoverLimit; 'AppPoolId' = $_.AppPoolId; 'AppWamClsid' = $_.AppWamClsid; 'AspAllowOutOfProcComponents' = $_.AspAllowOutOfProcComponents; 'AspAllowSessionState' = $_.AspAllowSessionState; 'AspAppServiceFlags' = $_.AspAppServiceFlags; 'AspBufferingLimit' = $_.AspBufferingLimit; 'AspBufferingOn' = $_.AspBufferingOn; 'AspCalcLineNumber' = $_.AspCalcLineNumber; 'AspCodepage' = $_.AspCodepage; 'AspDiskTemplateCacheDirectory' = $_.AspDiskTemplateCacheDirectory; 'AspEnableApplicationRestart' = $_.AspEnableApplicationRestart; 'AspEnableAspHtmlFallback' = $_.AspEnableAspHtmlFallback; 'AspEnableChunkedEncoding' = $_.AspEnableChunkedEncoding; 'AspEnableParentPaths' = $_.AspEnableParentPaths; 'AspEnableSxs' = $_.AspEnableSxs; 'AspEnableTracker' = $_.AspEnableTracker; 'AspEnableTypelibCache' = $_.AspEnableTypelibCache; 'AspErrorsToNTLog' = $_.AspErrorsToNTLog; 'AspExceptionCatchEnable' = $_.AspExceptionCatchEnable; 'AspExecuteInMTA' = $_.AspExecuteInMTA; 'AspKeepSessionIDSecure' = $_.AspKeepSessionIDSecure; 'AspLCID' = $_.AspLCID; 'AspLogErrorRequests' = $_.AspLogErrorRequests; 'AspMaxDiskTemplateCacheFiles' = $_.AspMaxDiskTemplateCacheFiles; 'AspMaxRequestEntityAllowed' = $_.AspMaxRequestEntityAllowed; 'AspPartitionID' = $_.AspPartitionID; 'AspProcessorThreadMax' = $_.AspProcessorThreadMax; 'AspQueueConnectionTestTime' = $_.AspQueueConnectionTestTime; 'AspQueueTimeout' = $_.AspQueueTimeout; 'AspRequestQueueMax' = $_.AspRequestQueueMax; 'AspRunOnEndAnonymously' = $_.AspRunOnEndAnonymously; 'AspScriptEngineCacheMax' = $_.AspScriptEngineCacheMax; 'AspScriptErrorMessage' = $_.AspScriptErrorMessage; 'AspScriptErrorSentToBrowser' = $_.AspScriptErrorSentToBrowser; 'AspScriptFileCacheSize' = $_.AspScriptFileCacheSize; 'AspScriptLanguage' = $_.AspScriptLanguage; 'AspScriptTimeout' = $_.AspScriptTimeout; 'AspSessionMax' = $_.AspSessionMax; 'AspSessionTimeout' = $_.AspSessionTimeout; 'AspSxsName' = $_.AspSxsName; 'AspTrackThreadingModel' = $_.AspTrackThreadingModel; 'AspUsePartition' = $_.AspUsePartition; 'AuthAnonymous' = $_.AuthAnonymous; 'AuthBasic' = $_.AuthBasic; 'AuthFlags' = $_.AuthFlags; 'AuthMD5' = $_.AuthMD5; 'AuthNTLM' = $_.AuthNTLM; 'AuthPassport' = $_.AuthPassport; 'AuthPersistence' = $_.AuthPersistence; 'AuthPersistSingleRequest' = $_.AuthPersistSingleRequest; 'AzEnable' = $_.AzEnable; 'AzImpersonationLevel' = $_.AzImpersonationLevel; 'AzScopeName' = $_.AzScopeName; 'AzStoreName' = $_.AzStoreName; 'CacheControlCustom' = $_.CacheControlCustom; 'CacheControlMaxAge' = $_.CacheControlMaxAge; 'CacheControlNoCache' = $_.CacheControlNoCache; 'CacheISAPI' = $_.CacheISAPI; 'CGITimeout' = $_.CGITimeout; 'ContentIndexed' = $_.ContentIndexed; 'CreateCGIWithNewConsole' = $_.CreateCGIWithNewConsole; 'CreateProcessAsUser' = $_.CreateProcessAsUser; 'DefaultDoc' = $_.DefaultDoc; 'DefaultDocFooter' = $_.DefaultDocFooter; 'DefaultLogonDomain' = $_.DefaultLogonDomain; 'DirBrowseFlags' = $_.DirBrowseFlags; 'DirBrowseShowDate' = $_.DirBrowseShowDate; 'DirBrowseShowExtension' = $_.DirBrowseShowExtension; 'DirBrowseShowLongDate' = $_.DirBrowseShowLongDate; 'DirBrowseShowSize' = $_.DirBrowseShowSize; 'DirBrowseShowTime' = $_.DirBrowseShowTime; 'DoDynamicCompression' = $_.DoDynamicCompression; 'DontLog' = $_.DontLog; 'DoStaticCompression' = $_.DoStaticCompression; 'EnableDefaultDoc' = $_.EnableDefaultDoc; 'EnableDirBrowsing' = $_.EnableDirBrowsing; 'EnableDocFooter' = $_.EnableDocFooter; 'EnableReverseDns' = $_.EnableReverseDns; 'FrontPageWeb' = $_.FrontPageWeb; 'HttpExpires' = $_.HttpExpires; 'HttpRedirect' = $_.HttpRedirect; 'LogonMethod' = $_.LogonMethod; 'MaxRequestEntityAllowed' = $_.MaxRequestEntityAllowed; 'Name' = $_.Name; 'PoolIdcTimeout' = $_.PoolIdcTimeout; 'Realm' = $_.Realm; 'RedirectHeaders' = $_.RedirectHeaders; 'ShutdownTimeLimit' = $_.ShutdownTimeLimit; 'SSIExecDisable' = $_.SSIExecDisable; 'UploadReadAheadSize' = $_.UploadReadAheadSize; 'UseDigestSSP' = $_.UseDigestSSP; }
                                 }
@@ -4565,8 +4597,8 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         } catch {
                             $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IisWebVirtualDirSetting'; 'Error' = $_; 'AccessExecute' = $false; 'AccessFlags' = 0; 'AccessNoRemoteExecute' = $false; 'AccessNoRemoteRead' = $false; 'AccessNoRemoteScript' = $false; 'AccessNoRemoteWrite' = $false; 'AccessRead' = $false; 'AccessScript' = $false; 'AccessSource' = $false; 'AccessSSL' = $false; 'AccessSSL128' = $false; 'AccessSSLFlags' = 0; 'AccessSSLMapCert' = $false; 'AccessSSLNegotiateCert' = $false; 'AccessSSLRequireCert' = $false; 'AccessWrite' = $false; 'AnonymousPasswordSync' = $false; 'AnonymousUserName' = ''; 'AnonymousUserPass' = ''; 'AppAllowClientDebug' = $false; 'AppAllowDebugging' = $false; 'AppFriendlyName' = ''; 'AppOopRecoverLimit' = 0; 'AppPoolId' = ''; 'AppWamClsid' = ''; 'AspAllowOutOfProcComponents' = $false; 'AspAllowSessionState' = $false; 'AspAppServiceFlags' = 0; 'AspBufferingLimit' = 0; 'AspBufferingOn' = $false; 'AspCalcLineNumber' = $false; 'AspCodepage' = 0; 'AspDiskTemplateCacheDirectory' = ''; 'AspEnableApplicationRestart' = $false; 'AspEnableAspHtmlFallback' = $false; 'AspEnableChunkedEncoding' = $false; 'AspEnableParentPaths' = $false; 'AspEnableSxs' = $false; 'AspEnableTracker' = $false; 'AspEnableTypelibCache' = $false; 'AspErrorsToNTLog' = $false; 'AspExceptionCatchEnable' = $false; 'AspExecuteInMTA' = 0; 'AspKeepSessionIDSecure' = 0; 'AspLCID' = 0; 'AspLogErrorRequests' = $false; 'AspMaxDiskTemplateCacheFiles' = 0; 'AspMaxRequestEntityAllowed' = 0; 'AspPartitionID' = ''; 'AspProcessorThreadMax' = 0; 'AspQueueConnectionTestTime' = 0; 'AspQueueTimeout' = 0; 'AspRequestQueueMax' = 0; 'AspRunOnEndAnonymously' = $false; 'AspScriptEngineCacheMax' = 0; 'AspScriptErrorMessage' = ''; 'AspScriptErrorSentToBrowser' = $false; 'AspScriptFileCacheSize' = 0; 'AspScriptLanguage' = ''; 'AspScriptTimeout' = 0; 'AspSessionMax' = 0; 'AspSessionTimeout' = 0; 'AspSxsName' = ''; 'AspTrackThreadingModel' = $false; 'AspUsePartition' = $false; 'AuthAnonymous' = $false; 'AuthBasic' = $false; 'AuthFlags' = 0; 'AuthMD5' = $false; 'AuthNTLM' = $false; 'AuthPassport' = $false; 'AuthPersistence' = 0; 'AuthPersistSingleRequest' = $false; 'AzEnable' = $false; 'AzImpersonationLevel' = 0; 'AzScopeName' = ''; 'AzStoreName' = ''; 'CacheControlCustom' = ''; 'CacheControlMaxAge' = 0; 'CacheControlNoCache' = $false; 'CacheISAPI' = $false; 'CGITimeout' = 0; 'ContentIndexed' = $false; 'CreateCGIWithNewConsole' = $false; 'CreateProcessAsUser' = $false; 'DefaultDoc' = ''; 'DefaultDocFooter' = ''; 'DefaultLogonDomain' = ''; 'DirBrowseFlags' = 0; 'DirBrowseShowDate' = $false; 'DirBrowseShowExtension' = $false; 'DirBrowseShowLongDate' = $false; 'DirBrowseShowSize' = $false; 'DirBrowseShowTime' = $false; 'DoDynamicCompression' = $false; 'DontLog' = $false; 'DoStaticCompression' = $false; 'EnableDefaultDoc' = $false; 'EnableDirBrowsing' = $false; 'EnableDocFooter' = $false; 'EnableReverseDns' = $false; 'FrontPageWeb' = $false; 'HttpExpires' = ''; 'HttpRedirect' = ''; 'LogonMethod' = 0; 'MaxRequestEntityAllowed' = 0; 'Name' = ''; 'PoolIdcTimeout' = 0; 'Realm' = ''; 'RedirectHeaders' = ''; 'ShutdownTimeLimit' = 0; 'SSIExecDisable' = $false; 'UploadReadAheadSize' = 0; 'UseDigestSSP' = $false; }
                         }
-
-                    }                        
+                        $returnInfo
+                    }
                     Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
                 }
                 While (@(Get-Job | where-object { $_.State -eq "Running" }).Count -ge 1) {  
@@ -4614,7 +4646,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         try {
                             $returnInfo = @()
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\MicrosoftIISv2" -class "IIsApplicationPoolSetting" -ErrorAction SilentlyContinue)
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemreturn | foreach-object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'AppPoolAutoStart' = $_.AppPoolAutoStart; 'AppPoolCommand' = $_.AppPoolCommand; 'AppPoolIdentityType' = $_.AppPoolIdentityType; 'AppPoolQueueLength' = $_.AppPoolQueueLength; 'AppPoolRecycleConfigChange' = $_.AppPoolRecycleConfigChange; 'AppPoolRecycleIsapiUnhealthy' = $_.AppPoolRecycleIsapiUnhealthy; 'AppPoolRecycleMemory' = $_.AppPoolRecycleMemory; 'AppPoolRecycleOnDemand' = $_.AppPoolRecycleOnDemand; 'AppPoolRecyclePrivateMemory' = $_.AppPoolRecyclePrivateMemory; 'AppPoolRecycleRequests' = $_.AppPoolRecycleRequests; 'AppPoolRecycleSchedule' = $_.AppPoolRecycleSchedule; 'AppPoolRecycleTime' = $_.AppPoolRecycleTime; 'AppPoolState' = $_.AppPoolState; 'AutoShutdownAppPoolExe' = $_.AutoShutdownAppPoolExe; 'AutoShutdownAppPoolParams' = $_.AutoShutdownAppPoolParams; 'CPUAction' = $_.CPUAction; 'CPULimit' = $_.CPULimit; 'CPUResetInterval' = $_.CPUResetInterval; 'DisallowOverlappingRotation' = $_.DisallowOverlappingRotation; 'DisallowRotationOnConfigChange' = $_.DisallowRotationOnConfigChange; 'IdleTimeout' = $_.IdleTimeout; 'LoadBalancerCapabilities' = $_.LoadBalancerCapabilities; 'LogEventOnRecycle' = $_.LogEventOnRecycle; 'LogonMethod' = $_.LogonMethod; 'MaxProcesses' = $_.MaxProcesses; 'Name' = $_.Name; 'OrphanActionExe' = $_.OrphanActionExe; 'OrphanActionParams' = $_.OrphanActionParams; 'OrphanWorkerProcess' = $_.OrphanWorkerProcess; 'PeriodicRestartMemory' = $_.PeriodicRestartMemory; 'PeriodicRestartPrivateMemory' = $_.PeriodicRestartPrivateMemory; 'PeriodicRestartRequests' = $_.PeriodicRestartRequests; 'PeriodicRestartTime' = $_.PeriodicRestartTime; 'PingingEnabled' = $_.PingingEnabled; 'PingInterval' = $_.PingInterval; 'PingResponseTime' = $_.PingResponseTime; 'RapidFailProtection' = $_.RapidFailProtection; 'RapidFailProtectionInterval' = $_.RapidFailProtectionInterval; 'RapidFailProtectionMaxCrashes' = $_.RapidFailProtectionMaxCrashes; 'ShutdownTimeLimit' = $_.ShutdownTimeLimit; 'SMPAffinitized' = $_.SMPAffinitized; 'SMPProcessorAffinityMask' = $_.SMPProcessorAffinityMask; 'StartupTimeLimit' = $_.StartupTimeLimit; 'WAMUserName' = $_.WAMUserName; 'WAMUserPass' = $_.WAMUserPass; 'Win32Error' = $_.Win32Error; }
                                 }
@@ -4624,7 +4656,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         } catch {
                             $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 2; 'ServerName' = $RemoteComputer; 'ConnectionType' = 'WMI (root\MicrosoftIISv2) IIsApplicationPoolSetting'; 'Error' = $_; 'AppPoolAutoStart' = $false; 'AppPoolCommand' = 0; 'AppPoolIdentityType' = 0; 'AppPoolQueueLength' = 0; 'AppPoolRecycleConfigChange' = $false; 'AppPoolRecycleIsapiUnhealthy' = $false; 'AppPoolRecycleMemory' = $false; 'AppPoolRecycleOnDemand' = $false; 'AppPoolRecyclePrivateMemory' = $false; 'AppPoolRecycleRequests' = $false; 'AppPoolRecycleSchedule' = $false; 'AppPoolRecycleTime' = $false; 'AppPoolState' = 0; 'AutoShutdownAppPoolExe' = ''; 'AutoShutdownAppPoolParams' = ''; 'CPUAction' = 0; 'CPULimit' = 0; 'CPUResetInterval' = 0; 'DisallowOverlappingRotation' = $false; 'DisallowRotationOnConfigChange' = $false; 'IdleTimeout' = 0; 'LoadBalancerCapabilities' = 0; 'LogEventOnRecycle' = 0; 'LogonMethod' = 0; 'MaxProcesses' = 0; 'Name' = ''; 'OrphanActionExe' = ''; 'OrphanActionParams' = ''; 'OrphanWorkerProcess' = $false; 'PeriodicRestartMemory' = 0; 'PeriodicRestartPrivateMemory' = 0; 'PeriodicRestartRequests' = 0; 'PeriodicRestartTime' = 0; 'PingingEnabled' = $false; 'PingInterval' = 0; 'PingResponseTime' = 0; 'RapidFailProtection' = $false; 'RapidFailProtectionInterval' = 0; 'RapidFailProtectionMaxCrashes' = 0; 'ShutdownTimeLimit' = 0; 'SMPAffinitized' = $false; 'SMPProcessorAffinityMask' = 0; 'StartupTimeLimit' = 0; 'WAMUserName' = ''; 'WAMUserPass' = ''; 'Win32Error' = 0; }
                         }
-
+                        $returnInfo
                     }                        
                     Start-Job -ScriptBlock $Scriptblock -ArgumentList @($RemoteComputer) | out-null
                 }
@@ -4691,7 +4723,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         try {
                             $returnInfo = @()
                             $itemReturn = (Get-WmiObject -ComputerName $RemoteComputer -namespace "root\cimv2" -class "Win32_OptionalFeature" -ErrorAction SilentlyContinue)
-                            if ($itemReturn -ne $null) {
+                            if ($null -ne $itemReturn) {
                                 $itemreturn | foreach-object {
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'Description' = $_.Description; 'InstallDate' = $_.InstallDate; 'Status' = $_.Status; 'Caption' = $_.Caption; 'Name' = $_.Name; 'InstallState' = $_.InstallState;  }
                                 }
@@ -4777,10 +4809,10 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 } finally {
     $Script:EndDateTime = get-date
     $FullScriptTimeSpan = New-TimeSpan -Start $Script:StartDateTime -End $Script:EndDateTime
-    if (($Script:StartCollectingDateTime -ne $null) -and ($Script:EndCollectingDateTime -ne $null)) {
+    if (($null -ne $Script:StartCollectingDateTime) -and ($null -ne $Script:EndCollectingDateTime)) {
         $CollectingScriptTimeSpan = New-TimeSpan -Start $Script:StartCollectingDateTime -End $Script:EndCollectingDateTime
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1052 @('Collection Data Stats', ('{0:dd} days, {0:hh} hours, {0:mm} minutes, {0:ss} seconds' -f $CollectingScriptTimeSpan)))
     }
     Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1052 @('Full Script Stats', ('{0:dd} days, {0:hh} hours, {0:mm} minutes, {0:ss} seconds' -f $FullScriptTimeSpan)))
 }
-#endregionn
+#endregion

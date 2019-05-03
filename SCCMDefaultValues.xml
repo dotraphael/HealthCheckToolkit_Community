@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <DefaultValues>
     <DefaultValue Name="ADPageSize" Type="int" value="2000" />
-    <DefaultValue Name="ExcludeServers" Type="array" value="server1fqdn,server2fqdn" />
-    <DefaultValue Name="MinimumSQLVersion" Type="string" value="11.0.0.0" />
+    <DefaultValue Name="ExcludeServers" Type="array" value="" />
+    <DefaultValue Name="MinimumSQLVersion" Type="string" value="11.0.6020.0" />
     <DefaultValue Name="MinimumSQLMemory" Type="string" value="8192" />
     <DefaultValue Name="MaximumNumberOfMPS" Type="int" value="15" />
     <DefaultValue Name="RolesThatMustBeInstalledPrimary" Type="array" value="SMS Management Point,SMS Distribution Point,SMS Fallback Status Point,SMS SRS Reporting Point,SMS Software Update Point,SMS Application Web Service,SMS Portal Web Site" />
