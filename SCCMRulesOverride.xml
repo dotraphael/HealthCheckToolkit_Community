@@ -289,7 +289,7 @@
     <Rule ID="287" Name="Application - DT allow User Interaction" Category="22" Classification="WARNING" Criticality="Low" Enabled="True" />
     <Rule ID="288" Name="Distribution Point Content - Not on DP Group" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True" />
     <Rule ID="289" Name="Distribution Point Content - Not on All DPs" Category="22" Classification="WARNING" Criticality="Medium" Enabled="True" />
-    <Rule ID="290" Name="Packages - Source Path does not exist" Category="23" Classification="ERROR" Criticality="High" Enabled="True" />
+    <Rule ID="290" Name="Packages - Source Path does not exist" Category="20" Classification="ERROR" Criticality="High" Enabled="True" />
     <Rule ID="291" Name="Packages - Source Path Local" Category="23" Classification="WARNING" Criticality="High" Enabled="True" />
     <Rule ID="292" Name="Packages - Deployment Count not used by TS" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True" />
     <Rule ID="293" Name="Packages - Deployment Count used by not deployed TS" Category="23" Classification="WARNING" Criticality="Medium" Enabled="True" />
@@ -342,7 +342,7 @@
     <Rule ID="340" Name="IP Subnet Boundary" Category="2" Classification="ERROR" Criticality="Medium" Enabled="True" />
     <Rule ID="341" Name="Device Collection Schedule Too Often" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
     <Rule ID="342" Name="User Collection Schedule Too Often" Category="11" Classification="ERROR" Criticality="High" Enabled="True" />
-    <Rule ID="343" Name="Boundary without GroupCount" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
+    <Rule ID="343" Name="Boundary without Group Count" Category="13" Classification="ERROR" Criticality="Low" Enabled="True" />
     <Rule ID="344" Name="Free Disk Space - Warning" Category="1" Classification="WARNING" Criticality="Medium" Enabled="True" />
     <Rule ID="345" Name="Free Disk Space - Error" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
     <Rule ID="346" Name="Total Site Server RAM Memory" Category="1" Classification="ERROR" Criticality="High" Enabled="True" />
@@ -389,4 +389,18 @@
     <Rule ID="387" Name="Windows Features - MP" Category="2" Classification="ERROR" Criticality="High" Enabled="True" />
     <Rule ID="388" Name="Software Update - Packages - Binary Delta Replication" Category="17" Classification="Warning" Criticality="Medium" Enabled="True" />
     <Rule ID="389" Name="Software Update - Packages - Copy to a Package Share" Category="17" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="390" Name="SQL Server Jobs Disabled" Category="3" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="391" Name="SQL Server Jobs Enabled but not scheduled" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="392" Name="SQL Server Jobs Last run status" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="393" Name="SQL Server DB CPU Waits" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="394" Name="SQL Server DB Information - Number of DB Files" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="395" Name="SQL Server DB Information - Number of Log Files" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="396" Name="SQL Server DB Information - File Size" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="397" Name="SQL Server DB Information - File Growth Size" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="398" Name="SQL Server DB Growth" Category="3" Classification="Error" Criticality="Medium" Enabled="True" />
+    <Rule ID="399" Name="Software Update Group Summary Task Schedule (Higher)" Category="17" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="400" Name="Software Update Group Summary Task Schedule (Higher)" Category="17" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="401" Name="Management Insights - Action Needed" Category="2" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="402" Name="Site Feature - Release and off" Category="2" Classification="Warning" Criticality="Medium" Enabled="True" />
+    <Rule ID="403" Name="Client Settings - Enable user policy on clients" Category="9" Classification="ERROR" Criticality="Medium" Enabled="True" />
 </Rules>

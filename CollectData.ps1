@@ -53,18 +53,8 @@
         Update: 28/09/2018 (v1.3)
         Update: 01/11/2018 (v1.4)
         Update: 03/05/2019 (v1.5)
-             - updated Test-CEUrl when list of servers are empty
-             - updated support for 1810 as latest SCCM version (LatestSCCMBuildVersion and LatestWhatsNew)
-             - fixed rule 182 when no firewall rules were defines
-             - fixed rule 300 when non-default classes were added to a Task Sequence
-             - fixed rules 35,36,37,256,257,258 when collecting data
-             - fixed rules 222,223,224,316,317,318 when collecing data
-             - fixed rules 308, 363 when collecting data
-             - fixed rules 372,373,374,375,376,377,378 when collecting data
-             - updated Export-CEXMLFile to export empty files and fixed issue when not exporting some files
-             - updated minimum sql server version to 2012 SP3
-             - updated null validation (ie. $null -eq xx instead xx -eq $null)
-        LastUpdate: 03/05/2019 (v1.5)
+        Update: 01/10/2019 (v1.6)
+        LastUpdate: 01/10/2019 (v1.6)
 
         Test:
             CM1702 Primary site installed on a WS2012R2
@@ -73,6 +63,9 @@
             CM1802 Primary site installed on a WS2016
             CM1806 Primary site installed on a WS2016
             CM1810 Primary site installed on a WS2016
+            CM1902 Primary site installed on a WS2016
+            CM1902 Primary site installed on a WS2019
+            CM1906 Primary site installed on a WS2019
 
         Requirements: 
             SCCM Console must be installed and connected to the SCCM infrastructure to be able to run the tool
@@ -98,9 +91,9 @@
 #region param
 [CmdletBinding()]param (
     [parameter(Mandatory=$true)][string]$AuthorizedSiteCodes,
-    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Message File Path given: $_"}})][string]$MessagesFilePath,
-    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Rules Override File Path given: $_"}})][string]$RulesOverrideFilePath,
-    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path $_){$true}else{Throw "Invalid Default Values Override File Path given: $_"}})][string]$DefaultValuesOverrideFilePath,
+    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path -LiteralPath $_){$true}else{Throw "Invalid Message File Path given: $_"}})][string]$MessagesFilePath,
+    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path -LiteralPath $_){$true}else{Throw "Invalid Rules Override File Path given: $_"}})][string]$RulesOverrideFilePath,
+    [parameter(Mandatory=$true)][ValidateScript({If(Test-Path -LiteralPath $_){$true}else{Throw "Invalid Default Values Override File Path given: $_"}})][string]$DefaultValuesOverrideFilePath,
     [switch]$CreateZipFiles,
     $SaveToFolder = 'C:\Temp\SCCMHealthCheck'
 )
@@ -833,6 +826,13 @@ try {
     Set-CEHealthCheckDefaultValue -ValueName 'DPFeatures' -ValueNonExist 'Internet Information Services,IIS-WebServerRole;World Wide Web Services,IIS-WebServer;Common HTTP Features, IIS-CommonHttpFeatures;Default Document,IIS-DefaultDocument;Directory Browsing,IIS-DirectoryBrowsing;HTTP Errors,IIS-HttpErrors;Static Content,IIS-StaticContent;HTTP Redirection,IIS-HttpRedirect;Health and Diagnostics,IIS-HealthAndDiagnostics;HTTP Logging,IIS-HttpLogging;Performance Features,IIS-Performance;Static Content Compression,IIS-HttpCompressionStatic;Security,IIS-Security;Request Filtering,IIS-RequestFiltering;Windows Authentication,IIS-WindowsAuthentication;Application Development Features,IIS-ApplicationDevelopment;ISAPI Extensions,IIS-ISAPIExtensions;Web Management Tools,IIS-WebServerManagementTools;IIS Management Console,IIS-ManagementConsole;IIS 6 Management Compatibility,IIS-IIS6ManagementCompatibility;IIS Metabase and IIS 6 configuration compatibility,IIS-Metabase;IIS 6 WMI Compatibility,IIS-WMICompatibility;IIS Management Scripts and Tools,IIS-ManagementScriptingTools;Remote Differential Compression API Support,MSRDC-Infrastructure'
     Set-CEHealthCheckDefaultValue -ValueName 'MPFeatures' -ValueNonExist 'Internet Information Services,IIS-WebServerRole;World Wide Web Services,IIS-WebServer;Common HTTP Features,IIS-CommonHttpFeatures;Default Document,IIS-DefaultDocument;Directory Browsing,IIS-DirectoryBrowsing;HTTP Errors,IIS-HttpErrors;Static Content,IIS-StaticContent;HTTP Redirection,IIS-HttpRedirect;Health and Diagnostics,IIS-HealthAndDiagnostics;HTTP Logging,IIS-HttpLogging;Logging Tools,IIS-LoggingLibraries;Request Monitor,IIS-RequestMonitor;Tracing,IIS-HttpTracing;Performance Features,IIS-Performance;Static Content Compression,IIS-HttpCompressionStatic;Security,IIS-Security;Request Filtering,IIS-RequestFiltering;Windows Authentication,IIS-WindowsAuthentication;Application Development Features,IIS-ApplicationDevelopment;.NET Extensibility 3.5,IIS-NetFxExtensibility;.NET Extensibility 4.6,IIS-NetFxExtensibility45;ISAPI Extensions,IIS-ISAPIExtensions;ISAPI Filters,IIS-ISAPIFilter;ASP.NET 3.5,IIS-ASPNET;ASP.NET 4.6,IIS-ASPNET45;Web Management Tools,IIS-WebServerManagementTools;IIS Management Console,IIS-ManagementConsole;IIS 6 Management Compatibility,IIS-IIS6ManagementCompatibility;IIS Metabase and IIS 6 configuration compatibility,IIS-Metabase;IIS 6 WMI Compatibility,IIS-WMICompatibility;IIS Management Scripts and Tools,IIS-ManagementScriptingTools;IIS Management Service,IIS-ManagementService;Background Intelligent Transfer Service (BITS),BITS;Background Intelligent Transfer Service (BITS) Server Extensions for File Upload,BITSExtensions-Upload'
     Set-CEHealthCheckDefaultValue -ValueName 'MaxThreads' -ValueNonExist 30
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxCPULoad' -ValueNonExist 20
+    Set-CEHealthCheckDefaultValue -ValueName 'AutoGrowthDateOld' -ValueNonExist 7
+    Set-CEHealthCheckDefaultValue -ValueName 'MinSUPGroupSummarizationTime' -ValueNonExist 43200
+    Set-CEHealthCheckDefaultValue -ValueName 'MaxSUPGroupSummarizationTime' -ValueNonExist 86400
+    Set-CEHealthCheckDefaultValue -ValueName 'MinSUSDBSize' -ValueNonExist 30
+    Set-CEHealthCheckDefaultValue -ValueName 'MinSCCMDBSize' -ValueNonExist 75
+    Set-CEHealthCheckDefaultValue -ValueName 'SCCMDBMinClients' -ValueNonExist 25000
     #endregion
 
     #region set Override Rules
@@ -1225,6 +1225,20 @@ try {
     Set-CEHealthCheckRulesOverride -RuleID 387 -RuleName 'Windows Features - MP' -DefaultCategory 2 -Criticality 'High' -DefaultClassification 'ERROR'
     Set-CEHealthCheckRulesOverride -RuleID 388 -RuleName 'Software Update - Packages - Binary Delta Replication' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
     Set-CEHealthCheckRulesOverride -RuleID 389 -RuleName 'Software Update - Packages - Copy to a Package Share' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 390 -RuleName 'SQL Server Jobs Disabled' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 391 -RuleName 'SQL Server Jobs Enabled but not scheduled' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 392 -RuleName 'SQL Server Jobs Last run status' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 393 -RuleName 'SQL Server DB CPU Waits' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 394 -RuleName 'SQL Server DB Information - Number of DB Files' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 395 -RuleName 'SQL Server DB Information - Number of Log Files' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 396 -RuleName 'SQL Server DB Information - File Count' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 397 -RuleName 'SQL Server DB Information - File Growth Size' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 398 -RuleName 'SQL Server DB Growth' -DefaultCategory 3 -Criticality 'Medium' -DefaultClassification 'ERROR'
+    Set-CEHealthCheckRulesOverride -RuleID 399 -RuleName 'Software Update Group Summary Task Schedule (Higher)' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 400 -RuleName 'Software Update Group Summary Task Schedule (Lower)' -DefaultCategory 17 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 401 -RuleName 'Management Insights - Action Needed' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 402 -RuleName 'Site Feature - Release and off' -DefaultCategory 2 -Criticality 'Medium' -DefaultClassification 'WARNING'
+    Set-CEHealthCheckRulesOverride -RuleID 403 -RuleName 'Client Settings - Enable user policy on clients' -DefaultCategory 9 -Criticality 'Medium' -DefaultClassification 'ERROR'
     #endregion
 
     #region Script default variables
@@ -1450,7 +1464,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #region Site Information
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site'))
         $FileToImport = "$($SaveToFolder)\SiteList.xml"
-        if (Test-Path $FileToImport) {
+        if (Test-Path -LiteralPath $FileToImport) {
             Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
             New-Variable -Name "SiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
         } else {
@@ -1471,7 +1485,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #region Site Role List
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Role'))        
         $FileToImport = "$($SaveToFolder)\SiteRoleList.xml"
-        if (Test-Path $FileToImport) {
+        if (Test-Path -LiteralPath $FileToImport) {
             Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
             New-Variable -Name "SiteRoleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
         } else {
@@ -1493,7 +1507,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #region Site Role List without CloudDP
         Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1026 @('Site Role'))        
         $FileToImport = "$($SaveToFolder)\SiteRoleListWOCDP.xml"
-        if (Test-Path $FileToImport) {
+        if (Test-Path -LiteralPath $FileToImport) {
             Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
             New-Variable -Name "SiteRoleListWOCDP" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
         } else {
@@ -1518,7 +1532,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
 
         #region Site Component List
         $FileToImport = "$($SaveToFolder)\SiteComponentList.xml"
-        if (Test-Path $FileToImport) {
+        if (Test-Path -LiteralPath $FileToImport) {
             Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
             New-Variable -Name "SiteComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
         } else {            
@@ -1540,7 +1554,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\SiteComponentManagerList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SiteComponentManagerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1558,7 +1572,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\SMSPolProvComponentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SMSPolProvComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1575,7 +1589,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AlertList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AlertList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1593,7 +1607,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\MPComponentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MPComponentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1611,7 +1625,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\MPList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1658,7 +1672,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AppCatalogWebServiceList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AppCatalogWebServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1685,7 +1699,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AppCatalogWebSiteList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AppCatalogWebSiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1712,7 +1726,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SUPList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SUPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1773,7 +1787,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SRSList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SRSList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1811,7 +1825,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\SQLList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SQLList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1822,13 +1836,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #endregion
 
         #region sub-Rules
-        $arrRuleID = @(25,26,27,28,29, 30, 31 ,32, 33, 34, 285,311)
+        $arrRuleID = @(25,26,27,28,29,30,31,32,33,34,285,311,390,391,392,393,394,395,396,397)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SQLServerPrimarySiteList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SQLServerPrimarySiteList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -1848,7 +1862,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SQLConfigurationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SQLConfigurationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1938,7 +1952,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SQLServerInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SQLServerInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -1997,13 +2011,13 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                                 $SQLDataRoot = $SQLData.Split('\')[0].Replace(':','$')
                                 $SQLLogsRoot = $SQLLogs.Split('\')[0].Replace(':','$')
 
-                                if (Test-Path -Path "filesystem::\\$($SQLServerName)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                if (Test-Path -LiteralPath "filesystem::\\$($SQLServerName)\$($SQLDataRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
                                     $bPathExistDataRoot = $true
                                 } else {
                                     $bPathExistDataRoot = $false
                                 }
 
-                                if (Test-Path -Path "filesystem::\\$($SQLServerName)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                                if (Test-Path -LiteralPath "filesystem::\\$($SQLServerName)\$($SQLLogsRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
                                     $bPathExistLogRoot = $true
                                 } else {
                                     $bPathExistLogRoot = $false
@@ -2039,7 +2053,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ServiceAccountList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServiceAccountList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2056,7 +2070,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AdminAccountList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AdminAccountList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2073,7 +2087,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\GroupMembershipList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "GroupMembershipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
                 New-Variable -Name "GroupMembershipErrorList" -Value (Import-Clixml -Path "$($SaveToFolder)\GroupMembershipErrorList.xml") -Force -Option AllScope -Scope Script
@@ -2100,7 +2114,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ClientStatusSettings.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ClientStatusSettings" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2117,7 +2131,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DiscoveryMethodList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DiscoveryMethodList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2134,7 +2148,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DPGroupList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2151,7 +2165,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\CollectionMembershipEvaluation.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "CollectionMembershipEvaluation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2168,7 +2182,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DeviceCollectionList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DeviceCollectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2185,7 +2199,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\CollectionDeviceFilterCount.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "CollectionDeviceFilterCount" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2213,7 +2227,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\UserCollectionList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "UserCollectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2230,7 +2244,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\CollectionUserFilterCount.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "CollectionUserFilterCount" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2257,7 +2271,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DeploymentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2274,7 +2288,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AlertSubscriptionList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AlertSubscriptionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2291,7 +2305,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DeviceList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DeviceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2309,7 +2323,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\EndpointProtectionList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "EndpointProtectionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2320,14 +2334,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #endregion
         
         #region sub-Rules
-        $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163)
+        $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,403)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ClientSettingsList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ClientSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2338,14 +2352,14 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         #endregion
 
         #region sub-Rules-- parallel (to verify)
-        $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163)
+        $arrRuleID = @(139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,403)
         if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ClientSettingsSettingsList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ClientSettingsSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2376,7 +2390,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\MaintenanceTaskList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MaintenanceTaskList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2402,7 +2416,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\BoundaryGroupList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BoundaryGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2418,7 +2432,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
         } else {
             $FileToImport = "$($SaveToFolder)\BoundaryGroupRelationshipList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BoundaryGroupRelationshipList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2439,7 +2453,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\DPList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2467,7 +2481,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\SMPList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SMPList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2485,7 +2499,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\MalwareDetectedList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwareDetectedList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2504,7 +2518,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\MalwarePolicyList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwarePolicyList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2523,7 +2537,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\MalwarePolicySettingsList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwarePolicySettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2557,7 +2571,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\FirewallPolicyList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "MalwarePolicyList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2575,7 +2589,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SwMeteringSettingsList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SwMeteringSettingsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2592,7 +2606,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SwMeteringRuleList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SwMeteringRuleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2609,7 +2623,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\BootList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BootList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2626,7 +2640,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\TaskSequenceList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "TaskSequenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2643,7 +2657,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\TaskSequenceReferenceList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "TaskSequenceReferenceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2674,7 +2688,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateSummarizationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2691,7 +2705,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2712,7 +2726,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateDeploymentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2731,7 +2745,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateGroupList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateGroupList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2748,7 +2762,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateGroupDeploymentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateGroupDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2771,7 +2785,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateADRList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateADRList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2788,7 +2802,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateADRDeploymetList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateADRDeploymetList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2807,7 +2821,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AutoUpgradeConfigs.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AutoUpgradeConfigs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
                 New-Variable -Name "AutoUpgradeConfigsError" -Value (Import-Clixml -Path "$($SaveToFolder)\AutoUpgradeConfigsError.xml") -Force -Option AllScope -Scope Script
@@ -2835,7 +2849,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\EmailNotificationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "EmailNotificationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2852,7 +2866,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ADForestlist.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ADForestlist" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2869,7 +2883,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ADForestDiscoveryStatusList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ADForestDiscoveryStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2903,7 +2917,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DatabaseReplicationStatusList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DatabaseReplicationStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2922,7 +2936,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DatabaseReplicationScheduleList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DatabaseReplicationScheduleList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -2942,7 +2956,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SiteSummarizationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SiteSummarizationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -2976,7 +2990,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ProcessInfoList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3047,7 +3061,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ProcessAverageTimeList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ProcessAverageTimeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3070,7 +3084,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ServerRegistryInformation.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServerRegistryInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3122,7 +3136,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DistributionPointList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionPointList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3143,7 +3157,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DistributionPointInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionPointInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3163,7 +3177,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\BoundarySiteSystemsList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BoundarySiteSystemsList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3181,7 +3195,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DistributionPointDriveInfo.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionPointDriveInfo" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3199,7 +3213,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DistributionStatusList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DistributionStatusList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3220,7 +3234,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ApplicationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ApplicationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3237,7 +3251,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DeploymentTypeList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DeploymentTypeList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3257,7 +3271,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\PathDTInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PathDTInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3288,7 +3302,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                             }
                             if ([string]::IsNullOrEmpty($folderName) -eq $false) {
                                 if ($folderName -is [System.Array]) { $folderName = $FolderName[0] }
-                                if (Test-Path -Path "filesystem::$($folderName)" -ErrorAction SilentlyContinue) {
+                                if (Test-Path -LiteralPath "filesystem::$($folderName)" -ErrorAction SilentlyContinue) {
                                     $bPathExist = $true
                                 } else {
                                     $bPathExist = $false
@@ -3313,7 +3327,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DPContentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3342,7 +3356,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DPGroupContentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DPGroupContentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3360,7 +3374,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\PackageList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PackageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3377,7 +3391,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\PathPkgInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PathPkgInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3391,7 +3405,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                             $HiddenPackages,
                             $pkgID
                         )
-                        if (Test-Path -Path "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                        if (Test-Path -LiteralPath "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
                             $bPathExist = $true
                         } else {
                             $bPathExist = $false
@@ -3413,7 +3427,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\OperatingSystemImageList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "OperatingSystemImageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3430,7 +3444,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\PathOSImgInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PathOSImgInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3445,7 +3459,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                                 $HiddenPackages,
                                 $pkgID
                             )
-                            if (Test-Path -Path "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                            if (Test-Path -LiteralPath "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
                                 $bPathExist = $true
                             } else {
                                 $bPathExist = $false
@@ -3468,7 +3482,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\OperatingSystemInstallerList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "OperatingSystemInstallerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3485,7 +3499,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\PathOSInstallerInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PathOSInstallerInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3500,7 +3514,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                                 $HiddenPackages,
                                 $pkgID
                             )
-                            if (Test-Path -Path "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
+                            if (Test-Path -LiteralPath "filesystem::$($PkgSourcePath)" -ErrorAction SilentlyContinue) {
                                 $bPathExist = $true
                             } else {
                                 $bPathExist = $false
@@ -3523,7 +3537,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\TaskSequenceRebootOptions.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "TaskSequenceRebootOptions" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3554,7 +3568,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\inboxList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "inboxList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3568,7 +3582,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         )
                         $returninfo = @()
                         try {
-                            if (Test-Path -Path "filesystem::\\$($ServerName)\SMS_$($SiteCode)\inboxes") {
+                            if (Test-Path -LiteralPath "filesystem::\\$($ServerName)\SMS_$($SiteCode)\inboxes") {
                                 $ChildFolders = Get-ChildItem "filesystem::\\$($ServerName)\SMS_$($SiteCode)\inboxes" -Recurse -ErrorAction Stop | Where-Object {$_.PSIsContainer}
                                 foreach($subitem in $ChildFolders) {
                                     if(Test-Path "filesystem::$($subitem.FullName)")
@@ -3618,7 +3632,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\DriverPackageList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "DriverPackageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3635,7 +3649,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ComponentSummarizerList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ComponentSummarizerList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3655,7 +3669,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ComponentStatusMessageList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ComponentStatusMessageList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
                 New-Variable -Name "ComponentStatusMessageListError" -Value (Import-Clixml -Path "$($SaveToFolder)\ComponentStatusMessageListError.xml") -Force -Option AllScope -Scope Script
@@ -3681,7 +3695,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ComponentStatusMessageCompletedList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ComponentStatusMessageCompletedList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3764,7 +3778,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SUPWIDList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SUPWIDList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3813,7 +3827,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ServerNOSMSONDriveInformation.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServerNOSMSONDriveInformation" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3833,7 +3847,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                             $RegKey= $Reg.OpenSubKey("SOFTWARE\Microsoft\Windows NT\CurrentVersion")
                     
                             $SystemRoot = $RegKey.GetValue("SystemRoot").Split('\')[0].Replace(':','$')
-                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
+                            if (Test-Path -LiteralPath "filesystem::\\$($RemoteComputer)\$($SystemRoot)\NO_SMS_ON_DRIVE.SMS" -ErrorAction SilentlyContinue) {
                                 $bPathExist = $true
                             } else {
                                 $bPathExist = $false
@@ -3866,7 +3880,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SUPSQL.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SUPSQL" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -3911,7 +3925,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ApprovalRequestList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ApprovalRequestList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3928,7 +3942,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SUPComponentSyncManager.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SUPComponentSyncManager" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3945,7 +3959,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SUPComponent.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SUPComponent" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3962,7 +3976,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SiteDefinition.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SiteDefinition" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -3979,7 +3993,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareVersionList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareVersionList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4025,7 +4039,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\ServiceList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ServiceList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -4088,7 +4102,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\PingList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "PingList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4145,7 +4159,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IntuneSubscription.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IntuneSubscription" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4162,7 +4176,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\Boundary.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "Boundary" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4181,7 +4195,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\LogicalDiskInfoList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "LogicalDiskInfoList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -4242,7 +4256,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\ComputerInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "ComputerInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -4305,7 +4319,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
 
             $FileToImport = "$($SaveToFolder)\FolderInformationList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "FolderInformationList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4322,7 +4336,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\AdvertisementList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "AdvertisementList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4339,7 +4353,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\BaselineList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BaselineList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4356,7 +4370,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\BaselineDeploymentList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "BaselineDeploymentList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4373,7 +4387,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IISList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IISList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4390,7 +4404,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IISClientWebService.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IISClientWebService" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4404,7 +4418,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                             $RemoteComputer
                         )
                         try {
-                            if (Test-Path -Path "filesystem::\\$($RemoteComputer)\C$\Program Files\Update Services\WebServices\ClientWebService\web.config" -ErrorAction SilentlyContinue) {
+                            if (Test-Path -LiteralPath "filesystem::\\$($RemoteComputer)\C$\Program Files\Update Services\WebServices\ClientWebService\web.config" -ErrorAction SilentlyContinue) {
                                 [xml]$webConfigFile = Get-Content "filesystem::\\$($RemoteComputer)\C$\Program Files\Update Services\WebServices\ClientWebService\web.config"
                                 New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ConnectionType'='';'Error'=''; 'ServerName' = $RemoteComputer; 'ClientWebServiceExist' = $true; 'ExecutionTimeout' = [int]$webConfigFile.configuration.'system.web'.httpRuntime.executionTimeout; 'maxRequestLength' = [int]$webConfigFile.configuration.'system.web'.httpRuntime.maxRequestLength }
                             } else {
@@ -4433,7 +4447,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IISWebServerSetting.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IISWebServerSetting" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4494,7 +4508,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IISLogs.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IISLogs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {                
@@ -4523,7 +4537,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
                         )
                         try {
                             $returnInfo = @()
-                            if (Test-Path -Path "filesystem::$($LogRemoteFolder)") {
+                            if (Test-Path -LiteralPath "filesystem::$($LogRemoteFolder)") {
                                 Get-ChildItem "filesystem::$($LogRemoteFolder)" | Where-Object {!$_.PSIsContainer} | ForEach-Object {
                                     $subitem = $_
                                     $returnInfo += New-Object -TypeName PSObject -Property @{'ReturnType' = 1; 'ServerName' = $RemoteComputer; 'ConnectionType' = ''; 'Error' = ''; 'LogFolder' = $subitem.FullName.ToString().Replace($LogRemoteFolder, $LogFolder).Replace("\\$($RemoteComputer)\", '').Replace("\$($subitem.Name)", ''); 'IIS Site ID' = $SiteID; 'IIS Site Name' = $SiteName; 'LogFile' = $subitem.Name; 'LogFileCompletePath' = $subitem.FullName; 'LogSize' = $subitem.Length; 'LogCreationTime' = $subitem.CreationTime }
@@ -4569,7 +4583,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IisWebVirtualDirSetting.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IisWebVirtualDirSetting" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4628,7 +4642,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\IIsApplicationPoolSetting.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "IIsApplicationPoolSetting" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4688,7 +4702,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\CMUpdates.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "CMUpdates" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4705,7 +4719,7 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\OptionalFeaturesList.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "OptionalFeaturesList" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
@@ -4766,12 +4780,382 @@ public static extern IntPtr LoadLibrary(string lpFileName);
         } else {
             Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
             $FileToImport = "$($SaveToFolder)\SoftwareUpdateDeploymentPackage.xml"
-            if (Test-Path $FileToImport) {
+            if (Test-Path -LiteralPath $FileToImport) {
                 Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
                 New-Variable -Name "SoftwareUpdateDeploymentPackage" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
             } else {
                 $SoftwareUpdateDeploymentPackage = Get-CMSoftwareUpdateDeploymentPackage
                 Export-CEXMLFile -VariableName 'SoftwareUpdateDeploymentPackage' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules 
+        $arrRuleID = @(390,391,392)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLJobs.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLJobs" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLJobs = @()
+                $SQLServerPrimarySiteList | ForEach-Object { 
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    $ServerName = $item.NetworkOSPath.Replace('\\','')
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+                    $code = {
+                        Param (
+                            $servername,
+                            $databasename
+                        )
+                        $ReturnInfo = @()
+                        #connect to SQL
+                        $SQLOpen = $false
+                        $conn = New-Object System.Data.SqlClient.SqlConnection
+                        try {
+                            $conn.ConnectionString = "Data Source=$($servername);Initial Catalog=$($databasename);trusted_connection = true;"
+                            $conn.Open()
+                            $SQLOpen = $true
+                        } catch {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'Total' = 0; 'Name' = ''; 'Description' = ''; 'Enabled' = 0; 'Owner' = ''; 'Scheduled' = 0; 'lastrunstatus' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                        }
+
+                        if ($SQLOpen -eq $true) {
+                            try {
+                                $SqlCommand = $Conn.CreateCommand()
+                                $SqlCommand.CommandTimeOut = 0
+                                $SqlCommand.CommandText = "select s.name,s.Description,s.Enabled,l.name as Owner, isnull((select top 1 SJH.run_status from msdb..sysjobhistory SJH where s.job_id = sjh.job_id and SJH.run_date = (SELECT MAX(SJH1.run_date) FROM msdb..sysjobhistory SJH1 WHERE SJH.job_id = SJH1.job_id)), 2) as lastrunstatus, CASE WHEN EXISTS (SELECT 1 FROM msdb..sysjobschedules ss WITh(NOLOCK) WHERE s.job_id = ss.job_id) THEN 1 else 0 END as Scheduled from  msdb..sysjobs s left join master.sys.syslogins l on s.owner_sid = l.sid"
+                                $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                                $dataset = new-object System.Data.Dataset
+                                $DataAdapter.Fill($dataset) | Out-Null
+
+                                if ($dataset.Tables[0].Rows.Count -eq 0) {
+                                    $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'Total' = 0; 'Name' = ''; 'Description' = ''; 'Enabled' = 0; 'Owner' = ''; 'Scheduled' = 0; 'lastrunstatus' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                } else {
+                                    $rowCount = $dataSet.Tables[0].Rows.Count
+                                    $dataset.Tables[0].Rows | ForEach-Object {
+                                        $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'Total' = $rowCount; 'Name' = $_.Name; 'Description' = $_.Description; 'Enabled' = $_.Enabled; 'Owner' = $_.Owner; 'Scheduled' = $_.Scheduled; 'lastrunstatus' = $_.lastrunstatus; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                    }
+                                }
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'Total' = 0; 'Name' = ''; 'Description' = ''; 'Enabled' = 0; 'Owner' = ''; 'Scheduled' = 0; 'lastrunstatus' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                            } finally {
+                                $conn.Close()
+                            }
+                        }
+                        $ReturnInfo
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($arrPropList[1], $arrPropList[2])
+
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SQLJobs += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'Total' = $_.Total; 'Name' = $_.Name; 'Description' = $_.Description; 'Enabled' = $_.Enabled; 'Owner' = $_.Owner; 'Scheduled' = $_.Scheduled; 'lastrunstatus' = $_.lastrunstatus; }
+                    }
+
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLJobs' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules 
+        $arrRuleID = @(393)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLDBWaits.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLDBWaits" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLDBWaits = @()
+                $SQLServerPrimarySiteList | ForEach-Object { 
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    $ServerName = $item.NetworkOSPath.Replace('\\','')
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+                    $code = {
+                        Param (
+                            $servername,
+                            $databasename
+                        )
+                        $ReturnInfo = @()
+                        #connect to SQL
+                        $SQLOpen = $false
+                        $conn = New-Object System.Data.SqlClient.SqlConnection
+                        try {
+                            $conn.ConnectionString = "Data Source=$($servername);Initial Catalog=$($databasename);trusted_connection = true;"
+                            $conn.Open()
+                            $SQLOpen = $true
+                        } catch {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'cpuwaits' = 0; 'resourcewaits' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                        }
+
+                        if ($SQLOpen -eq $true) {
+                            try {
+                                $SqlCommand = $Conn.CreateCommand()
+                                $SqlCommand.CommandTimeOut = 0
+                                $SqlCommand.CommandText = "SELECT CAST(100.0 * SUM(signal_wait_time_ms) / SUM (wait_time_ms) AS NUMERIC(20,2)) AS [cpuwaits],CAST(100.0 * SUM(wait_time_ms - signal_wait_time_ms) / SUM (wait_time_ms) AS NUMERIC(20,2)) AS [resourcewaits] FROM sys.dm_os_wait_stats OPTION (RECOMPILE);"
+                                $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                                $dataset = new-object System.Data.Dataset
+                                $DataAdapter.Fill($dataset) | Out-Null
+
+                                if ($dataset.Tables[0].Rows.Count -eq 0) {
+                                    $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'cpuwaits' = 0; 'resourcewaits' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                } else {
+                                    $rowCount = $dataSet.Tables[0].Rows.Count
+                                    $dataset.Tables[0].Rows | ForEach-Object {
+                                        $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'cpuwaits' = $_.cpuwaits; 'resourcewaits' = $_.resourcewaits; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                    }
+                                }
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'cpuwaits' = 0; 'resourcewaits' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                            } finally {
+                                $conn.Close()
+                            }
+                        }
+                        $ReturnInfo
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($arrPropList[1], $arrPropList[2])
+
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SQLDBWaits += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'cpuwaits' = $_.cpuwaits; 'resourcewaits' = $_.resourcewaits; }
+                    }
+
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLDBWaits' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules 
+        $arrRuleID = @(394,395,396,397)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLDBInfo.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLDBInfo" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLDBInfo = @()
+                $SQLServerPrimarySiteList | ForEach-Object { 
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    $ServerName = $item.NetworkOSPath.Replace('\\','')
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+                    $code = {
+                        Param (
+                            $servername,
+                            $databasename
+                        )
+                        $ReturnInfo = @()
+                        #connect to SQL
+                        $SQLOpen = $false
+                        $conn = New-Object System.Data.SqlClient.SqlConnection
+                        try {
+                            $conn.ConnectionString = "Data Source=$($servername);Initial Catalog=$($databasename);trusted_connection = true;"
+                            $conn.Open()
+                            $SQLOpen = $true
+                        } catch {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'DBName' = ''; 'recovery_model_desc' = ''; 'type_desc' = ''; 'physical_name' = ''; 'size' = 0; 'max_size' = 0; 'FreeSpace' = 0; 'is_percent_growth' = 0; 'growth' = 0; 'CountDataFile' = 0; 'CountLogFile' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                        }
+
+                        if ($SQLOpen -eq $true) {
+                            try {
+                                $SqlCommand = $Conn.CreateCommand()
+                                $SqlCommand.CommandTimeOut = 0
+                                $SqlCommand.CommandText = @"
+Create Table ##temp_DatabaseAnalysis (DatabaseName sysname, Name sysname, physical_name nvarchar(500), size decimal (18,2), FreeSpace decimal (18,2) )
+Exec sp_msforeachdb '
+Use [?];
+Insert Into ##temp_DatabaseAnalysis (DatabaseName, Name, physical_name, Size, FreeSpace)
+Select DB_NAME() AS [DatabaseName], Name,  physical_name,
+Cast(Cast(Round(cast(size as decimal) * 8.0/1024.0,2) as decimal(18,2)) as nvarchar) Size,
+Cast(Cast(Round(cast(size as decimal) * 8.0/1024.0,2) as decimal(18,2)) - Cast(FILEPROPERTY(name, ''SpaceUsed'') * 8.0/1024.0 as decimal(18,2)) as nvarchar) As FreeSpace
+From sys.database_files
+'
+
+select db.name, db.recovery_model_desc, mf.type_desc, mf.physical_name, mf.size, mf.max_size, tmp.FreeSpace, mf.is_percent_growth, mf.growth, 
+(select count(1) FROM sys.master_files mf1 where mf1.type_desc = 'ROWS' and db.database_id = mf1.database_id ) as CountDataFile,
+(select count(1) FROM sys.master_files mf1 where mf1.type_desc = 'LOG' and db.database_id = mf1.database_id ) as CountLogFile
+from sys.master_files mf inner join sys.databases db on db.database_id = mf.database_id
+inner join ##temp_DatabaseAnalysis tmp on mf.physical_name = tmp.physical_name
+
+drop table ##temp_DatabaseAnalysis
+"@
+                                $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                                $dataset = new-object System.Data.Dataset
+                                $DataAdapter.Fill($dataset) | Out-Null
+
+                                if ($dataset.Tables[0].Rows.Count -eq 0) {
+                                    $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'DBName' = ''; 'recovery_model_desc' = ''; 'type_desc' = ''; 'physical_name' = ''; 'size' = 0; 'max_size' = 0; 'FreeSpace' = 0; 'is_percent_growth' = 0; 'growth' = 0; 'CountDataFile' = 0; 'CountLogFile' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                } else {
+                                    $rowCount = $dataSet.Tables[0].Rows.Count
+                                    $dataset.Tables[0].Rows | ForEach-Object {
+                                        $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'DBName' = $_.Name; 'recovery_model_desc' = $_.recovery_model_desc; 'type_desc' = $_.type_desc; 'physical_name' = $_.physical_name; 'size' = $_.size; 'max_size' = $_.max_size; 'FreeSpace' = $_.FreeSpace; 'is_percent_growth' = $_.is_percent_growth; 'growth' = $_.growth; 'CountDataFile' = $_.CountDataFile; 'CountLogFile' = $_.CountLogFile; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                    }
+                                }
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'DBName' = ''; 'recovery_model_desc' = ''; 'type_desc' = ''; 'physical_name' = ''; 'size' = 0; 'max_size' = 0; 'FreeSpace' = 0; 'is_percent_growth' = 0; 'growth' = 0; 'CountDataFile' = 0; 'CountLogFile' = 0; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                            } finally {
+                                $conn.Close()
+                            }
+                        }
+                        $ReturnInfo
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($arrPropList[1], $arrPropList[2])
+
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SQLDBInfo += New-Object -TypeName PSObject -Property @{'ServerName' = $_.ServerName; 'DBName' = $_.DBName; 'recovery_model_desc' = $_.recovery_model_desc; 'type_desc' = $_.type_desc; 'physical_name' = $_.physical_name; 'size' = $_.size; 'max_size' = $_.max_size; 'FreeSpace' = $_.FreeSpace; 'is_percent_growth' = $_.is_percent_growth; 'growth' = $_.growth; 'CountDataFile' = $_.CountDataFile; 'CountLogFile' = $_.CountLogFile; }
+                    }
+
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLDBInfo' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules 
+        $arrRuleID = @(398)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SQLDBGrowth.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SQLDBGrowth" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SQLDBGrowth = @()
+                $SQLServerPrimarySiteList | ForEach-Object { 
+                    $item = $_
+                    $arrPropList = $item.PropLists[0].values.split(',').Trim()
+                    $ServerName = $item.NetworkOSPath.Replace('\\','')
+                    Write-CELog -logtype "Info" -logmessage (Get-CEHealthCheckMessage 1029 @('Getting', 'SQL Server', $arrPropList[1]))
+                    $code = {
+                        Param (
+                            $servername,
+                            $databasename,
+                            $AutoGrowthDateOld
+                        )
+                        $ReturnInfo = @()
+                        #connect to SQL
+                        $SQLOpen = $false
+                        $conn = New-Object System.Data.SqlClient.SqlConnection
+                        try {
+                            $conn.ConnectionString = "Data Source=$($servername);Initial Catalog=$($databasename);trusted_connection = true;"
+                            $conn.Open()
+                            $SQLOpen = $true
+                        } catch {
+                            $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'database_name' = ''; 'backup_start_date' = ''; 'backup_finish_date' = ''; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                        }
+
+                        if ($SQLOpen -eq $true) {
+                            try {
+                                $SqlCommand = $Conn.CreateCommand()
+                                $SqlCommand.CommandTimeOut = 0
+                                $SqlCommand.CommandText = "SELECT s.database_name, s.backup_size, s.backup_start_date, s.backup_finish_date FROM msdb.dbo.backupset s INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id WHERE s.backup_start_date >= DATEADD(dd,-convert(int,$($AutoGrowthDateOld)),GetDate())"
+                                $DataAdapter = new-object System.Data.SqlClient.SqlDataAdapter $SqlCommand
+                                $dataset = new-object System.Data.Dataset
+                                $DataAdapter.Fill($dataset) | Out-Null
+
+                                if ($dataset.Tables[0].Rows.Count -eq 0) {
+                                    $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'database_name' = ''; 'backup_start_date' = ''; 'backup_finish_date' = ''; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                } else {
+                                    $rowCount = $dataSet.Tables[0].Rows.Count
+                                    $dataset.Tables[0].Rows | ForEach-Object {
+                                        $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $true; 'ServerName' = $ServerName; 'database_name' = $_.database_name; 'backup_start_date' = $_.backup_start_date; 'backup_finish_date' = $_.backup_finish_date; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= ''}
+                                    }
+                                }
+                            } catch {
+                                $ReturnInfo += New-Object -TypeName PSObject -Property @{'Success' = $false; 'ServerName' = $ServerName; 'database_name' = ''; 'backup_start_date' = ''; 'backup_finish_date' = ''; 'ConnectionType' = 'SQL Server (SQL TCP)' ; 'Error'= $_}
+                            } finally {
+                                $conn.Close()
+                            }
+                        }
+                        $ReturnInfo
+                    }
+                    $returninfo = Execute-CERunSpace -code $Code -ParameterList @($arrPropList[1], $arrPropList[2], $Script:AutoGrowthDateOld)
+
+                    $returninfo | where-object {$_.Success -eq $true} | foreach-object {
+                        $SQLDBGrowth += New-Object -TypeName PSObject -Property @{'ServerName' = $ServerName; 'database_name' = $_.database_name; 'backup_start_date' = $_.backup_start_date; 'backup_finish_date' = $_.backup_finish_date; }
+                    }
+
+                    $returninfo | where-object {$_.Success -eq $false} | foreach-object {
+                        Write-CELog -logtype "EXCEPTION" -logmessage (Get-CEHealthCheckMessage 1000 $_.Error)
+                        $Script:ServerDown += New-Object -TypeName PSObject -Property @{'ServerName' =$_.ServerName; 'ConnectionType' = $_.ConnectionType }
+                    }
+                }
+                Export-CEXMLFile -VariableName 'SQLDBGrowth' -ClearVariable
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(399,400)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\sitesummarytask.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "sitesummarytask" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $sitesummarytask = get-cmsitesummarytask
+                Export-CEXMLFile -VariableName 'sitesummarytask'
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(401)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\ManagementInsights.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "ManagementInsights" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $ManagementInsights = Get-WmiObject -computer $SMSProviderServer -Namespace "root\sms\site_$($MainSiteCode)" -Query 'SELECT * FROM SMS_ManagementInsights'
+                Export-CEXMLFile -VariableName 'ManagementInsights'
+            }
+        }
+        #endregion
+
+        #region sub-Rules
+        $arrRuleID = @(402)
+        if (-not (Test-CEHealthCheckCollectData -Rules $arrRuleID)) {
+            Write-CELog -logtype "WARNING" -logmessage "Rule(s) $($arrRuleID) is/are disabled. Collecting Data ignored"
+        } else {
+            Write-CELog -logtype "INFO" -logmessage "At least one rule ($($arrRuleID)) is enabled. Collecting Data"
+            $FileToImport = "$($SaveToFolder)\SiteFeature.xml"
+            if (Test-Path -LiteralPath $FileToImport) {
+                Write-CELog -logtype "WARNING" -logmessage "File $($FileToImport) already exist, using existing file"
+                New-Variable -Name "SiteFeature" -Value (Import-Clixml -Path "$($FileToImport)") -Force -Option AllScope -Scope Script
+            } else {
+                $SiteFeature = Get-CMSiteFeature
+                Export-CEXMLFile -VariableName 'SiteFeature'
             }
         }
         #endregion
