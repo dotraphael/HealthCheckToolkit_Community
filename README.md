@@ -1,21 +1,79 @@
-# HealthCheckToolkit_Community
-This repository contains the scripts used to collect data from a SCCM environmnet as per the blog post from https://thedesktopteam.com/raphael/sccm-sccm-healthcheck/
+# HealthCheck Toolkit
+Created in 2013 by the Microsoft MVP Raphael Perez, it was an innovative tool that helps diagnose potential issues within a Configuration Manager environment in an easy and practical manner.
 
-How to:<br>
-1- Download all files and save to a location on the hard drive (You should have 5 files: CollectData.ps1, HealthCheckClasses.dll, Messages.xml, SCCMDefaultValues.xml and SCCMRulesOverride.xml)<br>
-2- Open PowerShell as Administrator and If prompted by UAC, click Yes
-3- Navigate to the folder where you have extracted the files<br>
-4- Type: .\CollectData.ps1 -AuthorizedSiteCodes '001' -MessageFilePath .\Messages.xml -RulesOverrideFilePath .\SCCMRulesOverride.xml -DefaultValuesOverrideFilePath .\SCCMDefaultValues.xml<br>
-4.1 - AuthorizedSiteCodes should have the SCCM Site Code. Remember to change it<br>
-5- Once the collection of the files have been created, a zip file will be created on the Desktop and the collected XML files will be saved on C:\Temp\SCCMHealthCheck<br>
-<br>
-Notes:<br>
-1- Depending on the size of the environment, the tool may take couple of hours to run<br>
-2- Send an e-mail to me (raphael AT perez DOT net DOT br) with the HealthCheck zip file created by the tool (if the file is too big, upload it to somewhere and send me the link)<br>
-2.1- When sending the e-mail, don't forget to give me your details, like Name and SCCM Site Information so i can check it against the generated report (just to be sure the tool is doing what it is supposed to do). And if you're collecting data from a production environment, send me the name of the company as well.<br>
-3- I'll run it against our SCCM HealthCheck Reporting Tool and will generate a report in word format and will reply it to your e-mail. There will be no manual intervention, so the what the solution find i'll send to you<br>
-3.1- As it is a free service, don't expect a reply "ASAP style". I'll do my best to reply to you within couple of working days, but depending on my work schedule, it may take more time. Expect at least one week for reply. If not, send me an e-mail again.<br>
-4- Once i reply to your e-mail with the report, all data will be erased. i'll not keep any of the data you've send to me.<br>
-5- This is "as is" service, If something does not work, let me know and i'll try to fix, but don't expect a "premier" support. If you want a "premier" support and a only "on-prem" execution, you can use our paid services, available at https://www.rflsystems.co.uk/software/healthcheck-toolkit/<br>
-6- This service is limited to 1 per month. If you want to run as many times as you'd like per month, you can use our paid services, available at https://www.rflsystems.co.uk/software/healthcheck-toolkit/<br>
+Over the years, the tool has changed and evolved and back in 2018, a full re-write, in PowerShell, started with the latest pieces of code completed its transition from C# to PowerShell in late March/2022.
 
+The tool is based on pre-established rules, to assess the current status of the Configuration Manager’s performance, latest updates, disk space, client data and other key indicators.
+
+Once the data is collected, it can them be analysed and a report can be generated into a Word (or Excel) format, organised sections. The report allows a holistic and straightforward health-check analysis of the ecosystem with provided recommendations and possible fixes of known issues.
+
+# Rules & Categories
+The HealthCheck contain over 400 rules that have been categorised in the following table:
+
+| Category | Count |
+| -- | -- |
+| Server Connectivity and Performance | 30 |
+| Sites and Hierarchy | 79 |
+| SQL Server | 21 |
+| Maintenance Tasks | 2 |
+| Status Summarisation | 12 |
+| Management Point | 2 |
+| Application Catalog | 1 |
+| Accounts | 9 |
+| Client Settings | 26 |
+| Discovery | 42 |
+| Collection | 20 |
+| Distribution Point and Distribution Point Group | 14 |
+| Boundary and Boundary Group | 11 |
+| Endpoint Protection | 7 |
+| Software Metering | 2 |
+| Operating System | 20 |
+| Software Update | 33 |
+| Alerts | 3 |
+| Database Replication | 8 |
+| Content Distribution | 6 |
+| Deployments | 7 |
+| Application | 12 |
+| Packages | 5 |
+| Devices | 35 |
+| Compliance Settings | 6 |
+| **March/2022 - Total** |  413 |
+
+# Pre-Requisites
+The following is a list of the requirements to run the tool:
+
+System Center Configuration Manager/Microsoft Endpoint Configuration Manager:
+* SCCM 2012 SP2 or newer, SCCM Current Branch, version 1702 or newer
+* Stand Alone primary site with or without any child secondary site
+
+Tool machine:
+* Computer running Windows 7 or later, or Windows Server 2012 or later
+* Minimum: 8GB RAM, 2Ghz dual-core processor, 10 GB of free disk space plus at least 7 GB for every 100,000 objects in the assessed environment during data collection.
+* Joined to one of the same domain where the SCCM server is or another domain in the same forest which has two-way trust relationship with all domains.
+* .Net Framework 4.6.2 or alter
+* PowerShell 5 or later
+* SCCM console (Please make sure you can connect from this console to the Primary Site)
+
+Accounts:
+* Single User account with Admin access to every server (Site System) in the SCCM environment
+* At least read-only analyst rights to all the SCCM objects
+* Unrestricted network access to every server (Site System) in the SCCM environment.
+* Administrator permissions to all SQL servers used by the SCCM environment
+* VIEW SERVER STATE permission to all SQL Instances used by SCCM environment
+
+Remote Access (The user account running the tool should have the following remote access rights on the SCCM Servers)
+* Remote Registry (https://support.microsoft.com/en-us/help/314837/how-to-manage-remote-access-to-the-registry)
+* Remote WMI Access (https://docs.microsoft.com/en-us/windows/desktop/WmiSdk/connecting-to-wmi-remotely-starting-with-vista)
+* Access to Admin Shares (https://support.microsoft.com/en-us/help/842715/overview-of-problems-that-may-occur-when-administrative-shares-are-mis)
+
+Exporting
+* When exporting to Word, Install the DocX PowerShell Module - https://www.nuget.org/packages/DocX
+* When Exporting to Excel, Install the Microsoft.IO.RecyclableMemoryStream (https://www.nuget.org/packages/Microsoft.IO.RecyclableMemoryStream/) and EPPlus library (https://www.nuget.org/packages/epplus) PowerShell modules
+
+**Configuration Manager servers spanned across multiple forests without two-way trust is not supported. **
+
+# Documentation
+Access our Wiki at https://github.com/dotraphael/HealthCheckToolkit_Community/wiki
+
+# Issues and Support
+Access our Issues at https://github.com/dotraphael/HealthCheckToolkit_Community/issues
