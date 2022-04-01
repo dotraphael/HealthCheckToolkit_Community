@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<DefaultValues>
+	<!--Reporting only-->
+	<!--
+    @@OEMNAME@@ -> OEMName
+    @@MODULETITLE@@ -> Module Description
+    @@MODULENAME@@ -> Module
+    @@CUSTOMERNAME@@ -> Customer Name
+    @@DATETIME@@ -> Current Date/Time
+    @@TOTALISSUE@@ -> Total of issues
+    [NL] -> new Line
+    -->
+	<DefaultValue Name="SummaryFormat" Type="string" value="[BOLD]@@OEMNAME@@[/BOLD] has completed a @@MODULETITLE@@ health check for [BOLD]@@CUSTOMERNAME@@[/BOLD] on @@DATETIME@@ by running a suite of tools to collect key data from @@MODULENAME@@ and its dependent systems.[NL][NL][BOLD]@@OEMNAME@@[/BOLD] has found a total of [BOLD]@@TOTALISSUE@@[/BOLD] issues/misconfiguration and a break down can be seen in the table(s) below:" />
+	<DefaultValue Name="SummaryNote" Type="string" value="[NL]Please note, the findings and guidance provided by this assessment is based on our best practices database that was built over the years by our team of experts that have conducted over thousands of customers assessments. [BOLD]@@OEMNAME@@[/BOLD] has made every attempt to ensure the accuracy and reliability of the information provided on this report. However, the information is provided 'as is' without warranty of any kind. [BOLD]@@OEMNAME@@[/BOLD] does not accept any responsibility or liability for the accuracy, content, completeness, legality, or reliability of the information contained on this report." />
+	<DefaultValue Name="SummaryNoteBlank" Type="string" value="" />
+	<DefaultValue Name="ReportHeader" Type="string" value="This section contains all issues and recommendations for [BOLD]@@OEMNAME@@[/BOLD] consideration.[NL]" />
+	<DefaultValue Name="SortReport" Type="string" value='@{Expression = "Classification"; Descending = $false}, @{Expression = "CriticalityID"; Descending = $false}, @{Expression = "RuleID"; Descending = $false}, @{Expression = "CategoryID"; Descending = $false}' />
+	<DefaultValue Name="ExportDateFormat" Type="string" value="dd/MM/yyyy HH:mm:ss" />
+
+	<DefaultValue Name="Excel_HeaderBackgroundColour" Type="string" value="#ff70ad47" />
+	<DefaultValue Name="Excel_HeaderFontColour" Type="string" value="#ff000000" />
+	<DefaultValue Name="Excel_TitleCell" Type="string" value="A1" />
+	<DefaultValue Name="Excel_LicensedToCell" Type="string" value="J14" />
+	<DefaultValue Name="Excel_DateTimeCell" Type="string" value="J15" />
+	<DefaultValue Name="Excel_OEMCell" Type="string" value="J16" />
+
+	<DefaultValue Name="Word_HeaderColour" Type="string" value="#ff70ad47" />
+	<DefaultValue Name="Word_Column1Size" Type="int" value="90" />
+	<DefaultValue Name="Word_Column2Size" Type="int" value="350" />
+
+	<DefaultValue Name="CategoryError" Type="string" value="#ff8b0000" />
+	<DefaultValue Name="CategoryWarning" Type="string" value="#ffffa500" />
+	<DefaultValue Name="CriticalityHigh" Type="string" value="#ff8b0000" />
+	<DefaultValue Name="CriticalityMedium" Type="string" value="#ffffa500" />
+	<DefaultValue Name="CriticalityLow" Type="string" value="#ff00cc00" />
+	<DefaultValue Name="AddRuleID" Type="bool" value="true" />
+	<DefaultValue Name="ExportComments" Type="bool" value="true" />
+
+
+	<!-- not used	
+	<DefaultValue Name="Word_ImageSize" Type="string" value="135, 258" />
+	<DefaultValue Name="Word_AddImage" Type="string" value="0" />
+    -->
+</DefaultValues>

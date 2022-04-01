@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Categories>
+    <category id="0" module="ConfigMgr" name="Unknown" />
+    <category id="1" module="ConfigMgr" name="Server Connectivity and Performance" />
+    <category id="2" module="ConfigMgr" name="Sites and Hierarchy" />
+    <category id="3" module="ConfigMgr" name="SQL Server" />
+    <category id="4" module="ConfigMgr" name="Maintenance Tasks" />
+    <category id="5" module="ConfigMgr" name="Status Summarisation" />
+    <category id="6" module="ConfigMgr" name="Management Point" />
+    <category id="7" module="ConfigMgr" name="Application Catalog" />
+    <category id="8" module="ConfigMgr" name="Accounts" />
+    <category id="9" module="ConfigMgr" name="Client Settings" />
+    <category id="10" module="ConfigMgr" name="Discovery" />
+    <category id="11" module="ConfigMgr" name="Collection" />
+    <category id="12" module="ConfigMgr" name="Distribution Point and Distribution Point Group" />
+    <category id="13" module="ConfigMgr" name="Boundary and Boundary Group" />
+    <category id="14" module="ConfigMgr" name="Endpoint Protection" />
+    <category id="15" module="ConfigMgr" name="Software Metering" />
+    <category id="16" module="ConfigMgr" name="Operating System" />
+    <category id="17" module="ConfigMgr" name="Software Update" />
+    <category id="18" module="ConfigMgr" name="Alerts" />
+    <category id="19" module="ConfigMgr" name="Database Replication" />
+    <category id="20" module="ConfigMgr" name="Content Distribution" />
+    <category id="21" module="ConfigMgr" name="Deployments" />
+    <category id="22" module="ConfigMgr" name="Application" />
+    <category id="23" module="ConfigMgr" name="Packages" />
+    <category id="24" module="ConfigMgr" name="Devices" />
+    <category id="25" module="ConfigMgr" name="Compliance Settings" />
+</Categories>

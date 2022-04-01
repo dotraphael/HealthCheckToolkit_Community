@@ -1,0 +1,298 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Issues>
+    <!-- not in use anymore
+    <Issue id="3005" module="ConfigMgr" name="Distribution Point Group '{0}' has no members on site '{1}'" />
+    <Issue id="3006" module="ConfigMgr" name="Distribution Point Group '{0}' content is not in sync on '{1}'" />
+    <Issue id="3011" module="ConfigMgr" name="Boundary Group '{0}' has no '{1}'" />
+    <Issue id="3012" module="ConfigMgr" name="Site '{0}' has the generate alert for database disk space value disabled" />
+    <Issue id="3015" module="ConfigMgr" name="Automatic Deployment Rule '{0}' last execution was not successful" />
+    <Issue id="3016" module="ConfigMgr" name="Alert '{0}' does not have subscription" />
+    <Issue id="3020" module="ConfigMgr" name="Application '{0}' is not being deployed to any collection" />
+    <Issue id="3021" module="ConfigMgr" name="Content '{0}' ({1}) has been not distributed to all Distribution Point Groups" />
+    <Issue id="3022" module="ConfigMgr" name="Task Sequence '{0}' ('{1}') reference '{2}' ({3}) has not been distributed to any Distribution Point or Distribution Point Group" />
+    <Issue id="3023" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is not being used by any Task Sequence" />
+    <Issue id="3028" module="ConfigMgr" name="Account '{0}' is not being used" />
+    <Issue id="3030" module="ConfigMgr" name="Service Account '{0}' has been added as administrative User" />
+    <Issue id="3035" module="ConfigMgr" name="'{0}' name '{1}' has been deployed to the '{2}' collection" />
+    <Issue id="3037" module="ConfigMgr" name="Client Setting '{0}' has not been deployed" />
+    <Issue id="3038" module="ConfigMgr" name="'{0}' role for site '{1}' has been installed" />
+    <Issue id="3043" module="ConfigMgr" name="Client Setting '{0}', Setting Category '{1}', '{2}' ('{3}') lower than '{4}' ('{5})" />
+    <Issue id="3045" module="ConfigMgr" name="Site '{0}' has the Signing and Encryption option '{1}' disabled" />
+    <Issue id="3050" module="ConfigMgr" name="Firewall Policy '{0}', Setting '{1}' has the profile '{2}' set to '{3}'" />
+    <Issue id="3052" module="ConfigMgr" name="'{0}' '{1}' has then option '{2}' '{3}'" />
+    <Issue id="3054" module="ConfigMgr" name="Default Boot Image '{0}' has been enabled to be distributed to a PXE-Enabled Distribution Point" />
+    <Issue id="3055" module="ConfigMgr" name="Default Boot Image '{0}' has Drivers" />
+    <Issue id="3056" module="ConfigMgr" name="Boot Image '{0}' has Operating System version '{1}' that is below minimum supported version '{2}'" />
+    <Issue id="3058" module="ConfigMgr" name="Software Update Group '{0}' contains one or more invalid software updates" />
+    <Issue id="3059" module="ConfigMgr" name="Software Update Group '{0}' contains distributed updates and has not been deployed" />
+    <Issue id="3060" module="ConfigMgr" name="Automatic Deployment Rule '{0}' is not enabled" />
+    <Issue id="3061" module="ConfigMgr" name="Automatic Deployment Rule '{0}' did not run in the last '{1}' days" />
+    <Issue id="3062" module="ConfigMgr" name="Automatic Deployment Rule '{0}' has no active deployments" />
+    <Issue id="3064" module="ConfigMgr" name="Automatic Deployment Rule '{0}', deployment to '{1}' has the Deployment Settings, Detail Level not set to 'All Messages'" />
+    <Issue id="3065" module="ConfigMgr" name="Automatic Deployment Rule '{0}', deployment to '{1}' has the Alert option disabled" />
+    <Issue id="3067" module="ConfigMgr" name="Update Group '{0}', deployment to '{1}' has the Deployment Settings, Detail Level not set to 'All Messages'" />
+    <Issue id="3068" module="ConfigMgr" name="Update Group '{0}', deployment to '{1}' is not enabled" />
+    <Issue id="3074" module="ConfigMgr" name="Active Directory Forest '{0}' '{1}' status is '{2}' on Site Code '{3}'" />
+    <Issue id="3075" module="ConfigMgr" name="Active Directory Forest '{0}' on Site Code '{1}' last '{2}' time too old" />
+    <Issue id="3076" module="ConfigMgr" name="Active Directory Forest '{0}' on Site Code '{1}' have '{2}' disabled" />
+    <Issue id="3078" module="ConfigMgr" name="Database Replication Status from '{0}' Site '{1}' ({2}) to '{3}' Site '{4}'({5}) is currently too old ({6})" />
+    <Issue id="3079" module="ConfigMgr" name="User account or Group '{0}' ({1}) is direct or indirect member of '{2}' ({3})" />
+    <Issue id="3080" module="ConfigMgr" name="Distribution Point '{0}' is enabled for PXE but PXE Password is not set" />
+    <Issue id="3081" module="ConfigMgr" name="Distribution Point '{0}' is enabled for PXE but not responding to requests" />
+    <Issue id="3082" module="ConfigMgr" name="Distribution Point '{0}' is enabled for PXE but not responding to unknown requests" />
+    <Issue id="3083" module="ConfigMgr" name="Distribution Point '{0}' is not enabled for content validation" />
+    <Issue id="3084" module="ConfigMgr" name="Distribution Point '{0}' is enabled for content validation but priority is too high ({1})" />
+    <Issue id="3086" module="ConfigMgr" name="Unable to connect to servers '{0}' via '{1}'" />
+    <Issue id="3087" module="ConfigMgr" name="Distribution Point '{0}' is not member of any Distribution Point Group" />
+    <Issue id="3088" module="ConfigMgr" name="Distribution Point '{0}' is not member of any boundary group" />
+    <Issue id="3089" module="ConfigMgr" name="Distribution Point has a '{0}' Drive '{1}' has free disk space percentage too low ({2})" />
+    <Issue id="3091" module="ConfigMgr" name="Distribution Point '{0}' is enabled Multicast" />
+    <Issue id="3093" module="ConfigMgr" name="Application '{0}' does not have any Deployment Type" />
+    <Issue id="3094" module="ConfigMgr" name="Application '{0}', Deployment Type '{1}', Folder '{2}' does not exist or user '{3}' does not have access" />
+    <Issue id="3095" module="ConfigMgr" name="Application '{0}', Deployment Type '{1}', Installation behaviour set to 'Install for '{2}' has user interaction enabled" />
+    <Issue id="3096" module="ConfigMgr" name="Content '{0}' ({1}) has been distributed to a Distribution Point and not to a Distribution Point Group" />
+    <Issue id="3097" module="ConfigMgr" name="Package '{0}' ({1}) is using source files located locally on the ConfigMgr Server" />
+    <Issue id="3098" module="ConfigMgr" name="'{0}' '{1}' ({2}), Source Folder '{3}' does not exist or user '{4}' does not have access" />
+    <Issue id="3102" module="ConfigMgr" name="'{0}' name '{1}' has been deployed to '{2}' collections" />
+    <Issue id="3103" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is being used by Task Sequence '{3}' ('{4}')" />
+    <Issue id="3104" module="ConfigMgr" name="'{0}' name '{1}' has '{2}' Reboot to WinPE enabled step(s) but no boot image assigned to it" />
+    <Issue id="3107" module="ConfigMgr" name="Object '{0}-{1}' ({2}) has returned error when distributed to '{3}' Distribution Point and/or Distribution Point Group" />
+    <Issue id="3108" module="ConfigMgr" name="Processor '{0}' on computer '{1}' has average CPU utilization of '{2}'" />
+    <Issue id="3125" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is not being deployed to any collection, it is not dependent of another Application/Package nor being used by any Task Sequence" />
+    <Issue id="3128" module="ConfigMgr" name="Unable check Server '{0}' with URL '{1}'. HTTP Error Code: '{2}'" />
+    <Issue id="3130" module="ConfigMgr" name="'{0}' is enabled on server '{1}'" />
+    <Issue id="3144" module="ConfigMgr" name="'{2}' '{1}' ('{0}') has been distributed to '{3}' Distribution Point and/or Distribution Point Group and has been in InProgress for over '{4}' days (Last update '{5}' - '{6}')" />
+    <Issue id="3145" module="ConfigMgr" name="Unable to ping server '{0}'. All '{1}' tests have failed." />
+    <Issue id="3146" module="ConfigMgr" name="Average Ping response time from server '{0}' is too high ('{1}ms'). Maxium recommended is '{2}ms'" />
+    <Issue id="3147" module="ConfigMgr" name="Average Ping drop time from server '{0}' is too high ('{1}' - '{2}%')" />
+    <Issue id="3148" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is not being deployed to any collection, it is not dependent of another Application/Package nor being used by any deployed Task Sequence" />
+    <Issue id="3132" module="ConfigMgr" name="Component '{0}' is in a '{1}' state on '{2}'" />
+    <Issue id="3151" module="ConfigMgr" name="'{0}' collection '{1}' has its update schedule too often ('{2}' minutes)." />
+    <Issue id="3152" module="ConfigMgr" name="Boundary '{0}' has no boundary group assignment." />
+    <Issue id="3153" module="ConfigMgr" name="Server '{0}' has low disk space ('{1}', '{2}') on drive '{3}'. Below minimum recommended of '{4}'." />
+    <Issue id="3154" module="ConfigMgr" name="'{0}' Server '{1}' has low '{2}' ('{3}')." />
+    <Issue id="3155" module="ConfigMgr" name="'{0}' Folder '{1}' is empty." />
+    <Issue id="3156" module="ConfigMgr" name="'{0}' '{1}' deployed to collection '{2}' has deployment errors ('{3}'-'{4}') over minimum threshold ('{5}')" />
+    <Issue id="3158" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is '{3}' to any collection" />
+    <Issue id="3159" module="ConfigMgr" name="'{0}' '{1}' has '{2}' ('{3}'-'{4}') over minimum threshold ('{5}')" />
+    <Issue id="3160" module="ConfigMgr" name="'{0}' '{1}' deployed to collection '{2}' has its evaluation schedule too often ('{3}' minutes)." />
+    <Issue id="3165" module="ConfigMgr" name="Log folder for IIS WebSite '{0}' on '{1}' has files older than '{2}' days." />
+    <Issue id="3166" module="ConfigMgr" name="ConfigMgr Hierarchy is missing update '{0}'. " />
+    <Issue id="3168" module="ConfigMgr" name="Feature '{0}' ('{1}') on '{2}' is not installed. This feature is required for the a '{3}' Site Role" />
+    <Issue id="3180" module="ConfigMgr" name="There is/are '{0}' Client Setting with Setting Category '{1}', '{2}' value is '{3}'.[NL]Client Settings List: '{4}'" />
+    <Issue id="3262" module="ConfigMgr" name="There is/are '{0}' databases growing too often.[NL]List: '{1}'" />
+    <Issue id="3263" module="ConfigMgr" name="There is/are '{0}' databases without a proper number of data files.[NL]List: '{1}'" />
+    <Issue id="3266" module="ConfigMgr" name="There is/are '{0}' Default Boot Image(s) without Binary Delta Replication enabled.[NL]List: '{1}'" />
+    <Issue id="3281" module="ConfigMgr" name="There is/are '{0}' sites with the Signing and Encryption option 'Require SHA-256' disabled.[NL]List: '{1}'" />
+    <Issue id="3282" module="ConfigMgr" name="There is/are '{0}' sites with the Signing and Encryption option 'Require signing' disabled.[NL]List: '{1}'" />
+    <Issue id="3283" module="ConfigMgr" name="There is/are '{0}' sites with the Signing and Encryption option 'Use Encryption' disabled.[NL]List: '{1}'" />
+    <Issue id="3284" module="ConfigMgr" name="There is/are '{0}' Servers that cannot be contacted via 'MPCert' and returned HTTP Error '{1}'.[NL]List: '{2}'" />
+    <Issue id="3285" module="ConfigMgr" name="There is/are '{0}' Site(s) running an outdate (and possible non-supported) version.[NL]List: '{1}'" />
+    <Issue id="3286" module="ConfigMgr" name="There is/are '{0}' Site(s) with too many Management point.[NL]List: '{1}'" />
+    <Issue id="3287" module="ConfigMgr" name="There is/are '{0}' SQL Server running a version below recommended/supported.[NL]List: '{1}'" />
+    <Issue id="3288" module="ConfigMgr" name="There is/are '{0}' SQL Server running without '{1}' recommended memory configuration.[NL]List: '{2}'" />
+	<Issue id="3289" module="ConfigMgr" name="There is/are '{0}' databases on SQL Server '{1}' with Compatibility level below recommended.[NL]List: '{2}'" />
+    <Issue id="3292" module="ConfigMgr" name="There is/are '{0}' Client Setting with Setting Category '{1}', '{2}' value is too high.[NL]List: '{3}'" />
+    -->
+
+    <Issue id="3001" module="ConfigMgr" name="'{0}' is not enabled on site '{1}'" />
+    <Issue id="3002" module="ConfigMgr" name="'{0}' value too low ('{1}') on site '{2}'" />
+    <Issue id="3003" module="ConfigMgr" name="'{0}' is enabled on site '{1}'" />
+    <Issue id="3004" module="ConfigMgr" name="'{0}' is connected to the root domain ('{1}') on site '{2}'" />
+    <Issue id="3007" module="ConfigMgr" name="There is/are '{0}' '{1}' collection(s) without any '{2}'.[NL]Collection List: '{3}'" />
+    <Issue id="3008" module="ConfigMgr" name="There is/are '{0}' collection(s) limited by the '{1}' collection.[NL]Collection List: '{2}'" />
+    <Issue id="3009" module="ConfigMgr" name="Client Setting '{0}', Setting Category '{1}', '{2}' value is '{3}'" />
+    <Issue id="3010" module="ConfigMgr" name="There is/are '{0}' device(s) discovered but not reporting the ConfigMgr Client is installed" />
+    <Issue id="3013" module="ConfigMgr" name="There is/are '{0}' '{1}' software updates {2}being deployed[NL]List: '{3}'" />
+    <Issue id="3014" module="ConfigMgr" name="Software Update Group '{0}' has '{1}' updates" />
+    <Issue id="3017" module="ConfigMgr" name="Total number of Full Administrators is too high ('{0}')" />
+    <Issue id="3018" module="ConfigMgr" name="'{2}' '{1}' ('{0}') has been distributed to '{3}' Distribution Point and/or Distribution Point Group" />
+    <Issue id="3019" module="ConfigMgr" name="Application '{0}' has not been successfully installed on '{1}' '{2}'" />
+    <Issue id="3024" module="ConfigMgr" name="SQL Server '{0}' is running without '{1}' recommended memory configuration ('{2}')" />
+    <Issue id="3025" module="ConfigMgr" name="Site '{0}' is running an outdate (and possible non-supported) version ('{1}')" />
+    <Issue id="3026" module="ConfigMgr" name="'{0}' role for site '{1}' has not been installed" />
+    <Issue id="3027" module="ConfigMgr" name="Total number of Management point for '{0}' is to high" />
+    <Issue id="3029" module="ConfigMgr" name="No account configured as Network Access Account" />
+    <Issue id="3031" module="ConfigMgr" name="'{0}' is enabled with empty containers on site '{1}'" />
+    <Issue id="3032" module="ConfigMgr" name="There is/are '{0}' '{1}' collection(s) with incremental updates enabled" />
+    <Issue id="3033" module="ConfigMgr" name="There is/are '{0}' '{1}' collection(s) with too many direct membership rules" />
+    <Issue id="3034" module="ConfigMgr" name="There is/are '{0}' deployment(s) to a '{1}' collection(s) without any member.[NL]Collection List: '{2}'" />
+    <Issue id="3036" module="ConfigMgr" name="There is/are '{0}' active alert(s)[NL]List: '{1}'" />
+    <Issue id="3039" module="ConfigMgr" name="There is/are '{0}' '{1}' client(s)" />
+    <Issue id="3040" module="ConfigMgr" name="There is/are '{0}' device(s) running '{1}'" />
+    <Issue id="3041" module="ConfigMgr" name="There is/are '{0}' client(s) on site '{1}' with version lower than the site '{2}'" />
+    <Issue id="3042" module="ConfigMgr" name="There is/are '{0}' device(s) with '{1}' with status as '{2}'" />
+    <Issue id="3044" module="ConfigMgr" name="Maintenance Task '{0}' current status is '{1}'" />
+    <Issue id="3046" module="ConfigMgr" name="There is/are '{0}' device(s) with active malware" />
+    <Issue id="3047" module="ConfigMgr" name="Anti-Malware policy '{0}' has not been deployed" />
+    <Issue id="3048" module="ConfigMgr" name="Malware Policy '{0}', Setting Category '{1}', '{2}' value is too high ('{3}')" />
+    <Issue id="3049" module="ConfigMgr" name="Firewall policy '{0}' has not been deployed" />
+    <Issue id="3051" module="ConfigMgr" name="There is/are '{0}' disabled '{1}' on site '{2}'" />
+    <Issue id="3053" module="ConfigMgr" name="There is/are '{0}' Boot Image of Architecture '{1}' enabled to be distributed to a PXE-Enabled Distribution Point" />
+    <Issue id="3057" module="ConfigMgr" name="Software Update Group '{0}' has '{1}' software updates" />
+    <Issue id="3063" module="ConfigMgr" name="Automatic Deployment Rule '{0}' is being deployed to '{1}'" />
+    <Issue id="3066" module="ConfigMgr" name="Update Group '{0}' is being deployed to '{1}'" />
+    <Issue id="3069" module="ConfigMgr" name="There is/are '{0}' software updates being deployed individually" />
+    <Issue id="3070" module="ConfigMgr" name="Automatic Deployment Rule '{0}' evaluation schedule is not enabled" />
+    <Issue id="3071" module="ConfigMgr" name="'{0}' is not enabled" />
+    <Issue id="3072" module="ConfigMgr" name="Email Notification Component, '{0}' on site '{1}' is set to '{2}'" />
+    <Issue id="3073" module="ConfigMgr" name="There is no alert subscription configured" />
+    <Issue id="3077" module="ConfigMgr" name="Database Replication Status from Parent Site '{0}' ({1}) to Child Site '{2}'({3}) is currently on '{4}' status" />
+    <Issue id="3085" module="ConfigMgr" name="'{0}' Account '{1}' was not found in the Active Directory" />
+    <Issue id="3090" module="ConfigMgr" name="Application Catalog Web Service Point '{0}' is not connected to any Application Catalog Web Site Point" />
+    <Issue id="3092" module="ConfigMgr" name="'{0}' '{1}' has the attribute IsHidden set to true" />
+    <Issue id="3099" module="ConfigMgr" name="Task Sequence '{0}' ('{1}') reference '{2}' ({3}) has errors when distributing it to Distribution Point or Distribution Point Group" />
+    <Issue id="3100" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is enabled" />
+    <Issue id="3101" module="ConfigMgr" name="Task Sequence '{0}' ('{1}') reference '{2}' ({3}) is one of the default boot images" />
+    <Issue id="3105" module="ConfigMgr" name="SQL Server '{0}' is running a version below recommended ('{1}')" />
+    <Issue id="3106" module="ConfigMgr" name="User '{0}' does not have rights to WMI 'GetAutoUpgradeConfigs' on '{1}'" />
+    <Issue id="3109" module="ConfigMgr" name="'{0}' value too high ('{1}')" />
+    <Issue id="3110" module="ConfigMgr" name="'{0}' value too low ('{1}')" />
+    <Issue id="3111" module="ConfigMgr" name="'{0}' value too high ('{1}') on site '{2}'" />
+    <Issue id="3112" module="ConfigMgr" name="Client Setting '{0}', Setting Category '{1}', '{2}' value is too high ('{3}')" />
+    <Issue id="3113" module="ConfigMgr" name="Client Setting '{0}', Setting Category '{1}', '{2}' value is too low ('{3}')" />
+    <Issue id="3114" module="ConfigMgr" name="Boundary Group '{0}' has a '{1}' fallback value too high ('{2}')" />
+    <Issue id="3115" module="ConfigMgr" name="Boundary Group '{0}' has a '{1}' fallback value too low ('{2}')" />
+    <Issue id="3116" module="ConfigMgr" name="Malware Policy '{0}', Setting Category '{1}', '{2}' value is too low ('{3}')" />
+    <Issue id="3117" module="ConfigMgr" name="Automatic Deployment Rule '{0}' evaluation schedule value too high ('{1}')" />
+    <Issue id="3118" module="ConfigMgr" name="Automatic Deployment Rule '{0}' evaluation schedule value too low ('{1}')" />
+    <Issue id="3119" module="ConfigMgr" name="Automatic Deployment Rule '{0}', deployment to '{1}' alert value too high ('{2}')" />
+    <Issue id="3120" module="ConfigMgr" name="Automatic Deployment Rule '{0}', deployment to '{1}' alert value too low ('{2}')" />
+    <Issue id="3121" module="ConfigMgr" name="Database Replication Summarization Schedule value for Site '{0}' is too high ({1})" />
+    <Issue id="3122" module="ConfigMgr" name="Database Replication Summarization Schedule value for Site '{0}' is too low ({1})" />
+    <Issue id="3123" module="ConfigMgr" name="'{0}' - '{1}' value for Site '{2}' is too high ('{3}')" />
+    <Issue id="3124" module="ConfigMgr" name="'{0}' - '{1}' value for Site '{2}' is too low ('{3}')" />
+    <Issue id="3126" module="ConfigMgr" name="A total of '{0}' Driver Package(s) exist on the environment" />
+    <Issue id="3127" module="ConfigMgr" name="SQL Server '{0}' has its '{1}' on the same drive as the '{2}'" />
+    <Issue id="3129" module="ConfigMgr" name="Compatibility level on SQL Server '{0}, Database '{1}' is below recommended ('{2}')" />
+    <Issue id="3131" module="ConfigMgr" name="ConfigMgr Site '{0}' on server '{1}' has its '{2}' on the same drive as the '{3}'" />
+    <Issue id="3133" module="ConfigMgr" name="Malware Policy '{0}', Setting Category '{1}', '{2}' value is too low ('{3}')" />
+    <Issue id="3134" module="ConfigMgr" name="SQL Server '{0}' is running a '{1}' version without minimum recommended Service Pack ('{2}')" />
+    <Issue id="3135" module="ConfigMgr" name="ConfigMgr Site '{0}', Software Update Point is using a Windows Update Services (WSUS) '{1}' with a Windows Internal Database (WID) instead of a full version of SQL Server" />
+    <Issue id="3136" module="ConfigMgr" name="ConfigMgr Site '{0}', Server '{1}' does not have the NO_SMS_ON_DRIVE.SMS file created on '{2}' drive/folder" />
+    <Issue id="3137" module="ConfigMgr" name="ConfigMgr Site '{0}' has multiple Software Update Point (SUP) servers running connected to different SUSDB database servers" />
+    <Issue id="3138" module="ConfigMgr" name="There are currently '{0}' pending application requests older than '{1}' days" />
+    <Issue id="3139" module="ConfigMgr" name="Automatic Client Upgrade has '{0}' option '{1}'" />
+    <Issue id="3140" module="ConfigMgr" name="Site '{0}' has the generate alert for Software Update Point Synchronisation disabled" />
+    <Issue id="3141" module="ConfigMgr" name="Site '{0}' has the '{1}' for ConfigMgr Clients set to '{2}'" />
+    <Issue id="3142" module="ConfigMgr" name="'{0}' installed is below recommended version ('{1}')" />
+    <Issue id="3143" module="ConfigMgr" name="Service '{0}' is not configured correctly (Start Mode: '{1}' / State: '{2}')" />
+    <Issue id="3149" module="ConfigMgr" name="A Microsoft InTune subscription has been found." />
+    <Issue id="3150" module="ConfigMgr" name="A total '{0}' IP Subnet boundaries have been found." />
+    <Issue id="3157" module="ConfigMgr" name="Task Sequence '{0}' deployed to collection '{1}' has 'Make available to the following' option misconfigured." />
+    <Issue id="3161" module="ConfigMgr" name="'{0}' '{1}' ('{2}') is '{3}'" />
+    <Issue id="3162" module="ConfigMgr" name="Unable to collect group membership for account '{0}'" />
+    <Issue id="3163" module="ConfigMgr" name="Unable to collect Status Message data" />
+    <Issue id="3164" module="ConfigMgr" name="IIS '{0}' on '{1}' setting '{2}' is not configured adhering best practices. Current value is '{3}'" />
+    <Issue id="3167" module="ConfigMgr" name="There is/are '{0}' '{1}' collections with updates enabled but with invalid Refresh Interval.[NL]Collection List: '{2}'" />
+    <Issue id="3169" module="ConfigMgr" name="There is/are '{0}' '{1}' distributed to '{2}' Distribution Point and/or Distribution Point Group.[NL]'{1}' List: '{3}'" />
+    <Issue id="3170" module="ConfigMgr" name="There is/are '{0}' '{1}' returned error when distributed to '{2}' Distribution Point and/or Distribution Point Group.[NL]'{1}' List: '{3}'" />
+    <Issue id="3171" module="ConfigMgr" name="There is/are '{0}' '{1}' with the attribute IsHidden set to true.[NL]'{1}' List: '{2}'" />
+    <Issue id="3172" module="ConfigMgr" name="There is/are '{0}' '{1}' on site '{2}' not being used.[NL]'{1}' List: '{3}'" />
+    <Issue id="3173" module="ConfigMgr" name="There is/are '{0}' '{1}' on site '{2}' being used as '{3}'.[NL]'{1}' List: '{4}'" />
+    <Issue id="3174" module="ConfigMgr" name="There is/are '{0}' '{1}' on site '{2}' with no members.[NL]'{1}' List: '{3}'" />
+    <Issue id="3175" module="ConfigMgr" name="There is/are '{0}' '{1}' on site '{2}' with content not in sync.[NL]'{1}' List: '{3}'" />
+    <Issue id="3176" module="ConfigMgr" name="There is/are '{0}' '{1}' been deployed to the '{2}' collection.[NL]'{1}' List: '{3}'" />
+    <Issue id="3177" module="ConfigMgr" name="There is/are '{0}' '{1}' that does not has/have any subscription.[NL]'{1}' List: '{2}'" />
+    <Issue id="3178" module="ConfigMgr" name="There is/are '{0}' '{1}' without '{2}'.[NL]'{1}' List: '{3}'" />
+    <Issue id="3179" module="ConfigMgr" name="There is/are '{0}' '{1}' with the option '{2}' '{3}'.[NL]'{1}' List: '{4}'" />
+    <Issue id="3181" module="ConfigMgr" name="There is/are '{0}' '{1}' using a Default Boot Image '{2}' ('{3}').[NL]'{1}'' List: '{4}'" />
+    <Issue id="3182" module="ConfigMgr" name="There is/are '{0}' '{1}' not being used by any Task Sequence.[NL]'{1}'' List: '{2}'" />
+    <Issue id="3183" module="ConfigMgr" name="There is/are '{0}' '{1}' with Setting '{2}' '{3}'.[NL]'{1}'' List: '{4}'" />
+    <Issue id="3184" module="ConfigMgr" name="There is/are '{0}' '{1}' with Operating System below minimum supported version '{2}'.[NL]'{1}'' List: '{3}'" />
+    <Issue id="3185" module="ConfigMgr" name="There is/are '{0}' '{1}' not deployed and with downloaded updates.[NL]'{1}' List: '{2}'" />
+    <Issue id="3186" module="ConfigMgr" name="There is/are '{0}' '{1}' with all the ping tests with failed state.[NL]'{1}' List: '{2}'" />
+    <Issue id="3187" module="ConfigMgr" name="There is/are '{0}' '{1}' with setting '{2}' not configured adhering best practices.[NL]Server List: '{3}'" />
+    <Issue id="3188" module="ConfigMgr" name="There is/are '{0}' '{1}' not distributed to all Distribution Point Groups.[NL]'{1}' List: '{2}'" />
+    <Issue id="3189" module="ConfigMgr" name="There is/are '{0}' '{1}' distributed to a Distribution Point and not to a Distribution Point Group.[NL]'{1}' List: '{2}'" />
+    <Issue id="3190" module="ConfigMgr" name="There is/are '{0}' Sites with generate alert for database disk space value disabled.[NL]Site List: '{1}'" />
+    <Issue id="3191" module="ConfigMgr" name="There is/are '{0}' Sites with Site Alert - Database Free Space Warning value too high.[NL]Site List: '{1}'" />
+    <Issue id="3192" module="ConfigMgr" name="There is/are '{0}' Sites with Site Alert - Database Free Space Warning value too low.[NL]Site List: '{1}'" />
+    <Issue id="3193" module="ConfigMgr" name="There is/are '{0}' Sites with Site Alert - Database Free Space Critical value too high.[NL]Site List: '{1}'" />
+    <Issue id="3194" module="ConfigMgr" name="There is/are '{0}' Sites with Site Alert - Database Free Space Critical value too low.[NL]Site List: '{1}'" />
+    <Issue id="3195" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) enabled for content validation but priority is too high.[NL]Distribution Point List: '{1}'" />
+    <Issue id="3196" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) not enabled for content validation.[NL]Distribution Point List: '{1}'" />
+    <Issue id="3197" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) enabled for PXE but not responding to unknown requests.[NL]Distribution Point List: '{1}'" />
+    <Issue id="3198" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) enabled for PXE but not responding to requests.[NL]Distribution Point List: '{1}'" />
+    <Issue id="3199" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) enabled for PXE but PXE Password is not set.[NL]Distribution Point List: '{1}'" />
+    <Issue id="3200" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) enabled for Multicast.[NL]Distribution Point List: '{1}'" />
+    <Issue id="3201" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) not member of any boundary group.[NL]List: '{1}'" />
+    <Issue id="3202" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) not member of any Distribution Point Group.[NL]List: '{1}'" />
+    <Issue id="3203" module="ConfigMgr" name="There is/are '{0}' Server(s) with 'Short file name creation' enabled.[NL]List: '{1}'" />
+	<Issue id="3204" module="ConfigMgr" name="There is/are '{0}' Distribution Point(s) with feature '{1}' not installed.[NL]List: '{2}'" />
+    <Issue id="3205" module="ConfigMgr" name="There is/are '{0}' Management Point(s) with feature '{1}' not installed.[NL]List: '{2}'" />
+    <Issue id="3206" module="ConfigMgr" name="There is/are '{0}' Servers with IIS Website '{1}' with logs files older than '{2}' days.[NL]Server List: '{3}'" />
+    <Issue id="3207" module="ConfigMgr" name="There is/are '{0}' Configuration Baseline deployed to collection '{1}' with its evaluation schedule too often.[NL]List: '{2}'" />
+    <Issue id="3208" module="ConfigMgr" name="There is/are '{0}' Applications not being deployed to any collection, it is not dependent of another Application/Package nor being used by any Task Sequence.[NL]List: '{1}'" />
+    <Issue id="3209" module="ConfigMgr" name="There is/are '{0}' Applications not being deployed to any collection, it is not dependent of another Application/Package nor being used by any deployed Task Sequence.[NL]List: '{1}'" />
+    <Issue id="3210" module="ConfigMgr" name="There is/are '{0}' Process on computer '{1}' with average CPU utilization too high.[NL]Process List: '{2}'" />
+    <Issue id="3211" module="ConfigMgr" name="There is/are '{0}' Servers without NO_SMS_ON_DRIVE.SMS file on '{1}' drive/folder.[NL]Server List: '{2}'" />
+    <Issue id="3212" module="ConfigMgr" name="There is/are '{0}' Components on Server '{1}' in a '{2}' state.[NL]Component List: '{3}'" />
+    <Issue id="3213" module="ConfigMgr" name="There is/are '{0}' Packages not being deployed to any collection, it is not dependent of another Application/Package nor being used by any deployed Task Sequence.[NL]List: '{1}'" />
+    <Issue id="3214" module="ConfigMgr" name="There is/are '{0}' Packages not being deployed to any collection, it is not dependent of another Application/Package nor being used by any Task Sequence.[NL]List: '{1}'" />
+    <Issue id="3215" module="ConfigMgr" name="There is/are '{0}' Packages using source files located locally on the ConfigMgr Server.[NL]List: '{1}'" />
+    <Issue id="3216" module="ConfigMgr" name="There is/are '{0}' Configuration Baseline with failure count over '{1}' recommended threshold.[NL]List: '{2}'" />
+    <Issue id="3217" module="ConfigMgr" name="There is/are '{0}' Servers that cannot be contacted via '{1}'.[NL]List: '{2}'" />
+    <Issue id="3218" module="ConfigMgr" name="There is/are '{0}' Servers that cannot be contacted via '{1}' and returned Error '{2}'.[NL]List: '{3}'" />
+    <Issue id="3219" module="ConfigMgr" name="There is/are '{0}' child sites with old database replication status from '{1}' - '{2}' Site.[NL]List: '{3}'" />
+    <Issue id="3220" module="ConfigMgr" name="There is/are '{0}' sites with the Signing and Encryption option '{1}' disabled.[NL]List: '{2}'" />
+    <Issue id="3221" module="ConfigMgr" name="There is/are '{0}' User account(s) or Group(s) direct or indirect member of '{1}'.[NL]List: '{2}'" />
+    <Issue id="3222" module="ConfigMgr" name="There is/are '{0}' Distribution Point on Site '{1}' with low free disk space.[NL]List: '{2}'" />
+    <Issue id="3223" module="ConfigMgr" name="There is/are '{0}' folders used by ConfigMgr that does not exist or the user '{1}' does not have access.[NL]List: '{2}'" />
+    <Issue id="3224" module="ConfigMgr" name="There is/are '{0}' folders with too many files on site '{1}'.[NL]List: '{2}'" />
+    <Issue id="3225" module="ConfigMgr" name="There is/are '{0}' '{1}' that has been distributed to Distribution Point and/or Distribution Point Group and has been in InProgress for over '{2}' days.[NL]List: '{3}'" />
+    <Issue id="3226" module="ConfigMgr" name="There is/are '{0}' servers with average ping drop too high.[NL]List: '{1}'" />
+    <Issue id="3227" module="ConfigMgr" name="There is/are '{0}' '{1}' collection with update schedule too often.[NL]List: '{2}'" />
+    <Issue id="3228" module="ConfigMgr" name="There is/are '{0}' servers with low disk space.[NL]List: '{1}'" />
+    <Issue id="3229" module="ConfigMgr" name="There is/are '{0}' Servers with low '{1}'.[NL]List: '{2}'" />
+    <Issue id="3230" module="ConfigMgr" name="There is/are '{0}' '{1}' deployed to collection and has deployment errors over minimum threshold.[NL]List: '{2}'" />
+    <Issue id="3231" module="ConfigMgr" name="There is/are '{0}' sites running an outdate version ('{1}').[NL]List: '{2}'" />
+    <Issue id="3232" module="ConfigMgr" name="There is/are '{0}' Update Group with not enabled deployment.[NL]List: '{1}'" />
+    <Issue id="3233" module="ConfigMgr" name="There is/are '{0}' Update Group with deployment settings, Detail Level not set to 'All Messages'.[NL]List: '{1}'" />
+    <Issue id="3234" module="ConfigMgr" name="There is/are '{0}' '{1}' that have not been deployed to any collection.[NL]List: '{2}'" />
+    <Issue id="3235" module="ConfigMgr" name="There is/are '{0}' '{1}' that have no boundary group assignment.[NL]List: '{2}'" />
+    <Issue id="3236" module="ConfigMgr" name="There is/are '{0}' sites with '{1}' not enabled.[NL]List: '{2}'" />
+    <Issue id="3237" module="ConfigMgr" name="There is/are '{0}' servers with average ping response is too high.[NL]List: '{1}'" />
+    <Issue id="3238" module="ConfigMgr" name="There is/are '{0}' '{1}' with '{2}' software updates.[NL]List: '{3}'" />
+    <Issue id="3239" module="ConfigMgr" name="There is/are '{0}' Applications with user interaction enabled.[NL]List: '{1}'" />
+    <Issue id="3240" module="ConfigMgr" name="Task Sequence '{0}' ('{1}') has '{2}' references not distributed to any Distribution Point or Distribution Point Group.[NL]List: '{3}'" />
+    <Issue id="3241" module="ConfigMgr" name="There is/are '{0}' SQL Servers with its '{1}' on the same drive as the '{2}.[NL]List: '{3}'" />
+    <Issue id="3242" module="ConfigMgr" name="There is/are '{0}' Client Setting with Setting Category '{1}' where '{2}' value is too '{3}'.[NL]List: {4}'" />
+    <Issue id="3243" module="ConfigMgr" name="There is/are '{0}' Software Update Group with '{1}' updates.[NL]List: '{2}'" />
+    <Issue id="3244" module="ConfigMgr" name="There is/are '{0}' Automatic Deployment Rule not enabled.[NL]List: '{1}'" />
+    <Issue id="3245" module="ConfigMgr" name="There is/are '{0}' Automatic Deployment Rule where the last execution was not successful.[NL]List: '{1}'" />
+    <Issue id="3246" module="ConfigMgr" name="There is/are '{0}' Automatic Deployment Rule that did not run in the last '{1}' days.[NL]List: '{2}'" />
+    <Issue id="3247" module="ConfigMgr" name="There is/are '{0}' Automatic Deployment Rule deployment where the Deployment Settings, Detail Level is not set to 'All Messages'.[NL]List: '{1}'" />
+    <Issue id="3248" module="ConfigMgr" name="There is/are '{0}' Automatic Deployment Rule deployment with the Alert option disabled.[NL]List: '{1}'" />
+    <Issue id="3249" module="ConfigMgr" name="There is/are '{0}' SQL Server Jobs on '{1}' that are disabled.[NL]List: '{2}'" />
+    <Issue id="3250" module="ConfigMgr" name="There is/are '{0}' SQL Server Jobs on '{1}' that are enabled but not scheduled.[NL]List: '{2}'" />
+    <Issue id="3251" module="ConfigMgr" name="There is/are '{0}' SQL Server Jobs on '{1}' that are enabled, with scheduled, however, with error on last execution.[NL]List: '{2}'" />
+    <Issue id="3252" module="ConfigMgr" name="There is/are '{0}' SQL Server Jobs under heavly load.[NL]List: '{1}'" />
+    <Issue id="3253" module="ConfigMgr" name="There is/are '{0}' Software Update Group with '{1}' software updates.[NL]List: '{2}'" />
+    <Issue id="3254" module="ConfigMgr" name="There is/are '{0}' Task Sequence with a Reboot to WinPE enabled step(s) but no boot image assigned to it.[NL]List: '{1}'" />
+    <Issue id="3255" module="ConfigMgr" name="There is/are '{0}' IIS where '{1}' setting '{2}' is not configured adhering best practices.[NL]List: '{3}'" />
+    <Issue id="3256" module="ConfigMgr" name="There is/are '{0}' update(s) missing in the ConfigMgr infrastructure." />
+    <Issue id="3257" module="ConfigMgr" name="There is/are '{0}' empty '{1}' folders.[NL]List: '{2}'" />
+    <Issue id="3258" module="ConfigMgr" name="There is/are '{0}' Firewall Policy with option '{1}' disabled on one or more profiles.[NL]List: '{2}'" />
+    <Issue id="3259" module="ConfigMgr" name="There is/are '{0}' databases with the total number of files bellow recommended.[NL]List: '{1}'" />
+    <Issue id="3260" module="ConfigMgr" name="There is/are '{0}' databases with the auto growth configuration not adhering best practices.[NL]List: '{1}'" />
+    <Issue id="3261" module="ConfigMgr" name="There is/are '{0}' databases with the file size not adhering best practices.[NL]List: '{1}'" />
+    <Issue id="3264" module="ConfigMgr" name="There is/are '{0}' databases with database growth on {1} happening too often.[NL]List: '{2}'" />
+    <Issue id="3265" module="ConfigMgr" name="There is/are '{0}' Client Setting not been deployed.[NL]List: '{1}'" />
+    <Issue id="3267" module="ConfigMgr" name="There is/are '{0}' Default Boot Image(s) with Drivers.[NL]List: '{1}'" />
+    <Issue id="3268" module="ConfigMgr" name="There is/are '{0}' Automatic Deployment Rule with no active deployments.[NL]List: '{1}'" />
+    <Issue id="3269" module="ConfigMgr" name="There is/are '{0}' released Features that have been not enabled.[NL]List: '{1}'" />
+    <Issue id="3270" module="ConfigMgr" name="There is/are '{0}' Management Insights requiring actions to be taken.[NL]List: '{1}'" />
+    <Issue id="3271" module="ConfigMgr" name="There is/are '{0}' Client Setting with Setting Category '{1}', '{2}' value is too low.[NL]List: '{3}'" />
+    <Issue id="3272" module="ConfigMgr" name="There is/are '{0}' Client Setting with Setting Category '{1}', '{2}' value lower than '{3}'.[NL]List: '{4}'" />
+    <Issue id="3273" module="ConfigMgr" name="There is/are '{0}' Application without any Deployment Type.[NL]List: '{1}'" />
+    <Issue id="3274" module="ConfigMgr" name="There is/are '{0}' messages with ID '{1}' for component '{2}'.[NL]Sample Message: '{3}'" />
+    <Issue id="3275" module="ConfigMgr" name="There is/are '{0}' Sites where the Site Server has a version of ADK not supported.[NL]List:'{1}'" />
+    <Issue id="3276" module="ConfigMgr" name="There is/are '{0}' Configuration Baselines with non-compliance count greater than '{1}'.[NL]List:'{2}'" />
+    <Issue id="3277" module="ConfigMgr" name="There is/are '{0}' Active Directory Forest(s) on Site Code '{1}' with '{2}' disabled.[NL]List:'{3}'" />
+    <Issue id="3278" module="ConfigMgr" name="There is/are '{0}' Active Directory Forest(s) on Site Code '{1}' where '{2}' status is '{3}'.[NL]List:'{4}'" />
+    <Issue id="3279" module="ConfigMgr" name="There is/are '{0}' Active Directory Forest(s) on Site Code '{1}' where last '{2}' time is too old.[NL]List:'{3}'" />
+    <Issue id="3280" module="ConfigMgr" name="There is/are '{0}' SQL Server(s) with Windows Services not configured with a low-privileged accounts.[NL]List:'{1}'" />
+	<Issue id="3290" module="ConfigMgr" name="There is/are '{0}' sites with Maximum Allowable Inventory file size below recommended.[NL]List: '{1}'" />
+	<Issue id="3291" module="ConfigMgr" name="There is/are '{0}' sites with '{1}' option '{2}'.[NL]List: '{3}'" />
+</Issues>
